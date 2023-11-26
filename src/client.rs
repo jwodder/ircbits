@@ -1,4 +1,5 @@
 use crate::linestream::LineStream;
+use crate::messages::{Nickname, Parameter, Username};
 
 pub(crate) const PLAIN_PORT: u16 = 6667;
 
@@ -18,7 +19,7 @@ impl Client {
         Client { stream }
     }
 
-    pub(crate) async fn register(&mut self, reg: Registration) -> anyhow::Result<()> {
+    pub(crate) async fn register(&mut self, reg: Registration<'_>) -> anyhow::Result<()> {
         todo!()
     }
 
@@ -28,11 +29,11 @@ impl Client {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Registration {
-    password: Option<String>,
-    nickname: String,
-    username: String,
-    realname: String,
+pub(crate) struct Registration<'a> {
+    password: Option<Parameter<'a>>,
+    nickname: Nickname<'a>,
+    username: Username<'a>,
+    realname: Parameter<'a>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

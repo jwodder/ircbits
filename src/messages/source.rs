@@ -56,8 +56,8 @@ impl<'a> TryFrom<&'a str> for Source<'a> {
 
     fn try_from(mut s: &'a str) -> Result<Source<'a>, SourceError> {
         // cf. <https://github.com/ircdocs/modern-irc/issues/227>
-        if let Ok(server) = Host::parse(s) {
-            Ok(Source::Server(server))
+        if !s.contains(['!', '@']) && s.contains('.') {
+            Ok(Source::Server(Host::parse(s)?))
         } else {
             let host_str = s.rsplit_once('@').map(|(pre, h)| {
                 s = pre;
@@ -81,6 +81,8 @@ impl<'a> TryFrom<&'a str> for Source<'a> {
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub(crate) enum SourceError {
+    #[error("invalid host")]
+    Host(#[from] url::ParseError),
     #[error("invalid nickname")]
     Nickname(#[from] NicknameError),
     #[error("invalid username")]

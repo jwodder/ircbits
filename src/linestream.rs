@@ -1,3 +1,4 @@
+use crate::client::MAX_LINE_LENGTH;
 use crate::codec::IrcLinesCodec;
 use anyhow::Context;
 use std::sync::Arc;
@@ -53,6 +54,8 @@ pub(crate) async fn connect(server: &str, port: u16, tls: bool) -> anyhow::Resul
     } else {
         Either::Left(conn)
     };
-    // TODO: Set max line length
-    Ok(Framed::new(conn, IrcLinesCodec::new()))
+    Ok(Framed::new(
+        conn,
+        IrcLinesCodec::new_with_max_length(MAX_LINE_LENGTH),
+    ))
 }

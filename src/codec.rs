@@ -6,6 +6,8 @@
 //! - Text decoding is first attempted using UTF-8; if that fails, it falls
 //!   back to Latin-1.
 //!
+//! - Decoder: `max_length` now includes the terminating line ending.
+//!
 //! [1]: https://github.com/tokio-rs/tokio/blob/a03e0420249d1740668f608a5a16f1fa614be2c7/tokio-util/src/codec/lines_codec.rs
 
 // Copyright (c) 2022 Tokio Contributors
@@ -110,7 +112,7 @@ impl Decoder for IrcLinesCodec {
         loop {
             // Determine how far into the buffer we'll search for a newline. If
             // there's no max_length set, we'll read to the end of the buffer.
-            let read_to = cmp::min(self.max_length.saturating_add(1), buf.len());
+            let read_to = cmp::min(self.max_length, buf.len());
             let newline_offset = buf[self.next_index..read_to]
                 .iter()
                 .position(|b| *b == b'\n');
@@ -143,7 +145,7 @@ impl Decoder for IrcLinesCodec {
                     let line = decode_utf8_latin1(line.to_vec());
                     return Ok(Some(line));
                 }
-                (false, None) if buf.len() > self.max_length => {
+                (false, None) if buf.len() >= self.max_length => {
                     // Reached the maximum length without finding a
                     // newline, return an error and start discarding on the
                     // next call.
@@ -151,8 +153,8 @@ impl Decoder for IrcLinesCodec {
                     return Err(LinesCodecError::MaxLineLengthExceeded);
                 }
                 (false, None) => {
-                    // We didn't find a line or reach the length limit, so the next
-                    // call will resume searching at the current offset.
+                    // We didn't find a line or reach the length limit, so the
+                    // next call will resume searching at the current offset.
                     self.next_index = read_to;
                     return Ok(None);
                 }

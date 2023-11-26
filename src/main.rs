@@ -1,3 +1,4 @@
+mod client;
 mod codec;
 mod linestream;
 mod util;

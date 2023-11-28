@@ -11,6 +11,20 @@ pub(crate) struct RawMessage<'a> {
     parameters: Vec<Parameter<'a>>,
 }
 
+impl<'a> RawMessage<'a> {
+    pub(crate) fn source(&self) -> Option<&Source<'a>> {
+        self.source.as_ref()
+    }
+
+    pub(crate) fn command(&self) -> &RawCommand<'a> {
+        &self.command
+    }
+
+    pub(crate) fn parameters(&self) -> &[Parameter<'a>] {
+        &self.parameters
+    }
+}
+
 impl fmt::Display for RawMessage<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(source) = self.source.as_ref() {

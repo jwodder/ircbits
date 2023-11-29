@@ -1,4 +1,4 @@
-use crate::linestream::LineStream;
+use crate::linestream::IrcLineStream;
 use crate::messages::{Nickname, Parameter, Username};
 
 pub(crate) const PLAIN_PORT: u16 = 6667;
@@ -11,11 +11,11 @@ pub(crate) const MAX_LINE_LENGTH: usize = 512;
 
 #[derive(Debug)]
 pub(crate) struct Client {
-    stream: LineStream,
+    stream: IrcLineStream,
 }
 
 impl Client {
-    pub(crate) fn new(stream: LineStream) -> Client {
+    pub(crate) fn new(stream: IrcLineStream) -> Client {
         Client { stream }
     }
 

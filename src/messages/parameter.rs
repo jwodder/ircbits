@@ -7,8 +7,12 @@ pub(crate) struct Parameter<'a>(Cow<'a, str>);
 
 impl Parameter<'_> {
     pub(crate) fn is_middle(&self) -> bool {
+        !self.is_final()
+    }
+
+    pub(crate) fn is_final(&self) -> bool {
         let s = self.0.as_ref();
-        !(s.is_empty() || s.starts_with(':') || s.contains(' '))
+        s.is_empty() || s.starts_with(':') || s.contains(' ')
     }
 }
 

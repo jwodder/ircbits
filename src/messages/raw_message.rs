@@ -45,8 +45,10 @@ impl fmt::Display for RawMessage<'_> {
 impl<'a> TryFrom<&'a str> for RawMessage<'a> {
     type Error = RawMessageError;
 
-    // Assumes `s` does not contain the terminating CR LF
+    // `s` may optionally end with LF, CR LF, or CR.
     fn try_from(mut s: &'a str) -> Result<RawMessage<'a>, RawMessageError> {
+        s = s.strip_suffix('\n').unwrap_or(s);
+        s = s.strip_suffix('\r').unwrap_or(s);
         let source = if let Some(s2) = s.strip_prefix(':') {
             let (source_str, rest) = split_word(s2);
             s = rest;

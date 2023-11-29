@@ -12,7 +12,7 @@ impl fmt::Display for RawCommand<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             RawCommand::Command(name) => write!(f, "{name}"),
-            RawCommand::Reply(code) => write!(f, "{code}"),
+            RawCommand::Reply(code) => write!(f, "{code:03}"),
         }
     }
 }

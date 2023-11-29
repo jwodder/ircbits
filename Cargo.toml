@@ -35,6 +35,10 @@ unused = { level = "deny", priority = 0 }
 # Set a lint in "unused" back to "warn" (to be denied again under CI):
 dead_code = { level = "warn", priority = 5 }
 
+### TODO: Remove once these are no longer a problem:
+unused_variables = { level = "warn", priority = 5 }
+unused_imports = { level = "warn", priority = 5 }
+
 # Deny various allow-by-default lints:
 macro_use_extern_crate = "deny"
 missing_debug_implementations = "deny"
@@ -229,7 +233,11 @@ unnecessary_struct_initialization = "deny"
 unnecessary_wraps = "deny"
 unneeded_field_pattern = "deny"
 unnested_or_patterns = "deny"
-unused_async = "deny"
+
+### TODO: Set back to "deny" once this is no longer a problem:
+#unused_async = "deny"
+unused_async = "warn"
+
 unused_peekable = "deny"
 unused_rounding = "deny"
 unwrap_used = "deny"

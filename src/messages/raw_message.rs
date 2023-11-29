@@ -1,5 +1,5 @@
+use super::command::{Command, CommandError};
 use super::parameter::{Parameter, ParameterError};
-use super::raw_command::{RawCommand, RawCommandError};
 use super::source::{Source, SourceError};
 use std::fmt;
 use thiserror::Error;
@@ -7,7 +7,7 @@ use thiserror::Error;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct RawMessage<'a> {
     source: Option<Source<'a>>,
-    command: RawCommand<'a>,
+    command: Command<'a>,
     parameters: Vec<Parameter<'a>>,
 }
 
@@ -16,7 +16,7 @@ impl<'a> RawMessage<'a> {
         self.source.as_ref()
     }
 
-    pub(crate) fn command(&self) -> &RawCommand<'a> {
+    pub(crate) fn command(&self) -> &Command<'a> {
         &self.command
     }
 
@@ -57,7 +57,7 @@ impl<'a> TryFrom<&'a str> for RawMessage<'a> {
             None
         };
         let (cmd_str, mut s) = split_word(s);
-        let command = RawCommand::try_from(cmd_str)?;
+        let command = Command::try_from(cmd_str)?;
         let mut parameters = Vec::new();
         while !s.is_empty() {
             if let Some(trail) = s.strip_prefix(':') {
@@ -82,7 +82,7 @@ pub(crate) enum RawMessageError {
     #[error("invalid source prefix")]
     Source(#[from] SourceError),
     #[error("invalid command")]
-    Command(#[from] RawCommandError),
+    Command(#[from] CommandError),
     #[error("invalid parameter")]
     Parameter(#[from] ParameterError),
 }

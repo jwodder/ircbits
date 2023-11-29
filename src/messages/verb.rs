@@ -3,42 +3,42 @@ use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct CommandName<'a>(Cow<'a, str>);
+pub(crate) struct Verb<'a>(Cow<'a, str>);
 
-impl fmt::Display for CommandName<'_> {
+impl fmt::Display for Verb<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl PartialEq<str> for CommandName<'_> {
+impl PartialEq<str> for Verb<'_> {
     fn eq(&self, other: &str) -> bool {
         self.0 == other
     }
 }
 
-impl<'a> PartialEq<&'a str> for CommandName<'_> {
+impl<'a> PartialEq<&'a str> for Verb<'_> {
     fn eq(&self, other: &&'a str) -> bool {
         &self.0 == other
     }
 }
 
-impl AsRef<str> for CommandName<'_> {
+impl AsRef<str> for Verb<'_> {
     fn as_ref(&self) -> &str {
         self.0.as_ref()
     }
 }
 
-impl<'a> TryFrom<&'a str> for CommandName<'a> {
+impl<'a> TryFrom<&'a str> for Verb<'a> {
     type Error = CommandNameError;
 
-    fn try_from(s: &'a str) -> Result<CommandName<'a>, CommandNameError> {
+    fn try_from(s: &'a str) -> Result<Verb<'a>, CommandNameError> {
         if s.is_empty() {
             Err(CommandNameError::Empty)
         } else if s.contains(|ch: char| !ch.is_ascii_alphabetic()) {
             Err(CommandNameError::BadCharacter)
         } else {
-            Ok(CommandName(s.into()))
+            Ok(Verb(s.into()))
         }
     }
 }

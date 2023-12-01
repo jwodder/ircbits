@@ -38,6 +38,12 @@ macro_rules! common_cow {
             }
         }
 
+        common_from_cow!($t, $err);
+    };
+}
+
+macro_rules! common_from_cow {
+    ($t:ident, $err:ty) => {
         impl<'a> TryFrom<&'a str> for $t<'a> {
             type Error = $err;
 

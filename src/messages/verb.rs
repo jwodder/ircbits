@@ -22,8 +22,8 @@ impl<'a> TryFrom<Cow<'a, str>> for Verb<'a> {
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub(crate) enum VerbError {
-    #[error("command names cannot be empty")]
+    #[error("verbs cannot be empty")]
     Empty,
-    #[error("command names may only contain letters")]
+    #[error("verbs may only contain letters")]
     BadCharacter,
 }

@@ -1,3 +1,6 @@
+#[macro_use]
+mod common;
+
 mod command;
 mod nickname;
 mod parameter;

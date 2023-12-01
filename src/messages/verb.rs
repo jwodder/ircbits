@@ -1,50 +1,27 @@
 use std::borrow::Cow;
-use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Verb<'a>(Cow<'a, str>);
 
-impl fmt::Display for Verb<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+common_cow!(Verb, VerbError);
 
-impl PartialEq<str> for Verb<'_> {
-    fn eq(&self, other: &str) -> bool {
-        self.0 == other
-    }
-}
+impl<'a> TryFrom<Cow<'a, str>> for Verb<'a> {
+    type Error = VerbError;
 
-impl<'a> PartialEq<&'a str> for Verb<'_> {
-    fn eq(&self, other: &&'a str) -> bool {
-        &self.0 == other
-    }
-}
-
-impl AsRef<str> for Verb<'_> {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
-    }
-}
-
-impl<'a> TryFrom<&'a str> for Verb<'a> {
-    type Error = CommandNameError;
-
-    fn try_from(s: &'a str) -> Result<Verb<'a>, CommandNameError> {
+    fn try_from(s: Cow<'a, str>) -> Result<Verb<'a>, VerbError> {
         if s.is_empty() {
-            Err(CommandNameError::Empty)
+            Err(VerbError::Empty)
         } else if s.contains(|ch: char| !ch.is_ascii_alphabetic()) {
-            Err(CommandNameError::BadCharacter)
+            Err(VerbError::BadCharacter)
         } else {
-            Ok(Verb(s.into()))
+            Ok(Verb(s))
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub(crate) enum CommandNameError {
+pub(crate) enum VerbError {
     #[error("command names cannot be empty")]
     Empty,
     #[error("command names may only contain letters")]

@@ -1,40 +1,17 @@
 // See <https://github.com/ircdocs/modern-irc/issues/226> for notes on username
 // format.
 use std::borrow::Cow;
-use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Username<'a>(Cow<'a, str>);
 
-impl fmt::Display for Username<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+common_cow!(Username, UsernameError);
 
-impl PartialEq<str> for Username<'_> {
-    fn eq(&self, other: &str) -> bool {
-        self.0 == other
-    }
-}
-
-impl<'a> PartialEq<&'a str> for Username<'_> {
-    fn eq(&self, other: &&'a str) -> bool {
-        &self.0 == other
-    }
-}
-
-impl AsRef<str> for Username<'_> {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
-    }
-}
-
-impl<'a> TryFrom<&'a str> for Username<'a> {
+impl<'a> TryFrom<Cow<'a, str>> for Username<'a> {
     type Error = UsernameError;
 
-    fn try_from(s: &'a str) -> Result<Username<'a>, UsernameError> {
+    fn try_from(s: Cow<'a, str>) -> Result<Username<'a>, UsernameError> {
         if s.is_empty() {
             Err(UsernameError::Empty)
         } else if s.starts_with(':') {
@@ -42,7 +19,7 @@ impl<'a> TryFrom<&'a str> for Username<'a> {
         } else if s.contains(['\0', '\r', '\n', ' ', '@']) {
             Err(UsernameError::BadCharacter)
         } else {
-            Ok(Username(s.into()))
+            Ok(Username(s))
         }
     }
 }

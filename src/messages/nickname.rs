@@ -29,40 +29,17 @@
 // contain NUL, CR, or LF.
 
 use std::borrow::Cow;
-use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Nickname<'a>(Cow<'a, str>);
 
-impl fmt::Display for Nickname<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+common_cow!(Nickname, NicknameError);
 
-impl PartialEq<str> for Nickname<'_> {
-    fn eq(&self, other: &str) -> bool {
-        self.0 == other
-    }
-}
-
-impl<'a> PartialEq<&'a str> for Nickname<'_> {
-    fn eq(&self, other: &&'a str) -> bool {
-        &self.0 == other
-    }
-}
-
-impl AsRef<str> for Nickname<'_> {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
-    }
-}
-
-impl<'a> TryFrom<&'a str> for Nickname<'a> {
+impl<'a> TryFrom<Cow<'a, str>> for Nickname<'a> {
     type Error = NicknameError;
 
-    fn try_from(s: &'a str) -> Result<Nickname<'a>, NicknameError> {
+    fn try_from(s: Cow<'a, str>) -> Result<Nickname<'a>, NicknameError> {
         if s.is_empty() {
             Err(NicknameError::Empty)
         } else if s.starts_with(['$', ':', '#', '&', '~', '@', '%', '+']) {
@@ -70,7 +47,7 @@ impl<'a> TryFrom<&'a str> for Nickname<'a> {
         } else if s.contains(['\0', '\r', '\n', ' ', ',', '*', '?', '!', '@']) {
             Err(NicknameError::BadCharacter)
         } else {
-            Ok(Nickname(s.into()))
+            Ok(Nickname(s))
         }
     }
 }

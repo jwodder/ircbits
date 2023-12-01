@@ -30,6 +30,14 @@ macro_rules! common_cow {
             }
         }
 
+        impl std::ops::Deref for $t<'_> {
+            type Target = str;
+
+            fn deref(&self) -> &str {
+                &*self.0
+            }
+        }
+
         impl<'a> TryFrom<&'a str> for $t<'a> {
             type Error = $err;
 

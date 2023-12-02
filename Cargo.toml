@@ -244,3 +244,6 @@ unwrap_used = "deny"
 used_underscore_binding = "deny"
 wildcard_dependencies = "deny"
 zero_sized_map_values = "deny"
+
+[dev-dependencies]
+assert_matches = "1.5.0"

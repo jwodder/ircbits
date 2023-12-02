@@ -96,3 +96,108 @@ pub(crate) enum SourceError {
     #[error("invalid username")]
     Username(#[from] UsernameError),
 }
+
+#[cfg(test)]
+mod parser_tests {
+    // Test cases from <https://github.com/ircdocs/parser-tests/blob/6b417e666de20ba677b14e0189213b3706009df6/tests/userhost-split.yaml>
+    use super::*;
+    use assert_matches::assert_matches;
+
+    #[test]
+    fn simpler() {
+        let source = "coolguy".parse::<Source>().unwrap();
+        assert_matches!(source, Source::Client {
+            nickname,
+            user: None,
+            host: None
+        } => {
+            assert_eq!(nickname, "coolguy");
+        });
+    }
+
+    #[test]
+    fn simple1() {
+        let source = "coolguy!ag@127.0.0.1".parse::<Source>().unwrap();
+        assert_matches!(source, Source::Client {
+            nickname,
+            user: Some(user),
+            host: Some(host)
+        } => {
+            assert_eq!(nickname, "coolguy");
+            assert_eq!(user, "ag");
+            assert_eq!(host, "127.0.0.1");
+        });
+    }
+
+    #[test]
+    fn simple2() {
+        let source = "coolguy!~ag@localhost".parse::<Source>().unwrap();
+        assert_matches!(source, Source::Client {
+            nickname,
+            user: Some(user),
+            host: Some(host)
+        } => {
+            assert_eq!(nickname, "coolguy");
+            assert_eq!(user, "~ag");
+            assert_eq!(host, "localhost");
+        });
+    }
+
+    #[test]
+    fn without_user() {
+        let source = "coolguy@127.0.0.1".parse::<Source>().unwrap();
+        assert_matches!(source, Source::Client {
+            nickname,
+            user: None,
+            host: Some(host)
+        } => {
+            assert_eq!(nickname, "coolguy");
+            assert_eq!(host, "127.0.0.1");
+        });
+    }
+
+    #[test]
+    fn without_host() {
+        let source = "coolguy!ag".parse::<Source>().unwrap();
+        assert_matches!(source, Source::Client {
+            nickname,
+            user: Some(user),
+            host: None,
+        } => {
+            assert_eq!(nickname, "coolguy");
+            assert_eq!(user, "ag");
+        });
+    }
+
+    #[test]
+    fn control_codes1() {
+        let source = "coolguy!ag@net\x035w\x03ork.admin"
+            .parse::<Source>()
+            .unwrap();
+        assert_matches!(source, Source::Client {
+            nickname,
+            user: Some(user),
+            host: Some(host)
+        } => {
+            assert_eq!(nickname, "coolguy");
+            assert_eq!(user, "ag");
+            assert_eq!(host, "net\x035w\x03ork.admin");
+        });
+    }
+
+    #[test]
+    fn control_codes2() {
+        let source = "coolguy!~ag@n\x02et\x0305w\x0fork.admin"
+            .parse::<Source>()
+            .unwrap();
+        assert_matches!(source, Source::Client {
+            nickname,
+            user: Some(user),
+            host: Some(host)
+        } => {
+            assert_eq!(nickname, "coolguy");
+            assert_eq!(user, "~ag");
+            assert_eq!(host, "n\x02et\x0305w\x0fork.admin");
+        });
+    }
+}

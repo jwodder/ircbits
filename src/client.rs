@@ -19,7 +19,7 @@ impl Client {
         Client { stream }
     }
 
-    pub(crate) async fn register(&mut self, reg: Registration<'_>) -> anyhow::Result<()> {
+    pub(crate) async fn register(&mut self, reg: Registration) -> anyhow::Result<()> {
         todo!()
     }
 
@@ -29,11 +29,11 @@ impl Client {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Registration<'a> {
-    password: Option<Parameter<'a>>,
-    nickname: Nickname<'a>,
-    username: Username<'a>,
-    realname: Parameter<'a>,
+pub(crate) struct Registration {
+    password: Option<Parameter>,
+    nickname: Nickname,
+    username: Username,
+    realname: Parameter,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

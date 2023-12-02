@@ -28,18 +28,17 @@
 // In addition to the above, in order to be sent in messages, nicknames cannot
 // contain NUL, CR, or LF.
 
-use std::borrow::Cow;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Nickname<'a>(Cow<'a, str>);
+pub(crate) struct Nickname(String);
 
-common_cow!(Nickname, NicknameError);
+common_string!(Nickname, NicknameError);
 
-impl<'a> TryFrom<Cow<'a, str>> for Nickname<'a> {
+impl TryFrom<String> for Nickname {
     type Error = NicknameError;
 
-    fn try_from(s: Cow<'a, str>) -> Result<Nickname<'a>, NicknameError> {
+    fn try_from(s: String) -> Result<Nickname, NicknameError> {
         if s.is_empty() {
             Err(NicknameError::Empty)
         } else if s.starts_with(['$', ':', '#', '&', '~', '@', '%', '+']) {

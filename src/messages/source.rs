@@ -1,12 +1,11 @@
 use super::nickname::{Nickname, NicknameError};
 use super::username::{Username, UsernameError};
-use std::borrow::Cow;
 use std::fmt;
 use thiserror::Error;
 use url::Host;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) enum Source<'a> {
+pub(crate) enum Source {
     // <https://modern.ircdocs.horse> doesn't address the format of
     // `<servername>` and `<host>` in source prefixes.
     //
@@ -19,17 +18,17 @@ pub(crate) enum Source<'a> {
     // validation should be performed on host segments — for now.
     Server(Host),
     Client {
-        nickname: Nickname<'a>,
+        nickname: Nickname,
         // Note that the user component may begin with a tilde if the IRC
         // server failed to look up the username using ident and is instead
         // reporting a username supplied with `USER`.  TODO: Extract the tilde
         // as a field?
-        user: Option<Username<'a>>,
-        host: Option<Cow<'a, str>>,
+        user: Option<Username>,
+        host: Option<String>,
     },
 }
 
-impl fmt::Display for Source<'_> {
+impl fmt::Display for Source {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Source::Server(server) => write!(f, "{server}"),
@@ -51,14 +50,23 @@ impl fmt::Display for Source<'_> {
     }
 }
 
-impl<'a> TryFrom<&'a str> for Source<'a> {
+impl std::str::FromStr for Source {
+    type Err = SourceError;
+
+    fn from_str(s: &str) -> Result<Source, SourceError> {
+        String::from(s).try_into()
+    }
+}
+
+impl TryFrom<String> for Source {
     type Error = SourceError;
 
-    fn try_from(mut s: &'a str) -> Result<Source<'a>, SourceError> {
+    fn try_from(s: String) -> Result<Source, SourceError> {
         // cf. <https://github.com/ircdocs/modern-irc/issues/227>
         if !s.contains(['!', '@']) && s.contains('.') {
-            Ok(Source::Server(Host::parse(s)?))
+            Ok(Source::Server(Host::parse(&s)?))
         } else {
+            let mut s = &*s;
             let host_str = s.rsplit_once('@').map(|(pre, h)| {
                 s = pre;
                 h
@@ -67,9 +75,9 @@ impl<'a> TryFrom<&'a str> for Source<'a> {
                 s = pre;
                 u
             });
-            let nickname = Nickname::try_from(s)?;
-            let user = user_str.map(Username::try_from).transpose()?;
-            let host = host_str.map(Into::into);
+            let nickname = s.parse::<Nickname>()?;
+            let user = user_str.map(str::parse::<Username>).transpose()?;
+            let host = host_str.map(String::from);
             Ok(Source::Client {
                 nickname,
                 user,

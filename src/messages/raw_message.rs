@@ -5,27 +5,27 @@ use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct RawMessage<'a> {
-    source: Option<Source<'a>>,
-    command: Command<'a>,
-    parameters: Vec<Parameter<'a>>,
+pub(crate) struct RawMessage {
+    source: Option<Source>,
+    command: Command,
+    parameters: Vec<Parameter>,
 }
 
-impl<'a> RawMessage<'a> {
-    pub(crate) fn source(&self) -> Option<&Source<'a>> {
+impl RawMessage {
+    pub(crate) fn source(&self) -> Option<&Source> {
         self.source.as_ref()
     }
 
-    pub(crate) fn command(&self) -> &Command<'a> {
+    pub(crate) fn command(&self) -> &Command {
         &self.command
     }
 
-    pub(crate) fn parameters(&self) -> &[Parameter<'a>] {
+    pub(crate) fn parameters(&self) -> &[Parameter] {
         &self.parameters
     }
 }
 
-impl fmt::Display for RawMessage<'_> {
+impl fmt::Display for RawMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(source) = self.source.as_ref() {
             write!(f, ":{source} ")?;
@@ -42,30 +42,38 @@ impl fmt::Display for RawMessage<'_> {
     }
 }
 
-impl<'a> TryFrom<&'a str> for RawMessage<'a> {
+impl std::str::FromStr for RawMessage {
+    type Err = RawMessageError;
+
+    fn from_str(s: &str) -> Result<RawMessage, RawMessageError> {
+        String::from(s).try_into()
+    }
+}
+
+impl TryFrom<String> for RawMessage {
     type Error = RawMessageError;
 
     // `s` may optionally end with LF, CR LF, or CR.
-    fn try_from(mut s: &'a str) -> Result<RawMessage<'a>, RawMessageError> {
-        s = s.strip_suffix('\n').unwrap_or(s);
+    fn try_from(s: String) -> Result<RawMessage, RawMessageError> {
+        let mut s = s.strip_suffix('\n').unwrap_or(&*s);
         s = s.strip_suffix('\r').unwrap_or(s);
         let source = if let Some(s2) = s.strip_prefix(':') {
             let (source_str, rest) = split_word(s2);
             s = rest;
-            Some(Source::try_from(source_str)?)
+            Some(source_str.parse::<Source>()?)
         } else {
             None
         };
         let (cmd_str, mut s) = split_word(s);
-        let command = Command::try_from(cmd_str)?;
+        let command = cmd_str.parse::<Command>()?;
         let mut parameters = Vec::new();
         while !s.is_empty() {
             if let Some(trail) = s.strip_prefix(':') {
-                parameters.push(Parameter::try_from(trail)?);
+                parameters.push(trail.parse::<Parameter>()?);
                 s = "";
             } else {
                 let (param, rest) = split_word(s);
-                parameters.push(Parameter::try_from(param)?);
+                parameters.push(param.parse::<Parameter>()?);
                 s = rest;
             }
         }

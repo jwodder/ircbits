@@ -1,17 +1,16 @@
 // See <https://github.com/ircdocs/modern-irc/issues/226> for notes on username
 // format.
-use std::borrow::Cow;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Username<'a>(Cow<'a, str>);
+pub(crate) struct Username(String);
 
-common_cow!(Username, UsernameError);
+common_string!(Username, UsernameError);
 
-impl<'a> TryFrom<Cow<'a, str>> for Username<'a> {
+impl TryFrom<String> for Username {
     type Error = UsernameError;
 
-    fn try_from(s: Cow<'a, str>) -> Result<Username<'a>, UsernameError> {
+    fn try_from(s: String) -> Result<Username, UsernameError> {
         if s.is_empty() {
             Err(UsernameError::Empty)
         } else if s.starts_with(':') {

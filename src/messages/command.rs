@@ -1,17 +1,14 @@
 use super::verb::Verb;
-use std::borrow::Cow;
 use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) enum Command<'a> {
-    Verb(Verb<'a>),
+pub(crate) enum Command {
+    Verb(Verb),
     Reply(u16),
 }
 
-common_from_cow!(Command, CommandError);
-
-impl fmt::Display for Command<'_> {
+impl fmt::Display for Command {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Command::Verb(name) => write!(f, "{name}"),
@@ -20,10 +17,18 @@ impl fmt::Display for Command<'_> {
     }
 }
 
-impl<'a> TryFrom<Cow<'a, str>> for Command<'a> {
+impl std::str::FromStr for Command {
+    type Err = CommandError;
+
+    fn from_str(s: &str) -> Result<Command, CommandError> {
+        String::from(s).try_into()
+    }
+}
+
+impl TryFrom<String> for Command {
     type Error = CommandError;
 
-    fn try_from(s: Cow<'a, str>) -> Result<Command<'a>, CommandError> {
+    fn try_from(s: String) -> Result<Command, CommandError> {
         if s.len() == 3 && s.chars().all(|ch| ch.is_ascii_digit()) {
             let code = s
                 .parse::<u16>()

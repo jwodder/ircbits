@@ -1,26 +1,24 @@
-use std::borrow::Cow;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Parameter<'a>(Cow<'a, str>);
+pub(crate) struct Parameter(String);
 
-common_cow!(Parameter, ParameterError);
+common_string!(Parameter, ParameterError);
 
-impl Parameter<'_> {
+impl Parameter {
     pub(crate) fn is_middle(&self) -> bool {
         !self.is_final()
     }
 
     pub(crate) fn is_final(&self) -> bool {
-        let s = self.0.as_ref();
-        s.is_empty() || s.starts_with(':') || s.contains(' ')
+        self.0.is_empty() || self.0.starts_with(':') || self.0.contains(' ')
     }
 }
 
-impl<'a> TryFrom<Cow<'a, str>> for Parameter<'a> {
+impl TryFrom<String> for Parameter {
     type Error = ParameterError;
 
-    fn try_from(s: Cow<'a, str>) -> Result<Parameter<'a>, ParameterError> {
+    fn try_from(s: String) -> Result<Parameter, ParameterError> {
         if s.contains(['\0', '\r', '\n']) {
             Err(ParameterError)
         } else {

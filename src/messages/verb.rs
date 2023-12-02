@@ -1,15 +1,14 @@
-use std::borrow::Cow;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Verb<'a>(Cow<'a, str>);
+pub(crate) struct Verb(String);
 
-common_cow!(Verb, VerbError);
+common_string!(Verb, VerbError);
 
-impl<'a> TryFrom<Cow<'a, str>> for Verb<'a> {
+impl TryFrom<String> for Verb {
     type Error = VerbError;
 
-    fn try_from(s: Cow<'a, str>) -> Result<Verb<'a>, VerbError> {
+    fn try_from(s: String) -> Result<Verb, VerbError> {
         if s.is_empty() {
             Err(VerbError::Empty)
         } else if s.contains(|ch: char| !ch.is_ascii_alphabetic()) {

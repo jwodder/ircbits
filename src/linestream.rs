@@ -1,10 +1,11 @@
 use crate::client::MAX_LINE_LENGTH;
 use crate::codec::IrcLinesCodec;
 use anyhow::Context;
+use rustls_pki_types::ServerName;
 use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio_rustls::{
-    rustls::{ClientConfig, RootCertStore, ServerName},
+    rustls::{ClientConfig, RootCertStore},
     TlsConnector,
 };
 use tokio_util::{codec::Framed, either::Either};
@@ -29,22 +30,20 @@ pub(crate) async fn connect(server: &str, port: u16, tls: bool) -> anyhow::Resul
         log::trace!("Initializing TLS ...");
         let mut root_cert_store = RootCertStore::empty();
         let system_certs = rustls_native_certs::load_native_certs()
-            .context("Failed to load system certificate store")?
-            .into_iter()
-            .map(|cert| cert.0)
-            .collect::<Vec<_>>();
-        let (good, bad) = root_cert_store.add_parsable_certificates(&system_certs);
+            .context("Failed to load system certificate store")?;
+        let (good, bad) = root_cert_store.add_parsable_certificates(system_certs);
         if good == 0 {
             anyhow::bail!(
                 "Failed to load any certificates from system store: all {bad} certs were invalid"
             );
         }
         let config = ClientConfig::builder()
-            .with_safe_defaults()
             .with_root_certificates(root_cert_store)
             .with_no_client_auth();
         let connector = TlsConnector::from(Arc::new(config));
-        let dnsname = ServerName::try_from(server).context("Invalid TLS server name")?;
+        let dnsname = ServerName::try_from(server)
+            .context("Invalid TLS server name")?
+            .to_owned();
         let tls_conn = connector
             .connect(dnsname, conn)
             .await

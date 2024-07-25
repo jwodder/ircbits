@@ -19,10 +19,12 @@ impl Client {
         Client { stream }
     }
 
+    #[allow(clippy::needless_pass_by_ref_mut)]
     pub(crate) async fn register(&mut self, reg: Registration) -> anyhow::Result<()> {
         todo!()
     }
 
+    #[allow(clippy::needless_pass_by_ref_mut)]
     pub(crate) async fn list(&mut self) -> anyhow::Result<Vec<Channel>> {
         todo!()
     }

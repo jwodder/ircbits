@@ -5,7 +5,7 @@ use thiserror::Error;
 use url::Host;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) enum Source {
+pub enum Source {
     // <https://modern.ircdocs.horse> doesn't address the format of
     // `<servername>` and `<host>` in source prefixes.
     //
@@ -88,7 +88,7 @@ impl TryFrom<String> for Source {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub(crate) enum SourceError {
+pub enum SourceError {
     #[error("invalid host")]
     Host(#[from] url::ParseError),
     #[error("invalid nickname")]

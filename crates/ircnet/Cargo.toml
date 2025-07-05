@@ -1,0 +1,23 @@
+[package]
+name = "ircnet"
+edition.workspace = true
+rust-version.workspace = true
+#description = ...
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow = "1.0.75"
+bytes = "1.5.0"
+irctext = { path = "../irctext" }
+log = "0.4.20"
+rustls-native-certs = "0.7.0"
+rustls-pki-types = "1.0.0"
+thiserror = "1.0.50"
+tokio = { version = "1.34.0", features = ["macros", "net", "rt"] }
+tokio-rustls = "0.25.0"
+tokio-util = { version = "0.7.10", features = ["codec"] }
+
+[lints]
+workspace = true

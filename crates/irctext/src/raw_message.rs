@@ -5,22 +5,22 @@ use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct RawMessage {
+pub struct RawMessage {
     source: Option<Source>,
     command: Command,
     parameters: Vec<Parameter>,
 }
 
 impl RawMessage {
-    pub(crate) fn source(&self) -> Option<&Source> {
+    pub fn source(&self) -> Option<&Source> {
         self.source.as_ref()
     }
 
-    pub(crate) fn command(&self) -> &Command {
+    pub fn command(&self) -> &Command {
         &self.command
     }
 
-    pub(crate) fn parameters(&self) -> &[Parameter] {
+    pub fn parameters(&self) -> &[Parameter] {
         &self.parameters
     }
 }
@@ -86,7 +86,7 @@ impl TryFrom<String> for RawMessage {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub(crate) enum RawMessageError {
+pub enum RawMessageError {
     #[error("invalid source prefix")]
     Source(#[from] SourceError),
     #[error("invalid command")]

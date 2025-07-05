@@ -44,7 +44,7 @@ use tokio_util::codec::{Decoder, Encoder};
 
 /// A simple [`Decoder`] and [`Encoder`] implementation that splits up data into lines.
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub(crate) struct IrcLinesCodec {
+pub struct IrcLinesCodec {
     // Stored index of the next index to examine for a `\n` character.
     // This is used to optimize searching.
     // For example, if `decode` was called with `abc`, it would hold `3`,
@@ -70,7 +70,7 @@ impl IrcLinesCodec {
     /// The returned `IrcLinesCodec` will not have an upper bound on the length
     /// of a buffered line. See the documentation for `new_with_max_length`
     /// for information on why this could be a potential security risk.
-    pub(crate) fn new() -> IrcLinesCodec {
+    pub fn new() -> IrcLinesCodec {
         IrcLinesCodec {
             next_index: 0,
             max_length: usize::MAX,
@@ -88,7 +88,7 @@ impl IrcLinesCodec {
     /// attacker could exploit this unbounded buffer by sending an unbounded
     /// amount of input without any `\n` characters, causing unbounded memory
     /// consumption.
-    pub(crate) fn new_with_max_length(max_length: usize) -> Self {
+    pub fn new_with_max_length(max_length: usize) -> Self {
         IrcLinesCodec {
             max_length,
             ..IrcLinesCodec::new()
@@ -205,7 +205,7 @@ impl Default for IrcLinesCodec {
 
 /// An error occurred while encoding or decoding a line.
 #[derive(Debug, Error)]
-pub(crate) enum LinesCodecError {
+pub enum LinesCodecError {
     /// The maximum line length was exceeded.
     #[error("max line length exceeded")]
     MaxLineLengthExceeded,

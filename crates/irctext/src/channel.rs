@@ -15,7 +15,7 @@
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Channel(String);
+pub struct Channel(String);
 
 common_string!(Channel, ChannelError);
 
@@ -36,7 +36,7 @@ impl TryFrom<String> for Channel {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub(crate) enum ChannelError {
+pub enum ChannelError {
     #[error("channels cannot be empty")]
     Empty,
     #[error("channels cannot start with a colon")]

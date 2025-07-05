@@ -3,7 +3,7 @@ use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) enum Command {
+pub enum Command {
     Verb(Verb),
     Reply(u16),
 }
@@ -44,4 +44,4 @@ impl TryFrom<String> for Command {
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 #[error("invalid command")]
-pub(crate) struct CommandError;
+pub struct CommandError;

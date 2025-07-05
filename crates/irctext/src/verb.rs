@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Verb(String);
+pub struct Verb(String);
 
 common_string!(Verb, VerbError);
 
@@ -20,7 +20,7 @@ impl TryFrom<String> for Verb {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub(crate) enum VerbError {
+pub enum VerbError {
     #[error("verbs cannot be empty")]
     Empty,
     #[error("verbs may only contain letters")]

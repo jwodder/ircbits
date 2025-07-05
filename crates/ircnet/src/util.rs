@@ -1,4 +1,4 @@
-pub(crate) fn decode_utf8_latin1(bs: Vec<u8>) -> String {
+pub fn decode_utf8_latin1(bs: Vec<u8>) -> String {
     match String::from_utf8(bs) {
         Ok(s) => s,
         Err(e) => e.into_bytes().into_iter().map(char::from).collect(),

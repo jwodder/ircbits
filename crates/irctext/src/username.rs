@@ -3,7 +3,7 @@
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Username(String);
+pub struct Username(String);
 
 common_string!(Username, UsernameError);
 
@@ -24,7 +24,7 @@ impl TryFrom<String> for Username {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub(crate) enum UsernameError {
+pub enum UsernameError {
     #[error("usernames cannot be empty")]
     Empty,
     #[error("usernames cannot start with a colon")]

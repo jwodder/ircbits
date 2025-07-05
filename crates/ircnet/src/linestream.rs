@@ -10,11 +10,11 @@ use tokio_rustls::{
 };
 use tokio_util::{codec::Framed, either::Either};
 
-pub(crate) type IrcLineStream = Framed<Either<TcpStream, TlsStream>, IrcLinesCodec>;
+pub type IrcLineStream = Framed<Either<TcpStream, TlsStream>, IrcLinesCodec>;
 
-pub(crate) type TlsStream = tokio_rustls::client::TlsStream<TcpStream>;
+pub type TlsStream = tokio_rustls::client::TlsStream<TcpStream>;
 
-pub(crate) async fn connect(server: &str, port: u16, tls: bool) -> anyhow::Result<IrcLineStream> {
+pub async fn connect(server: &str, port: u16, tls: bool) -> anyhow::Result<IrcLineStream> {
     log::trace!("Connecting to {server:?} on port {port} ...");
     let conn = TcpStream::connect((server, port))
         .await

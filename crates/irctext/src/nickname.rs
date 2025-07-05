@@ -31,7 +31,7 @@
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Nickname(String);
+pub struct Nickname(String);
 
 common_string!(Nickname, NicknameError);
 
@@ -52,7 +52,7 @@ impl TryFrom<String> for Nickname {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub(crate) enum NicknameError {
+pub enum NicknameError {
     #[error("nicknames cannot be empty")]
     Empty,
     #[error("nicknames cannot start with $, :, #, &, ~, @, %, or +")]

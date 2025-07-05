@@ -1,17 +1,24 @@
+#![expect(clippy::todo)]
 mod channel;
+mod climsg;
 mod command;
+mod message;
 mod nickname;
 mod parameters;
 mod raw_message;
+mod reply;
 mod source;
 mod username;
 mod util;
 mod verb;
 pub use crate::channel::*;
+pub use crate::climsg::*;
 pub use crate::command::*;
+pub use crate::message::*;
 pub use crate::nickname::*;
 pub use crate::parameters::*;
 pub use crate::raw_message::*;
+pub use crate::reply::*;
 pub use crate::source::*;
 pub use crate::username::*;
 pub use crate::verb::*;

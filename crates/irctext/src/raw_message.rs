@@ -7,9 +7,9 @@ use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RawMessage {
-    source: Option<Source>,
-    command: Command,
-    parameters: ParameterList,
+    pub source: Option<Source>,
+    pub command: Command,
+    pub parameters: ParameterList,
 }
 
 impl RawMessage {

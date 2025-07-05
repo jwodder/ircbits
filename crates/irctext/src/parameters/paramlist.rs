@@ -19,6 +19,16 @@ impl ParameterList {
         self.medial.is_empty() && self.finalp.is_none()
     }
 
+    pub fn get(&self, index: usize) -> Option<ParamRef<'_>> {
+        if index < self.medial.len() {
+            self.medial.get(index).map(ParamRef::Medial)
+        } else if index == self.medial.len() {
+            self.finalp.as_ref().map(ParamRef::Final)
+        } else {
+            None
+        }
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = ParamRef<'_>> + '_ {
         self.medial
             .iter()

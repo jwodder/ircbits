@@ -12,26 +12,36 @@
 // prefixless channel of "0" for the "JOIN" verb.  However, this implementation
 // does require that channel names not start with a colon (':', 0x3A), which is
 // necessary in order to be able to pass parameters after a channel parameter.
+use nutype::nutype;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[nutype(
+    validate(with = validate, error = ChannelError),
+    derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
+)]
 pub struct Channel(String);
 
-common_string!(Channel, ChannelError);
+impl PartialEq<str> for Channel {
+    fn eq(&self, other: &str) -> bool {
+        self.as_ref() == other
+    }
+}
 
-impl TryFrom<String> for Channel {
-    type Error = ChannelError;
+impl<'a> PartialEq<&'a str> for Channel {
+    fn eq(&self, other: &&'a str) -> bool {
+        self.as_ref() == *other
+    }
+}
 
-    fn try_from(s: String) -> Result<Channel, ChannelError> {
-        if s.is_empty() {
-            Err(ChannelError::Empty)
-        } else if s.starts_with(':') {
-            Err(ChannelError::StartsWithColon)
-        } else if s.contains(['\0', '\r', '\n', ' ', '\x07', ',']) {
-            Err(ChannelError::BadCharacter)
-        } else {
-            Ok(Channel(s))
-        }
+fn validate(s: &str) -> Result<(), ChannelError> {
+    if s.is_empty() {
+        Err(ChannelError::Empty)
+    } else if s.starts_with(':') {
+        Err(ChannelError::StartsWithColon)
+    } else if s.contains(['\0', '\r', '\n', ' ', '\x07', ',']) {
+        Err(ChannelError::BadCharacter)
+    } else {
+        Ok(())
     }
 }
 

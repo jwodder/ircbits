@@ -28,26 +28,36 @@
 // In addition to the above, in order to be sent in messages, nicknames cannot
 // contain NUL, CR, or LF.
 
+use nutype::nutype;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[nutype(
+    validate(with = validate, error = NicknameError),
+    derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
+)]
 pub struct Nickname(String);
 
-common_string!(Nickname, NicknameError);
+impl PartialEq<str> for Nickname {
+    fn eq(&self, other: &str) -> bool {
+        self.as_ref() == other
+    }
+}
 
-impl TryFrom<String> for Nickname {
-    type Error = NicknameError;
+impl<'a> PartialEq<&'a str> for Nickname {
+    fn eq(&self, other: &&'a str) -> bool {
+        self.as_ref() == *other
+    }
+}
 
-    fn try_from(s: String) -> Result<Nickname, NicknameError> {
-        if s.is_empty() {
-            Err(NicknameError::Empty)
-        } else if s.starts_with(['$', ':', '#', '&', '~', '@', '%', '+']) {
-            Err(NicknameError::BadStart)
-        } else if s.contains(['\0', '\r', '\n', ' ', ',', '*', '?', '!', '@']) {
-            Err(NicknameError::BadCharacter)
-        } else {
-            Ok(Nickname(s))
-        }
+fn validate(s: &str) -> Result<(), NicknameError> {
+    if s.is_empty() {
+        Err(NicknameError::Empty)
+    } else if s.starts_with(['$', ':', '#', '&', '~', '@', '%', '+']) {
+        Err(NicknameError::BadStart)
+    } else if s.contains(['\0', '\r', '\n', ' ', ',', '*', '?', '!', '@']) {
+        Err(NicknameError::BadCharacter)
+    } else {
+        Ok(())
     }
 }
 

@@ -1,9 +1,11 @@
+use nutype::nutype;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[nutype(
+    validate(with = validate, error = ParameterError),
+    derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
+)]
 pub struct Parameter(String);
-
-common_string!(Parameter, ParameterError);
 
 impl Parameter {
     pub fn is_middle(&self) -> bool {
@@ -11,19 +13,27 @@ impl Parameter {
     }
 
     pub fn is_final(&self) -> bool {
-        self.0.is_empty() || self.0.starts_with(':') || self.0.contains(' ')
+        self.as_ref().is_empty() || self.as_ref().starts_with(':') || self.as_ref().contains(' ')
     }
 }
 
-impl TryFrom<String> for Parameter {
-    type Error = ParameterError;
+impl PartialEq<str> for Parameter {
+    fn eq(&self, other: &str) -> bool {
+        self.as_ref() == other
+    }
+}
 
-    fn try_from(s: String) -> Result<Parameter, ParameterError> {
-        if s.contains(['\0', '\r', '\n']) {
-            Err(ParameterError)
-        } else {
-            Ok(Parameter(s))
-        }
+impl<'a> PartialEq<&'a str> for Parameter {
+    fn eq(&self, other: &&'a str) -> bool {
+        self.as_ref() == *other
+    }
+}
+
+fn validate(s: &str) -> Result<(), ParameterError> {
+    if s.contains(['\0', '\r', '\n']) {
+        Err(ParameterError)
+    } else {
+        Ok(())
     }
 }
 

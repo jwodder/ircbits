@@ -1,25 +1,35 @@
 // See <https://github.com/ircdocs/modern-irc/issues/226> for notes on username
 // format.
+use nutype::nutype;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[nutype(
+    validate(with = validate, error = UsernameError),
+    derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
+)]
 pub struct Username(String);
 
-common_string!(Username, UsernameError);
+impl PartialEq<str> for Username {
+    fn eq(&self, other: &str) -> bool {
+        self.as_ref() == other
+    }
+}
 
-impl TryFrom<String> for Username {
-    type Error = UsernameError;
+impl<'a> PartialEq<&'a str> for Username {
+    fn eq(&self, other: &&'a str) -> bool {
+        self.as_ref() == *other
+    }
+}
 
-    fn try_from(s: String) -> Result<Username, UsernameError> {
-        if s.is_empty() {
-            Err(UsernameError::Empty)
-        } else if s.starts_with(':') {
-            Err(UsernameError::StartsWithColon)
-        } else if s.contains(['\0', '\r', '\n', ' ', '@']) {
-            Err(UsernameError::BadCharacter)
-        } else {
-            Ok(Username(s))
-        }
+fn validate(s: &str) -> Result<(), UsernameError> {
+    if s.is_empty() {
+        Err(UsernameError::Empty)
+    } else if s.starts_with(':') {
+        Err(UsernameError::StartsWithColon)
+    } else if s.contains(['\0', '\r', '\n', ' ', '@']) {
+        Err(UsernameError::BadCharacter)
+    } else {
+        Ok(())
     }
 }
 

@@ -1,6 +1,3 @@
-#[macro_use]
-mod common;
-
 mod channel;
 mod command;
 mod nickname;

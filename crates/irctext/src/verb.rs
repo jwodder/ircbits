@@ -1,11 +1,57 @@
-use nutype::nutype;
-use thiserror::Error;
+#[derive(strum::AsRefStr, Clone, Debug, strum::Display, strum::EnumString, Eq, PartialEq)]
+#[strum(serialize_all = "UPPERCASE")]
+pub enum Verb {
+    Admin,
+    Authenticate,
+    Away,
+    Cap,
+    Connect,
+    Error,
+    Help,
+    Info,
+    Invite,
+    Join,
+    Kick,
+    Kill,
+    Links,
+    List,
+    Lusers,
+    Mode,
+    Motd,
+    Names,
+    Nick,
+    Notice,
+    Oper,
+    Part,
+    Pass,
+    Ping,
+    Pong,
+    Privmsg,
+    Quit,
+    Rehash,
+    Restart,
+    Squit,
+    Stats,
+    Time,
+    Topic,
+    User,
+    Userhost,
+    Version,
+    Wallops,
+    Who,
+    Whois,
+    Whowas,
+    #[strum(default, transparent)]
+    Unknown(String),
+}
 
-#[nutype(
-    validate(with = validate, error = VerbError),
-    derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
-)]
-pub struct Verb(String);
+impl TryFrom<String> for Verb {
+    type Error = strum::ParseError;
+
+    fn try_from(s: String) -> Result<Verb, strum::ParseError> {
+        s.parse()
+    }
+}
 
 impl PartialEq<str> for Verb {
     fn eq(&self, other: &str) -> bool {
@@ -17,22 +63,4 @@ impl<'a> PartialEq<&'a str> for Verb {
     fn eq(&self, other: &&'a str) -> bool {
         self.as_ref() == *other
     }
-}
-
-fn validate(s: &str) -> Result<(), VerbError> {
-    if s.is_empty() {
-        Err(VerbError::Empty)
-    } else if s.contains(|ch: char| !ch.is_ascii_alphabetic()) {
-        Err(VerbError::BadCharacter)
-    } else {
-        Ok(())
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum VerbError {
-    #[error("verbs cannot be empty")]
-    Empty,
-    #[error("verbs may only contain letters")]
-    BadCharacter,
 }

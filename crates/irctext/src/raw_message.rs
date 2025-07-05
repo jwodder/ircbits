@@ -1,6 +1,7 @@
-use super::command::{Command, CommandError};
-use super::parameter::{Parameter, ParameterError};
-use super::source::{Source, SourceError};
+use crate::command::{Command, CommandError};
+use crate::parameters::{ParameterList, ParameterListError};
+use crate::source::{Source, SourceError};
+use crate::util::split_word;
 use std::fmt;
 use thiserror::Error;
 
@@ -8,7 +9,7 @@ use thiserror::Error;
 pub struct RawMessage {
     source: Option<Source>,
     command: Command,
-    parameters: Vec<Parameter>,
+    parameters: ParameterList,
 }
 
 impl RawMessage {
@@ -20,7 +21,7 @@ impl RawMessage {
         &self.command
     }
 
-    pub fn parameters(&self) -> &[Parameter] {
+    pub fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
 }
@@ -31,8 +32,8 @@ impl fmt::Display for RawMessage {
             write!(f, ":{source} ")?;
         }
         write!(f, "{}", self.command)?;
-        for p in &self.parameters {
-            if p.is_middle() {
+        for p in self.parameters.iter() {
+            if p.is_medial() {
                 write!(f, " {p}")?;
             } else {
                 write!(f, " :{p}")?;
@@ -64,19 +65,9 @@ impl TryFrom<String> for RawMessage {
         } else {
             None
         };
-        let (cmd_str, mut s) = split_word(s);
+        let (cmd_str, params) = split_word(s);
         let command = cmd_str.parse::<Command>()?;
-        let mut parameters = Vec::new();
-        while !s.is_empty() {
-            if let Some(trail) = s.strip_prefix(':') {
-                parameters.push(trail.parse::<Parameter>()?);
-                s = "";
-            } else {
-                let (param, rest) = split_word(s);
-                parameters.push(param.parse::<Parameter>()?);
-                s = rest;
-            }
-        }
+        let parameters = params.parse::<ParameterList>()?;
         Ok(RawMessage {
             source,
             command,
@@ -92,14 +83,7 @@ pub enum RawMessageError {
     #[error("invalid command")]
     Command(#[from] CommandError),
     #[error("invalid parameter")]
-    Parameter(#[from] ParameterError),
-}
-
-fn split_word(s: &str) -> (&str, &str) {
-    match s.split_once(' ') {
-        Some((s1, s2)) => (s1, s2.trim_start_matches(' ')),
-        None => (s, ""),
-    }
+    Parameter(#[from] ParameterListError),
 }
 
 #[cfg(test)]

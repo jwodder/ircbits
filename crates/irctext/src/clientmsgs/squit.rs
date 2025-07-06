@@ -1,18 +1,40 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Squit;
+pub struct Squit {
+    server: MedialParam,
+    comment: FinalParam,
+}
+
+impl Squit {
+    pub fn new(server: MedialParam, comment: FinalParam) -> Squit {
+        Squit { server, comment }
+    }
+
+    pub fn server(&self) -> &MedialParam {
+        &self.server
+    }
+
+    pub fn comment(&self) -> &FinalParam {
+        &self.comment
+    }
+}
 
 impl ClientMessageParts for Squit {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (
+            Verb::Squit,
+            ParameterList::builder()
+                .with_medial(self.server)
+                .with_final(self.comment),
+        )
     }
 }
 
 impl ToIrcLine for Squit {
     fn to_irc_line(&self) -> String {
-        todo!()
+        format!("SQUIT {} :{}", self.server, self.comment)
     }
 }
 
@@ -32,6 +54,7 @@ impl TryFrom<ParameterList> for Squit {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Squit, ClientMessageError> {
-        todo!()
+        let (server, comment) = params.try_into()?;
+        Ok(Squit { server, comment })
     }
 }

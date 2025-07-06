@@ -12,7 +12,7 @@ mod username;
 mod util;
 mod verb;
 pub use crate::channel::*;
-pub use crate::clientmsgs::{ClientMessage, ClientMessageError};
+pub use crate::clientmsgs::{ClientMessage, ClientMessageError, ClientMessageParts};
 pub use crate::command::*;
 pub use crate::message::*;
 pub use crate::nickname::*;

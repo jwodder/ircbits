@@ -1,8 +1,26 @@
-use super::ClientMessageError;
-use crate::ParameterList;
+use super::{ClientMessage, ClientMessageError, ClientMessageParts};
+use crate::{Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Links;
+
+impl ClientMessageParts for Links {
+    fn into_parts(self) -> (Verb, ParameterList) {
+        todo!()
+    }
+}
+
+impl From<Links> for Message {
+    fn from(value: Links) -> Message {
+        Message::from(ClientMessage::from(value))
+    }
+}
+
+impl From<Links> for RawMessage {
+    fn from(value: Links) -> RawMessage {
+        RawMessage::from(ClientMessage::from(value))
+    }
+}
 
 impl TryFrom<ParameterList> for Links {
     type Error = ClientMessageError;

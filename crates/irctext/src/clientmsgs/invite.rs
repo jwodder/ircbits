@@ -1,8 +1,26 @@
-use super::ClientMessageError;
-use crate::ParameterList;
+use super::{ClientMessage, ClientMessageError, ClientMessageParts};
+use crate::{Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Invite;
+
+impl ClientMessageParts for Invite {
+    fn into_parts(self) -> (Verb, ParameterList) {
+        todo!()
+    }
+}
+
+impl From<Invite> for Message {
+    fn from(value: Invite) -> Message {
+        Message::from(ClientMessage::from(value))
+    }
+}
+
+impl From<Invite> for RawMessage {
+    fn from(value: Invite) -> RawMessage {
+        RawMessage::from(ClientMessage::from(value))
+    }
+}
 
 impl TryFrom<ParameterList> for Invite {
     type Error = ClientMessageError;

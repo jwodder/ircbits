@@ -79,51 +79,58 @@ pub use self::wallops::*;
 pub use self::who::*;
 pub use self::whois::*;
 pub use self::whowas::*;
-use crate::{ParameterList, Verb};
+use crate::{Message, ParameterList, RawMessage, Verb};
+use enum_dispatch::enum_dispatch;
 use thiserror::Error;
 
+#[enum_dispatch]
+pub trait ClientMessageParts {
+    fn into_parts(self) -> (Verb, ParameterList);
+}
+
+#[enum_dispatch(ClientMessageParts)] // This also gives us From and TryInto
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ClientMessage {
-    Admin(Admin),
-    Authenticate(Authenticate),
-    Away(Away),
-    Cap(Cap),
-    Connect(Connect),
-    Error(Error),
-    Help(Help),
-    Info(Info),
-    Invite(Invite),
-    Join(Join),
-    Kick(Kick),
-    Kill(Kill),
-    Links(Links),
-    List(List),
-    Lusers(Lusers),
-    Mode(Mode),
-    Motd(Motd),
-    Names(Names),
-    Nick(Nick),
-    Notice(Notice),
-    Oper(Oper),
-    Part(Part),
-    Pass(Pass),
-    Ping(Ping),
-    Pong(Pong),
-    PrivMsg(PrivMsg),
-    Quit(Quit),
-    Rehash(Rehash),
-    Restart(Restart),
-    Squit(Squit),
-    Stats(Stats),
-    Time(Time),
-    Topic(Topic),
-    User(User),
-    Userhost(Userhost),
-    Version(Version),
-    Wallops(Wallops),
-    Who(Who),
-    Whois(Whois),
-    Whowas(Whowas),
+    Admin,
+    Authenticate,
+    Away,
+    Cap,
+    Connect,
+    Error,
+    Help,
+    Info,
+    Invite,
+    Join,
+    Kick,
+    Kill,
+    Links,
+    List,
+    Lusers,
+    Mode,
+    Motd,
+    Names,
+    Nick,
+    Notice,
+    Oper,
+    Part,
+    Pass,
+    Ping,
+    Pong,
+    PrivMsg,
+    Quit,
+    Rehash,
+    Restart,
+    Squit,
+    Stats,
+    Time,
+    Topic,
+    User,
+    Userhost,
+    Version,
+    Wallops,
+    Who,
+    Whois,
+    Whowas,
 }
 
 impl ClientMessage {
@@ -174,6 +181,18 @@ impl ClientMessage {
             Verb::Whowas => Whowas::try_from(params).map(ClientMessage::Whowas),
             Verb::Unknown(v) => Err(ClientMessageError::Unknown(v)),
         }
+    }
+}
+
+impl From<ClientMessage> for Message {
+    fn from(value: ClientMessage) -> Message {
+        todo!()
+    }
+}
+
+impl From<ClientMessage> for RawMessage {
+    fn from(value: ClientMessage) -> RawMessage {
+        todo!()
     }
 }
 

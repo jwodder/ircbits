@@ -1,19 +1,15 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::util::join_with_commas;
-use crate::{
-    Channel, ChannelError, FinalParam, MedialParam, Message, Nickname, NicknameError,
-    ParameterList, RawMessage, ToIrcLine, Verb,
-};
-use thiserror::Error;
+use crate::util::{join_with_commas, split_targets};
+use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Target, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PrivMsg {
-    targets: Vec<PrivMsgTarget>,
+    targets: Vec<Target>,
     text: FinalParam,
 }
 
 impl PrivMsg {
-    pub fn new<T: Into<PrivMsgTarget>>(target: T, text: FinalParam) -> PrivMsg {
+    pub fn new<T: Into<Target>>(target: T, text: FinalParam) -> PrivMsg {
         PrivMsg {
             targets: vec![target.into()],
             text,
@@ -23,7 +19,7 @@ impl PrivMsg {
     pub fn new_to_many<I, T>(targets: I, text: FinalParam) -> Option<PrivMsg>
     where
         I: IntoIterator<Item = T>,
-        T: Into<PrivMsgTarget>,
+        T: Into<Target>,
     {
         let targets = targets.into_iter().map(Into::into).collect::<Vec<_>>();
         if targets.is_empty() {
@@ -33,7 +29,7 @@ impl PrivMsg {
         }
     }
 
-    pub fn targets(&self) -> &[PrivMsgTarget] {
+    pub fn targets(&self) -> &[Target] {
         &self.targets
     }
 
@@ -86,68 +82,7 @@ impl TryFrom<ParameterList> for PrivMsg {
 
     fn try_from(params: ParameterList) -> Result<PrivMsg, ClientMessageError> {
         let (p1, text): (_, FinalParam) = params.try_into()?;
-        match p1
-            .as_str()
-            .split(',')
-            .map(str::parse::<PrivMsgTarget>)
-            .collect::<Result<Vec<_>, _>>()
-        {
-            Ok(targets) => Ok(PrivMsg { targets, text }),
-            Err(source) => Err(ClientMessageError::ParseParam {
-                index: 0,
-                raw: p1.into_inner(),
-                source: Box::new(source),
-            }),
-        }
+        let targets = split_targets(p1.into_inner())?;
+        Ok(PrivMsg { targets, text })
     }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum PrivMsgTarget {
-    Channel(Channel),
-    User(Nickname),
-}
-
-impl std::str::FromStr for PrivMsgTarget {
-    type Err = PrivMsgTargetError;
-
-    fn from_str(s: &str) -> Result<PrivMsgTarget, PrivMsgTargetError> {
-        // TODO: Improve this!
-        if s.starts_with(['#', '&']) {
-            let channel = s.parse::<Channel>()?;
-            Ok(PrivMsgTarget::Channel(channel))
-        } else {
-            let nickname = s.parse::<Nickname>()?;
-            Ok(PrivMsgTarget::User(nickname))
-        }
-    }
-}
-
-impl AsRef<str> for PrivMsgTarget {
-    fn as_ref(&self) -> &str {
-        match self {
-            PrivMsgTarget::Channel(chan) => chan.as_ref(),
-            PrivMsgTarget::User(nick) => nick.as_ref(),
-        }
-    }
-}
-
-impl From<Channel> for PrivMsgTarget {
-    fn from(value: Channel) -> PrivMsgTarget {
-        PrivMsgTarget::Channel(value)
-    }
-}
-
-impl From<Nickname> for PrivMsgTarget {
-    fn from(value: Nickname) -> PrivMsgTarget {
-        PrivMsgTarget::User(value)
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum PrivMsgTargetError {
-    #[error(transparent)]
-    Channel(#[from] ChannelError),
-    #[error(transparent)]
-    Nickname(#[from] NicknameError),
 }

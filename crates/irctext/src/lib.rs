@@ -9,6 +9,7 @@ mod parameters;
 mod raw_message;
 mod reply;
 mod source;
+mod target;
 mod username;
 mod util;
 mod verb;
@@ -22,6 +23,7 @@ pub use crate::parameters::*;
 pub use crate::raw_message::*;
 pub use crate::reply::*;
 pub use crate::source::*;
+pub use crate::target::*;
 pub use crate::username::*;
 pub use crate::verb::*;
 

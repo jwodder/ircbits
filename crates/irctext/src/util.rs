@@ -1,4 +1,4 @@
-use crate::{Channel, ClientMessageError, Key};
+use crate::{Channel, ClientMessageError, Key, Target};
 
 pub(crate) fn split_word(s: &str) -> (&str, &str) {
     match s.split_once(' ') {
@@ -47,6 +47,22 @@ pub(crate) fn split_keys(s: String) -> Result<Vec<Key>, ClientMessageError> {
         Ok(keys) => Ok(keys),
         Err(source) => Err(ClientMessageError::ParseParam {
             index: 1,
+            raw: s,
+            source: Box::new(source),
+        }),
+    }
+}
+
+pub(crate) fn split_targets(s: String) -> Result<Vec<Target>, ClientMessageError> {
+    match s
+        .as_str()
+        .split(',')
+        .map(str::parse::<Target>)
+        .collect::<Result<Vec<_>, _>>()
+    {
+        Ok(targets) => Ok(targets),
+        Err(source) => Err(ClientMessageError::ParseParam {
+            index: 0,
             raw: s,
             source: Box::new(source),
         }),

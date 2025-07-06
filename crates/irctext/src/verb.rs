@@ -35,12 +35,12 @@ pub enum Verb {
     Time,
     Topic,
     User,
-    Userhost,
+    UserHost,
     Version,
     Wallops,
     Who,
-    Whois,
-    Whowas,
+    WhoIs,
+    WhoWas,
     #[strum(default, transparent)]
     Unknown(String),
 }

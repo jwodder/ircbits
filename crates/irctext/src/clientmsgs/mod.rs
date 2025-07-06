@@ -125,12 +125,12 @@ pub enum ClientMessage {
     Time,
     Topic,
     User,
-    Userhost,
+    UserHost,
     Version,
     Wallops,
     Who,
-    Whois,
-    Whowas,
+    WhoIs,
+    WhoWas,
 }
 
 impl ClientMessage {
@@ -173,12 +173,12 @@ impl ClientMessage {
             Verb::Time => Time::try_from(params).map(ClientMessage::Time),
             Verb::Topic => Topic::try_from(params).map(ClientMessage::Topic),
             Verb::User => User::try_from(params).map(ClientMessage::User),
-            Verb::Userhost => Userhost::try_from(params).map(ClientMessage::Userhost),
+            Verb::UserHost => UserHost::try_from(params).map(ClientMessage::UserHost),
             Verb::Version => Version::try_from(params).map(ClientMessage::Version),
             Verb::Wallops => Wallops::try_from(params).map(ClientMessage::Wallops),
             Verb::Who => Who::try_from(params).map(ClientMessage::Who),
-            Verb::Whois => Whois::try_from(params).map(ClientMessage::Whois),
-            Verb::Whowas => Whowas::try_from(params).map(ClientMessage::Whowas),
+            Verb::WhoIs => WhoIs::try_from(params).map(ClientMessage::WhoIs),
+            Verb::WhoWas => WhoWas::try_from(params).map(ClientMessage::WhoWas),
             Verb::Unknown(v) => Err(ClientMessageError::Unknown(v)),
         }
     }

@@ -2,30 +2,30 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Whois;
+pub struct WhoIs;
 
-impl ClientMessageParts for Whois {
+impl ClientMessageParts for WhoIs {
     fn into_parts(self) -> (Verb, ParameterList) {
         todo!()
     }
 }
 
-impl From<Whois> for Message {
-    fn from(value: Whois) -> Message {
+impl From<WhoIs> for Message {
+    fn from(value: WhoIs) -> Message {
         Message::from(ClientMessage::from(value))
     }
 }
 
-impl From<Whois> for RawMessage {
-    fn from(value: Whois) -> RawMessage {
+impl From<WhoIs> for RawMessage {
+    fn from(value: WhoIs) -> RawMessage {
         RawMessage::from(ClientMessage::from(value))
     }
 }
 
-impl TryFrom<ParameterList> for Whois {
+impl TryFrom<ParameterList> for WhoIs {
     type Error = ClientMessageError;
 
-    fn try_from(params: ParameterList) -> Result<Whois, ClientMessageError> {
+    fn try_from(params: ParameterList) -> Result<WhoIs, ClientMessageError> {
         todo!()
     }
 }

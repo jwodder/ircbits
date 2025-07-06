@@ -1,18 +1,18 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Restart;
 
 impl ClientMessageParts for Restart {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (Verb::Restart, ParameterList::default())
     }
 }
 
 impl ToIrcLine for Restart {
     fn to_irc_line(&self) -> String {
-        todo!()
+        String::from("RESTART")
     }
 }
 
@@ -32,6 +32,7 @@ impl TryFrom<ParameterList> for Restart {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Restart, ClientMessageError> {
-        todo!()
+        let () = params.try_into()?;
+        Ok(Restart)
     }
 }

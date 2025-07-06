@@ -1,18 +1,18 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{Message, ParameterList, ParameterListSizeError, RawMessage, ToIrcLine, Verb};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Info;
 
 impl ClientMessageParts for Info {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (Verb::Info, ParameterList::default())
     }
 }
 
 impl ToIrcLine for Info {
     fn to_irc_line(&self) -> String {
-        todo!()
+        String::from("INFO")
     }
 }
 
@@ -32,6 +32,13 @@ impl TryFrom<ParameterList> for Info {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Info, ClientMessageError> {
-        todo!()
+        if params.is_empty() {
+            Ok(Info)
+        } else {
+            Err(ClientMessageError::ParamQty(ParameterListSizeError {
+                requested: 0,
+                received: params.len(),
+            }))
+        }
     }
 }

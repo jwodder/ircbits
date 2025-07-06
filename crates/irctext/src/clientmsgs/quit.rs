@@ -24,13 +24,10 @@ impl Quit {
 
 impl ClientMessageParts for Quit {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let builder = ParameterList::builder();
-        let params = if let Some(reason) = self.0 {
-            builder.with_final(reason)
-        } else {
-            builder.finish()
-        };
-        (Verb::Quit, params)
+        (
+            Verb::Quit,
+            ParameterList::builder().maybe_with_final(self.0),
+        )
     }
 }
 

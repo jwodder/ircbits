@@ -89,12 +89,9 @@ impl Join {
 
 impl ClientMessageParts for Join {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let builder = ParameterList::builder().with_medial(self.channels_param());
-        let params = if let Some(keys_param) = self.keys_param() {
-            builder.with_final(keys_param)
-        } else {
-            builder.finish()
-        };
+        let params = ParameterList::builder()
+            .with_medial(self.channels_param())
+            .maybe_with_final(self.keys_param());
         (Verb::Join, params)
     }
 }

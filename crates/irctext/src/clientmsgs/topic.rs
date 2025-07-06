@@ -1,18 +1,54 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{Channel, FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Topic;
+pub struct Topic {
+    channel: Channel,
+    topic: Option<FinalParam>,
+}
+
+impl Topic {
+    pub fn new_get(channel: Channel) -> Topic {
+        Topic {
+            channel,
+            topic: None,
+        }
+    }
+
+    pub fn new_set(channel: Channel, topic: FinalParam) -> Topic {
+        Topic {
+            channel,
+            topic: Some(topic),
+        }
+    }
+
+    pub fn channel(&self) -> &Channel {
+        &self.channel
+    }
+
+    pub fn topic(&self) -> Option<&FinalParam> {
+        self.topic.as_ref()
+    }
+}
 
 impl ClientMessageParts for Topic {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        let params = ParameterList::builder()
+            .with_medial(self.channel)
+            .maybe_with_final(self.topic);
+        (Verb::Topic, params)
     }
 }
 
 impl ToIrcLine for Topic {
     fn to_irc_line(&self) -> String {
-        todo!()
+        let mut s = format!("TOPIC {}", self.channel);
+        if let Some(ref topic) = self.topic {
+            s.push(' ');
+            s.push(':');
+            s.push_str(topic.as_str());
+        }
+        s
     }
 }
 
@@ -32,6 +68,32 @@ impl TryFrom<ParameterList> for Topic {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Topic, ClientMessageError> {
-        todo!()
+        if params.len() == 1 {
+            let (p,) = params.try_into()?;
+            match p.as_str().parse::<Channel>() {
+                Ok(channel) => Ok(Topic {
+                    channel,
+                    topic: None,
+                }),
+                Err(source) => Err(ClientMessageError::ParseParam {
+                    index: 0,
+                    raw: p.into_inner(),
+                    source: Box::new(source),
+                }),
+            }
+        } else {
+            let (p1, p2) = params.try_into()?;
+            match p1.as_str().parse::<Channel>() {
+                Ok(channel) => Ok(Topic {
+                    channel,
+                    topic: Some(p2),
+                }),
+                Err(source) => Err(ClientMessageError::ParseParam {
+                    index: 0,
+                    raw: p1.into_inner(),
+                    source: Box::new(source),
+                }),
+            }
+        }
     }
 }

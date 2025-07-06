@@ -72,12 +72,9 @@ impl Part {
 
 impl ClientMessageParts for Part {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let builder = ParameterList::builder().with_medial(self.channels_param());
-        let params = if let Some(reason) = self.reason {
-            builder.with_final(reason)
-        } else {
-            builder.finish()
-        };
+        let params = ParameterList::builder()
+            .with_medial(self.channels_param())
+            .maybe_with_final(self.reason);
         (Verb::Part, params)
     }
 }

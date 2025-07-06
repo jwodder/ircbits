@@ -192,6 +192,11 @@ impl ParameterListBuilder {
         self
     }
 
+    pub fn maybe_with_final<P: Into<FinalParam>>(mut self, param: Option<P>) -> ParameterList {
+        self.0.finalp = param.map(Into::into);
+        self.0
+    }
+
     pub fn with_final<P: Into<FinalParam>>(mut self, param: P) -> ParameterList {
         self.0.finalp = Some(param.into());
         self.0

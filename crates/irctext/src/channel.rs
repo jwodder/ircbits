@@ -12,6 +12,7 @@
 // prefixless channel of "0" for the "JOIN" verb.  However, this implementation
 // does require that channel names not start with a colon (':', 0x3A), which is
 // necessary in order to be able to pass parameters after a channel parameter.
+use crate::{FinalParam, MedialParam};
 use nutype::nutype;
 use thiserror::Error;
 
@@ -42,6 +43,18 @@ fn validate(s: &str) -> Result<(), ChannelError> {
         Err(ChannelError::BadCharacter)
     } else {
         Ok(())
+    }
+}
+
+impl From<Channel> for MedialParam {
+    fn from(value: Channel) -> MedialParam {
+        MedialParam::try_from(value.into_inner()).expect("Channel should be valid MedialParam")
+    }
+}
+
+impl From<Channel> for FinalParam {
+    fn from(value: Channel) -> FinalParam {
+        FinalParam::from(MedialParam::from(value))
     }
 }
 

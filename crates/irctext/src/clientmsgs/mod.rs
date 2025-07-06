@@ -79,7 +79,7 @@ pub use self::wallops::*;
 pub use self::who::*;
 pub use self::whois::*;
 pub use self::whowas::*;
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{Message, ParameterList, ParameterListSizeError, RawMessage, ToIrcLine, Verb};
 use enum_dispatch::enum_dispatch;
 use thiserror::Error;
 
@@ -243,8 +243,18 @@ impl From<ClientMessage> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, Error, PartialEq)]
+#[derive(Debug, Error)]
 pub enum ClientMessageError {
     #[error("unknown/unrecognized client message verb {0:?}")]
     Unknown(String),
+
+    #[error(transparent)]
+    ParamQty(#[from] ParameterListSizeError),
+
+    #[error("failed to parse parameter #{}: {raw:?}", .index + 1)]
+    ParseParam {
+        index: usize,
+        raw: String,
+        source: Box<dyn std::error::Error + Send + Sync>,
+    },
 }

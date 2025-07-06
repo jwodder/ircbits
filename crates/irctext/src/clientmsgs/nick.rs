@@ -49,6 +49,14 @@ impl TryFrom<ParameterList> for Nick {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Nick, ClientMessageError> {
-        todo!()
+        let (p,) = params.try_into()?;
+        match p.as_str().parse::<Nickname>() {
+            Ok(nick) => Ok(Nick(nick)),
+            Err(source) => Err(ClientMessageError::ParseParam {
+                index: 0,
+                raw: p.into_inner(),
+                source: Box::new(source),
+            }),
+        }
     }
 }

@@ -36,7 +36,7 @@ pub enum Payload {
     Reply(Reply),
 }
 
-#[derive(Clone, Debug, Eq, Error, PartialEq)]
+#[derive(Debug, Error)]
 pub enum MessageError {
     #[error(transparent)]
     ClientMessage(#[from] ClientMessageError),

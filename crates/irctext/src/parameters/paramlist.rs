@@ -81,12 +81,40 @@ impl TryFrom<String> for ParameterList {
     }
 }
 
+impl TryFrom<ParameterList> for (FinalParam,) {
+    type Error = ParameterListSizeError;
+
+    fn try_from(mut params: ParameterList) -> Result<(FinalParam,), ParameterListSizeError> {
+        if params.len() == 1 {
+            let p = params
+                .medial
+                .pop()
+                .map(FinalParam::from)
+                .or(params.finalp)
+                .expect("There should be something to unwrap when len is 1");
+            Ok((p,))
+        } else {
+            Err(ParameterListSizeError {
+                requested: 1,
+                received: params.len(),
+            })
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum ParameterListError {
     #[error(transparent)]
     Medial(#[from] MedialParamError),
     #[error(transparent)]
     Final(#[from] FinalParamError),
+}
+
+#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[error("invalid number of parameters: expected {requested}, received {received}")]
+pub struct ParameterListSizeError {
+    requested: usize,
+    received: usize,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

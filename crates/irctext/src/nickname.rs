@@ -28,6 +28,7 @@
 // In addition to the above, in order to be sent in messages, nicknames cannot
 // contain NUL, CR, or LF.
 
+use crate::{FinalParam, MedialParam};
 use nutype::nutype;
 use thiserror::Error;
 
@@ -58,6 +59,18 @@ fn validate(s: &str) -> Result<(), NicknameError> {
         Err(NicknameError::BadCharacter)
     } else {
         Ok(())
+    }
+}
+
+impl From<Nickname> for MedialParam {
+    fn from(value: Nickname) -> MedialParam {
+        MedialParam::try_from(value.into_inner()).expect("Nickname should be valid MedialParam")
+    }
+}
+
+impl From<Nickname> for FinalParam {
+    fn from(value: Nickname) -> FinalParam {
+        FinalParam::from(MedialParam::from(value))
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::linestream::IrcLineStream;
-use irctext::{Nickname, Parameter, Username};
+use irctext::{FinalParam, Nickname, Username};
 
 pub const PLAIN_PORT: u16 = 6667;
 
@@ -32,10 +32,10 @@ impl Client {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Registration {
-    password: Option<Parameter>,
+    password: Option<FinalParam>,
     nickname: Nickname,
     username: Username,
-    realname: Parameter,
+    realname: FinalParam,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

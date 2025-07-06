@@ -1,18 +1,55 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::util::DisplayMaybeFinal;
+use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Stats;
+pub struct Stats {
+    query: MedialParam,
+    server: Option<FinalParam>,
+}
+
+impl Stats {
+    pub fn new(query: MedialParam) -> Stats {
+        Stats {
+            query,
+            server: None,
+        }
+    }
+
+    pub fn new_with_server(query: MedialParam, server: FinalParam) -> Stats {
+        Stats {
+            query,
+            server: Some(server),
+        }
+    }
+
+    pub fn query(&self) -> &MedialParam {
+        &self.query
+    }
+
+    pub fn server(&self) -> Option<&FinalParam> {
+        self.server.as_ref()
+    }
+}
 
 impl ClientMessageParts for Stats {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (
+            Verb::Stats,
+            ParameterList::builder()
+                .with_medial(self.query)
+                .maybe_with_final(self.server),
+        )
     }
 }
 
 impl ToIrcLine for Stats {
     fn to_irc_line(&self) -> String {
-        todo!()
+        format!(
+            "STATS {}{}",
+            self.query,
+            DisplayMaybeFinal(self.server.as_ref())
+        )
     }
 }
 
@@ -32,6 +69,7 @@ impl TryFrom<ParameterList> for Stats {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Stats, ClientMessageError> {
-        todo!()
+        let (query, server) = params.try_into()?;
+        Ok(Stats { query, server })
     }
 }

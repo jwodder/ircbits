@@ -128,6 +128,28 @@ impl TryFrom<ParameterList> for (MedialParam, FinalParam) {
     }
 }
 
+impl TryFrom<ParameterList> for (MedialParam, Option<FinalParam>) {
+    type Error = ParameterListSizeError;
+
+    fn try_from(
+        params: ParameterList,
+    ) -> Result<(MedialParam, Option<FinalParam>), ParameterListSizeError> {
+        if params.medial.len() == 1 {
+            let mut medials = params.medial.into_iter();
+            let p1 = medials
+                .next()
+                .expect("First element should exist when len is 1");
+            let p2 = params.finalp;
+            Ok((p1, p2))
+        } else {
+            Err(ParameterListSizeError {
+                requested: 2, // TODO: Change this to "1 or 2"
+                received: params.len(),
+            })
+        }
+    }
+}
+
 impl TryFrom<ParameterList> for (MedialParam, MedialParam, MedialParam, FinalParam) {
     type Error = ParameterListSizeError;
 

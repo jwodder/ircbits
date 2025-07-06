@@ -124,18 +124,12 @@ impl TryFrom<ParameterList> for Join {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Join, ClientMessageError> {
-        if params.len() == 1 {
-            let (p,) = params.try_into()?;
-            let channels = split_channels(p.into_inner())?;
-            Ok(Join {
-                channels,
-                keys: Vec::new(),
-            })
-        } else {
-            let (p1, p2) = params.try_into()?;
-            let channels = split_channels(p1.into_inner())?;
-            let keys = split_keys(p2.into_inner())?;
-            Ok(Join { channels, keys })
-        }
+        let (p1, p2): (_, Option<FinalParam>) = params.try_into()?;
+        let channels = split_channels(p1.into_inner())?;
+        let keys = match p2 {
+            Some(p) => split_keys(p.into_inner())?,
+            None => Vec::new(),
+        };
+        Ok(Join { channels, keys })
     }
 }

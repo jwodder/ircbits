@@ -2,13 +2,17 @@ use super::{FinalParam, FinalParamError, MedialParam, MedialParamError, ParamRef
 use crate::util::split_word;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ParameterList {
     medial: Vec<MedialParam>,
     finalp: Option<FinalParam>,
 }
 
 impl ParameterList {
+    pub fn builder() -> ParameterListBuilder {
+        ParameterListBuilder::new()
+    }
+
     pub fn len(&self) -> usize {
         self.medial
             .len()
@@ -83,4 +87,31 @@ pub enum ParameterListError {
     Medial(#[from] MedialParamError),
     #[error(transparent)]
     Final(#[from] FinalParamError),
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ParameterListBuilder(ParameterList);
+
+impl ParameterListBuilder {
+    pub fn new() -> ParameterListBuilder {
+        ParameterListBuilder::default()
+    }
+
+    pub fn push_medial<P: Into<MedialParam>>(&mut self, param: P) {
+        self.0.medial.push(param.into());
+    }
+
+    pub fn with_medial<P: Into<MedialParam>>(mut self, param: P) -> Self {
+        self.push_medial(param);
+        self
+    }
+
+    pub fn with_final<P: Into<FinalParam>>(mut self, param: P) -> ParameterList {
+        self.0.finalp = Some(param.into());
+        self.0
+    }
+
+    pub fn finish(self) -> ParameterList {
+        self.0
+    }
 }

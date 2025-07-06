@@ -20,7 +20,10 @@ impl Nick {
 
 impl ClientMessageParts for Nick {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (
+            Verb::Nick,
+            ParameterList::builder().with_medial(self.0).finish(),
+        )
     }
 }
 

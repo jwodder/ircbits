@@ -2,6 +2,7 @@
 mod channel;
 pub mod clientmsgs;
 mod command;
+mod key;
 mod message;
 mod nickname;
 mod parameters;
@@ -14,6 +15,7 @@ mod verb;
 pub use crate::channel::*;
 pub use crate::clientmsgs::{ClientMessage, ClientMessageError, ClientMessageParts};
 pub use crate::command::*;
+pub use crate::key::*;
 pub use crate::message::*;
 pub use crate::nickname::*;
 pub use crate::parameters::*;

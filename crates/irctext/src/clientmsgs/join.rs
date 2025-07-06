@@ -1,4 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
+use crate::util::{join_with_commas, split_channels, split_keys};
 use crate::{
     Channel, FinalParam, Key, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Verb,
 };
@@ -66,18 +67,11 @@ impl Join {
     }
 
     fn channels_param(&self) -> MedialParam {
-        let mut s = String::new();
-        let mut first = true;
         assert!(
             !self.channels.is_empty(),
             "Join.channels should always be nonempty"
         );
-        for chan in &self.channels {
-            if !std::mem::replace(&mut first, false) {
-                s.push(',');
-            }
-            s.push_str(chan.as_str());
-        }
+        let s = join_with_commas(&self.channels);
         MedialParam::try_from(s).expect("comma-separated channels should be a valid MedialParam")
     }
 
@@ -85,14 +79,7 @@ impl Join {
         if self.keys.is_empty() {
             None
         } else {
-            let mut s = String::new();
-            let mut first = true;
-            for key in &self.keys {
-                if !std::mem::replace(&mut first, false) {
-                    s.push(',');
-                }
-                s.push_str(key.as_str());
-            }
+            let s = join_with_commas(&self.keys);
             Some(
                 FinalParam::try_from(s).expect("comma-separated keys should be a valid FinalParam"),
             )
@@ -153,35 +140,5 @@ impl TryFrom<ParameterList> for Join {
             let keys = split_keys(p2.into_inner())?;
             Ok(Join { channels, keys })
         }
-    }
-}
-
-fn split_channels(s: String) -> Result<Vec<Channel>, ClientMessageError> {
-    match s
-        .split(',')
-        .map(str::parse::<Channel>)
-        .collect::<Result<Vec<_>, _>>()
-    {
-        Ok(channels) => Ok(channels),
-        Err(source) => Err(ClientMessageError::ParseParam {
-            index: 0,
-            raw: s,
-            source: Box::new(source),
-        }),
-    }
-}
-
-fn split_keys(s: String) -> Result<Vec<Key>, ClientMessageError> {
-    match s
-        .split(',')
-        .map(str::parse::<Key>)
-        .collect::<Result<Vec<_>, _>>()
-    {
-        Ok(keys) => Ok(keys),
-        Err(source) => Err(ClientMessageError::ParseParam {
-            index: 1,
-            raw: s,
-            source: Box::new(source),
-        }),
     }
 }

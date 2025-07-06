@@ -1,18 +1,32 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Error;
+pub struct Error(FinalParam);
+
+impl Error {
+    pub fn new(reason: FinalParam) -> Error {
+        Error(reason)
+    }
+
+    pub fn reason(&self) -> &FinalParam {
+        &self.0
+    }
+
+    pub fn into_reason(self) -> FinalParam {
+        self.0
+    }
+}
 
 impl ClientMessageParts for Error {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (Verb::Error, ParameterList::builder().with_final(self.0))
     }
 }
 
 impl ToIrcLine for Error {
     fn to_irc_line(&self) -> String {
-        todo!()
+        format!("ERROR :{}", self.0)
     }
 }
 
@@ -32,6 +46,7 @@ impl TryFrom<ParameterList> for Error {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Error, ClientMessageError> {
-        todo!()
+        let (p,) = params.try_into()?;
+        Ok(Error(p))
     }
 }

@@ -63,7 +63,7 @@ impl Part {
     fn channels_param(&self) -> MedialParam {
         assert!(
             !self.channels.is_empty(),
-            "Join.channels should always be nonempty"
+            "Part.channels should always be nonempty"
         );
         let s = join_with_commas(&self.channels);
         MedialParam::try_from(s).expect("comma-separated channels should be a valid MedialParam")

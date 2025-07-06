@@ -25,8 +25,8 @@ impl Join {
         }
     }
 
-    pub fn new_channels<I: IntoIterator<Item = Channel>>(iter: I) -> Option<Join> {
-        let channels = iter.into_iter().collect::<Vec<_>>();
+    pub fn new_channels<I: IntoIterator<Item = Channel>>(channels: I) -> Option<Join> {
+        let channels = channels.into_iter().collect::<Vec<_>>();
         if channels.is_empty() {
             None
         } else {

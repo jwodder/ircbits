@@ -26,7 +26,7 @@ pub enum Verb {
     Pass,
     Ping,
     Pong,
-    Privmsg,
+    PrivMsg,
     Quit,
     Rehash,
     Restart,

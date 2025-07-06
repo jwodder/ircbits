@@ -12,20 +12,6 @@ pub struct RawMessage {
     pub parameters: ParameterList,
 }
 
-impl RawMessage {
-    pub fn source(&self) -> Option<&Source> {
-        self.source.as_ref()
-    }
-
-    pub fn command(&self) -> &Command {
-        &self.command
-    }
-
-    pub fn parameters(&self) -> &ParameterList {
-        &self.parameters
-    }
-}
-
 impl fmt::Display for RawMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(source) = self.source.as_ref() {
@@ -95,51 +81,51 @@ mod parser_tests {
     #[test]
     fn simple() {
         let msg = "foo bar baz asdf".parse::<RawMessage>().unwrap();
-        assert!(msg.source().is_none());
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert!(msg.source.is_none());
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "foo");
         });
-        assert_eq!(msg.parameters(), ["bar", "baz", "asdf"]);
+        assert_eq!(msg.parameters, ["bar", "baz", "asdf"]);
     }
 
     #[test]
     fn with_source() {
         let msg = ":coolguy foo bar baz asdf".parse::<RawMessage>().unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "coolguy");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "coolguy");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "foo");
         });
-        assert_eq!(msg.parameters(), ["bar", "baz", "asdf"]);
+        assert_eq!(msg.parameters, ["bar", "baz", "asdf"]);
     }
 
     #[test]
     fn with_trailing_param1() {
         let msg = "foo bar baz :asdf quux".parse::<RawMessage>().unwrap();
-        assert!(msg.source().is_none());
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert!(msg.source.is_none());
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "foo");
         });
-        assert_eq!(msg.parameters(), ["bar", "baz", "asdf quux"]);
+        assert_eq!(msg.parameters, ["bar", "baz", "asdf quux"]);
     }
 
     #[test]
     fn with_trailing_param2() {
         let msg = "foo bar baz :".parse::<RawMessage>().unwrap();
-        assert!(msg.source().is_none());
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert!(msg.source.is_none());
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "foo");
         });
-        assert_eq!(msg.parameters(), ["bar", "baz", ""]);
+        assert_eq!(msg.parameters, ["bar", "baz", ""]);
     }
 
     #[test]
     fn with_trailing_param3() {
         let msg = "foo bar baz ::asdf".parse::<RawMessage>().unwrap();
-        assert!(msg.source().is_none());
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert!(msg.source.is_none());
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "foo");
         });
-        assert_eq!(msg.parameters(), ["bar", "baz", ":asdf"]);
+        assert_eq!(msg.parameters, ["bar", "baz", ":asdf"]);
     }
 
     #[test]
@@ -147,11 +133,11 @@ mod parser_tests {
         let msg = ":coolguy foo bar baz :asdf quux"
             .parse::<RawMessage>()
             .unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "coolguy");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "coolguy");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "foo");
         });
-        assert_eq!(msg.parameters(), ["bar", "baz", "asdf quux"]);
+        assert_eq!(msg.parameters, ["bar", "baz", "asdf quux"]);
     }
 
     #[test]
@@ -159,11 +145,11 @@ mod parser_tests {
         let msg = ":coolguy foo bar baz :  asdf quux "
             .parse::<RawMessage>()
             .unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "coolguy");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "coolguy");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "foo");
         });
-        assert_eq!(msg.parameters(), ["bar", "baz", "  asdf quux "]);
+        assert_eq!(msg.parameters, ["bar", "baz", "  asdf quux "]);
     }
 
     #[test]
@@ -171,81 +157,81 @@ mod parser_tests {
         let msg = ":coolguy PRIVMSG bar :lol :) "
             .parse::<RawMessage>()
             .unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "coolguy");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "coolguy");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "PRIVMSG");
         });
-        assert_eq!(msg.parameters(), ["bar", "lol :) "]);
+        assert_eq!(msg.parameters, ["bar", "lol :) "]);
     }
 
     #[test]
     fn with_source_and_trailing_param4() {
         let msg = ":coolguy foo bar baz :".parse::<RawMessage>().unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "coolguy");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "coolguy");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "foo");
         });
-        assert_eq!(msg.parameters(), ["bar", "baz", ""]);
+        assert_eq!(msg.parameters, ["bar", "baz", ""]);
     }
 
     #[test]
     fn with_source_and_trailing_param5() {
         let msg = ":coolguy foo bar baz :  ".parse::<RawMessage>().unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "coolguy");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "coolguy");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "foo");
         });
-        assert_eq!(msg.parameters(), ["bar", "baz", "  "]);
+        assert_eq!(msg.parameters, ["bar", "baz", "  "]);
     }
 
     #[test]
     fn last_param1() {
         let msg = ":src JOIN #chan".parse::<RawMessage>().unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "src");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "src");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "JOIN");
         });
-        assert_eq!(msg.parameters(), ["#chan"]);
+        assert_eq!(msg.parameters, ["#chan"]);
     }
 
     #[test]
     fn last_param2() {
         let msg = ":src JOIN :#chan".parse::<RawMessage>().unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "src");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "src");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "JOIN");
         });
-        assert_eq!(msg.parameters(), ["#chan"]);
+        assert_eq!(msg.parameters, ["#chan"]);
     }
 
     #[test]
     fn without_last_param() {
         let msg = ":src AWAY".parse::<RawMessage>().unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "src");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "src");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "AWAY");
         });
-        assert!(msg.parameters().is_empty());
+        assert!(msg.parameters.is_empty());
     }
 
     #[test]
     fn with_last_param() {
         let msg = ":src AWAY ".parse::<RawMessage>().unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "src");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "src");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "AWAY");
         });
-        assert!(msg.parameters().is_empty());
+        assert!(msg.parameters.is_empty());
     }
 
     #[test]
     fn tab_not_space() {
         let msg = ":cool\tguy foo bar baz".parse::<RawMessage>().unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "cool\tguy");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "cool\tguy");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "foo");
         });
-        assert_eq!(msg.parameters(), ["bar", "baz"]);
+        assert_eq!(msg.parameters, ["bar", "baz"]);
     }
 
     #[test]
@@ -254,13 +240,13 @@ mod parser_tests {
             .parse::<RawMessage>()
             .unwrap();
         assert_eq!(
-            msg.source().unwrap().to_string(),
+            msg.source.unwrap().to_string(),
             "coolguy!ag@net\x035w\x03ork.admin"
         );
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "PRIVMSG");
         });
-        assert_eq!(msg.parameters(), ["foo", "bar baz"]);
+        assert_eq!(msg.parameters, ["foo", "bar baz"]);
     }
 
     #[test]
@@ -269,13 +255,13 @@ mod parser_tests {
             .parse::<RawMessage>()
             .unwrap();
         assert_eq!(
-            msg.source().unwrap().to_string(),
+            msg.source.unwrap().to_string(),
             "coolguy!~ag@n\x02et\x0305w\x0fork.admin"
         );
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "PRIVMSG");
         });
-        assert_eq!(msg.parameters(), ["foo", "bar baz"]);
+        assert_eq!(msg.parameters, ["foo", "bar baz"]);
     }
 
     #[test]
@@ -283,21 +269,21 @@ mod parser_tests {
         let msg = ":irc.example.com COMMAND param1 param2 :param3 param3"
             .parse::<RawMessage>()
             .unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "irc.example.com");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "irc.example.com");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "COMMAND");
         });
-        assert_eq!(msg.parameters(), ["param1", "param2", "param3 param3"]);
+        assert_eq!(msg.parameters, ["param1", "param2", "param3 param3"]);
     }
 
     #[test]
     fn just_command() {
         let msg = "COMMAND".parse::<RawMessage>().unwrap();
-        assert!(msg.source().is_none());
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert!(msg.source.is_none());
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "COMMAND");
         });
-        assert!(msg.parameters().is_empty());
+        assert!(msg.parameters.is_empty());
     }
 
     #[test]
@@ -305,12 +291,10 @@ mod parser_tests {
         let msg = ":gravel.mozilla.org 432  #momo :Erroneous Nickname: Illegal characters"
             .parse::<RawMessage>()
             .unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "gravel.mozilla.org");
-        assert_matches!(msg.command(), Command::Reply(r) => {
-            assert_eq!(*r, 432);
-        });
+        assert_eq!(msg.source.unwrap().to_string(), "gravel.mozilla.org");
+        assert_eq!(msg.command, Command::Reply(432));
         assert_eq!(
-            msg.parameters(),
+            msg.parameters,
             ["#momo", "Erroneous Nickname: Illegal characters"]
         );
     }
@@ -320,11 +304,11 @@ mod parser_tests {
         let msg = ":gravel.mozilla.org MODE #tckk +n "
             .parse::<RawMessage>()
             .unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "gravel.mozilla.org");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "gravel.mozilla.org");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "MODE");
         });
-        assert_eq!(msg.parameters(), ["#tckk", "+n"]);
+        assert_eq!(msg.parameters, ["#tckk", "+n"]);
     }
 
     #[test]
@@ -332,21 +316,21 @@ mod parser_tests {
         let msg = ":services.esper.net MODE #foo-bar +o foobar  "
             .parse::<RawMessage>()
             .unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "services.esper.net");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "services.esper.net");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "MODE");
         });
-        assert_eq!(msg.parameters(), ["#foo-bar", "+o", "foobar"]);
+        assert_eq!(msg.parameters, ["#foo-bar", "+o", "foobar"]);
     }
 
     #[test]
     fn mode01() {
         let msg = ":SomeOp MODE #channel :+i".parse::<RawMessage>().unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "SomeOp");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "SomeOp");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "MODE");
         });
-        assert_eq!(msg.parameters(), ["#channel", "+i"]);
+        assert_eq!(msg.parameters, ["#channel", "+i"]);
     }
 
     #[test]
@@ -354,12 +338,12 @@ mod parser_tests {
         let msg = ":SomeOp MODE #channel +oo SomeUser :AnotherUser"
             .parse::<RawMessage>()
             .unwrap();
-        assert_eq!(msg.source().unwrap().to_string(), "SomeOp");
-        assert_matches!(msg.command(), Command::Verb(v) => {
+        assert_eq!(msg.source.unwrap().to_string(), "SomeOp");
+        assert_matches!(msg.command, Command::Verb(v) => {
             assert_eq!(v, "MODE");
         });
         assert_eq!(
-            msg.parameters(),
+            msg.parameters,
             ["#channel", "+oo", "SomeUser", "AnotherUser"]
         );
     }

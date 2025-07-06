@@ -1,18 +1,50 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{
+    FinalParam, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Username, Verb,
+};
+
+pub type Realname = FinalParam;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct User;
+pub struct User {
+    username: Username,
+    realname: FinalParam,
+}
+
+impl User {
+    pub fn new(username: Username, realname: Realname) -> User {
+        User { username, realname }
+    }
+
+    pub fn username(&self) -> &Username {
+        &self.username
+    }
+
+    pub fn realname(&self) -> &Realname {
+        &self.realname
+    }
+}
 
 impl ClientMessageParts for User {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        let params = ParameterList::builder()
+            .with_medial(self.username)
+            .with_medial(
+                "0".parse::<MedialParam>()
+                    .expect(r#""0" should be a valid MedialParam"#),
+            )
+            .with_medial(
+                "*".parse::<MedialParam>()
+                    .expect(r#""*" should be a valid MedialParam"#),
+            )
+            .with_final(self.realname);
+        (Verb::User, params)
     }
 }
 
 impl ToIrcLine for User {
     fn to_irc_line(&self) -> String {
-        todo!()
+        format!("USER {} 0 * :{}", self.username, self.realname)
     }
 }
 
@@ -32,6 +64,14 @@ impl TryFrom<ParameterList> for User {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<User, ClientMessageError> {
-        todo!()
+        let (username, _, _, realname) = params.try_into()?;
+        match username.as_str().parse::<Username>() {
+            Ok(username) => Ok(User { username, realname }),
+            Err(source) => Err(ClientMessageError::ParseParam {
+                index: 0,
+                raw: username.into_inner(),
+                source: Box::new(source),
+            }),
+        }
     }
 }

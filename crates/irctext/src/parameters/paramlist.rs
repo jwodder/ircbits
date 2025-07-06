@@ -102,6 +102,38 @@ impl TryFrom<ParameterList> for (FinalParam,) {
     }
 }
 
+impl TryFrom<ParameterList> for (MedialParam, MedialParam, MedialParam, FinalParam) {
+    type Error = ParameterListSizeError;
+
+    fn try_from(
+        params: ParameterList,
+    ) -> Result<(MedialParam, MedialParam, MedialParam, FinalParam), ParameterListSizeError> {
+        if params.len() == 4 {
+            let mut medials = params.medial.into_iter();
+            let p1 = medials
+                .next()
+                .expect("First element should exist when len is 4");
+            let p2 = medials
+                .next()
+                .expect("Second element should exist when len is 4");
+            let p3 = medials
+                .next()
+                .expect("Third element should exist when len is 4");
+            let p4 = medials
+                .next()
+                .map(FinalParam::from)
+                .or(params.finalp)
+                .expect("Fourth element should exist when len is 4");
+            Ok((p1, p2, p3, p4))
+        } else {
+            Err(ParameterListSizeError {
+                requested: 4,
+                received: params.len(),
+            })
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum ParameterListError {
     #[error(transparent)]

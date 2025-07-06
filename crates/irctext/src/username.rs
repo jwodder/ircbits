@@ -1,5 +1,6 @@
 // See <https://github.com/ircdocs/modern-irc/issues/226> for notes on username
 // format.
+use crate::parameters::{FinalParam, MedialParam};
 use nutype::nutype;
 use thiserror::Error;
 
@@ -30,6 +31,18 @@ fn validate(s: &str) -> Result<(), UsernameError> {
         Err(UsernameError::BadCharacter)
     } else {
         Ok(())
+    }
+}
+
+impl From<Username> for MedialParam {
+    fn from(value: Username) -> MedialParam {
+        MedialParam::try_from(value.into_inner()).expect("Username should be valid MedialParam")
+    }
+}
+
+impl From<Username> for FinalParam {
+    fn from(value: Username) -> FinalParam {
+        FinalParam::from(MedialParam::from(value))
     }
 }
 

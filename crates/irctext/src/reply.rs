@@ -1,5 +1,5 @@
 #![expect(unused_variables)]
-use crate::ParameterList;
+use crate::{ParameterList, ToIrcLine};
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -14,6 +14,12 @@ pub enum Reply {
 
 impl Reply {
     pub fn from_parts(code: u16, params: ParameterList) -> Result<Reply, ReplyError> {
+        todo!()
+    }
+}
+
+impl ToIrcLine for Reply {
+    fn to_irc_line(&self) -> String {
         todo!()
     }
 }

@@ -26,7 +26,11 @@ impl TryFrom<RawMessage> for Message {
 
 impl ToIrcLine for Message {
     fn to_irc_line(&self) -> String {
-        todo!()
+        if let Some(ref src) = self.source {
+            format!(":{src} {}", self.payload.to_irc_line())
+        } else {
+            self.payload.to_irc_line()
+        }
     }
 }
 
@@ -34,6 +38,15 @@ impl ToIrcLine for Message {
 pub enum Payload {
     ClientMessage(ClientMessage),
     Reply(Reply),
+}
+
+impl ToIrcLine for Payload {
+    fn to_irc_line(&self) -> String {
+        match self {
+            Payload::ClientMessage(msg) => msg.to_irc_line(),
+            Payload::Reply(r) => r.to_irc_line(),
+        }
+    }
 }
 
 #[derive(Debug, Error)]

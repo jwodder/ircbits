@@ -11,7 +11,7 @@ license.workspace = true
 enum_dispatch = "0.3.13"
 nutype = "0.6.1"
 strum = { version = "0.27.1", features = ["derive"] }
-thiserror = "1.0.50"
+thiserror = "2.0.12"
 url = "2.5.0"
 
 [dev-dependencies]

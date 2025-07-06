@@ -2,19 +2,21 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{Message, Nickname, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Nick(Nickname);
+pub struct Nick {
+    nickname: Nickname,
+}
 
 impl Nick {
     pub fn new(nickname: Nickname) -> Nick {
-        Nick(nickname)
+        Nick { nickname }
     }
 
     pub fn nickname(&self) -> &Nickname {
-        &self.0
+        &self.nickname
     }
 
     pub fn into_nickname(self) -> Nickname {
-        self.0
+        self.nickname
     }
 }
 
@@ -22,14 +24,14 @@ impl ClientMessageParts for Nick {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Nick,
-            ParameterList::builder().with_medial(self.0).finish(),
+            ParameterList::builder().with_medial(self.nickname).finish(),
         )
     }
 }
 
 impl ToIrcLine for Nick {
     fn to_irc_line(&self) -> String {
-        format!("NICK {}", self.0)
+        format!("NICK {}", self.nickname)
     }
 }
 
@@ -51,7 +53,7 @@ impl TryFrom<ParameterList> for Nick {
     fn try_from(params: ParameterList) -> Result<Nick, ClientMessageError> {
         let (p,) = params.try_into()?;
         match p.as_str().parse::<Nickname>() {
-            Ok(nick) => Ok(Nick(nick)),
+            Ok(nickname) => Ok(Nick { nickname }),
             Err(source) => Err(ClientMessageError::ParseParam {
                 index: 0,
                 raw: p.into_inner(),

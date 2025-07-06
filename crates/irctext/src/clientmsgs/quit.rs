@@ -2,23 +2,27 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct Quit(Option<FinalParam>);
+pub struct Quit {
+    reason: Option<FinalParam>,
+}
 
 impl Quit {
     pub fn new() -> Quit {
-        Quit(None)
+        Quit { reason: None }
     }
 
     pub fn new_with_reason(reason: FinalParam) -> Quit {
-        Quit(Some(reason))
+        Quit {
+            reason: Some(reason),
+        }
     }
 
     pub fn reason(&self) -> Option<&FinalParam> {
-        self.0.as_ref()
+        self.reason.as_ref()
     }
 
     pub fn into_reason(self) -> Option<FinalParam> {
-        self.0
+        self.reason
     }
 }
 
@@ -26,7 +30,7 @@ impl ClientMessageParts for Quit {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Quit,
-            ParameterList::builder().maybe_with_final(self.0),
+            ParameterList::builder().maybe_with_final(self.reason),
         )
     }
 }
@@ -34,7 +38,7 @@ impl ClientMessageParts for Quit {
 impl ToIrcLine for Quit {
     fn to_irc_line(&self) -> String {
         let mut s = String::from("QUIT");
-        if let Some(ref reason) = self.0 {
+        if let Some(ref reason) = self.reason {
             s.push(' ');
             s.push(':');
             s.push_str(reason.as_str());
@@ -62,8 +66,8 @@ impl TryFrom<ParameterList> for Quit {
         if params.is_empty() {
             Ok(Quit::new())
         } else {
-            let (p,) = params.try_into()?;
-            Ok(Quit::new_with_reason(p))
+            let (reason,) = params.try_into()?;
+            Ok(Quit::new_with_reason(reason))
         }
     }
 }

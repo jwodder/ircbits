@@ -2,31 +2,36 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Pass(FinalParam);
+pub struct Pass {
+    password: FinalParam,
+}
 
 impl Pass {
     pub fn new(password: FinalParam) -> Pass {
-        Pass(password)
+        Pass { password }
     }
 
     pub fn password(&self) -> &FinalParam {
-        &self.0
+        &self.password
     }
 
     pub fn into_password(self) -> FinalParam {
-        self.0
+        self.password
     }
 }
 
 impl ClientMessageParts for Pass {
     fn into_parts(self) -> (Verb, ParameterList) {
-        (Verb::Pass, ParameterList::builder().with_final(self.0))
+        (
+            Verb::Pass,
+            ParameterList::builder().with_final(self.password),
+        )
     }
 }
 
 impl ToIrcLine for Pass {
     fn to_irc_line(&self) -> String {
-        format!("PASS :{}", self.0)
+        format!("PASS :{}", self.password)
     }
 }
 
@@ -46,7 +51,7 @@ impl TryFrom<ParameterList> for Pass {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Pass, ClientMessageError> {
-        let (p,) = params.try_into()?;
-        Ok(Pass(p))
+        let (password,) = params.try_into()?;
+        Ok(Pass { password })
     }
 }

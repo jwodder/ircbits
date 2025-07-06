@@ -2,39 +2,41 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts, Pong};
 use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Ping(FinalParam);
+pub struct Ping {
+    token: FinalParam,
+}
 
 impl Ping {
     pub fn new(token: FinalParam) -> Ping {
-        Ping(token)
+        Ping { token }
     }
 
     pub fn token(&self) -> &FinalParam {
-        &self.0
+        &self.token
     }
 
     pub fn into_token(self) -> FinalParam {
-        self.0
+        self.token
     }
 
     pub fn to_pong(&self) -> Pong {
-        Pong::new(self.0.clone())
+        Pong::new(self.token.clone())
     }
 
     pub fn into_pong(self) -> Pong {
-        Pong::new(self.0)
+        Pong::new(self.token)
     }
 }
 
 impl ClientMessageParts for Ping {
     fn into_parts(self) -> (Verb, ParameterList) {
-        (Verb::Ping, ParameterList::builder().with_final(self.0))
+        (Verb::Ping, ParameterList::builder().with_final(self.token))
     }
 }
 
 impl ToIrcLine for Ping {
     fn to_irc_line(&self) -> String {
-        format!("PING :{}", self.0)
+        format!("PING :{}", self.token)
     }
 }
 
@@ -54,7 +56,7 @@ impl TryFrom<ParameterList> for Ping {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Ping, ClientMessageError> {
-        let (p,) = params.try_into()?;
-        Ok(Ping(p))
+        let (token,) = params.try_into()?;
+        Ok(Ping { token })
     }
 }

@@ -3,11 +3,15 @@ use crate::util::{join_with_commas, split_channels};
 use crate::{Channel, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Names(Vec<Channel>);
+pub struct Names {
+    channels: Vec<Channel>,
+}
 
 impl Names {
     pub fn new(channel: Channel) -> Names {
-        Names(vec![channel])
+        Names {
+            channels: vec![channel],
+        }
     }
 
     pub fn new_many<I: IntoIterator<Item = Channel>>(channels: I) -> Option<Names> {
@@ -15,17 +19,24 @@ impl Names {
         if channels.is_empty() {
             None
         } else {
-            Some(Names(channels))
+            Some(Names { channels })
         }
     }
 
     pub fn channels(&self) -> &[Channel] {
-        &self.0
+        &self.channels
+    }
+
+    pub fn into_channels(self) -> Vec<Channel> {
+        self.channels
     }
 
     fn channels_param(&self) -> MedialParam {
-        assert!(!self.0.is_empty(), "Names.0 should always be nonempty");
-        let s = join_with_commas(&self.0);
+        assert!(
+            !self.channels.is_empty(),
+            "Names.channels should always be nonempty"
+        );
+        let s = join_with_commas(&self.channels);
         MedialParam::try_from(s).expect("comma-separated channels should be a valid MedialParam")
     }
 }
@@ -65,6 +76,6 @@ impl TryFrom<ParameterList> for Names {
     fn try_from(params: ParameterList) -> Result<Names, ClientMessageError> {
         let (p,) = params.try_into()?;
         let channels = split_channels(p.into_inner())?;
-        Ok(Names(channels))
+        Ok(Names { channels })
     }
 }

@@ -2,23 +2,27 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct Time(Option<FinalParam>);
+pub struct Time {
+    server: Option<FinalParam>,
+}
 
 impl Time {
     pub fn new() -> Time {
-        Time(None)
+        Time { server: None }
     }
 
     pub fn new_with_server(server: FinalParam) -> Time {
-        Time(Some(server))
+        Time {
+            server: Some(server),
+        }
     }
 
     pub fn server(&self) -> Option<&FinalParam> {
-        self.0.as_ref()
+        self.server.as_ref()
     }
 
     pub fn into_server(self) -> Option<FinalParam> {
-        self.0
+        self.server
     }
 }
 
@@ -26,7 +30,7 @@ impl ClientMessageParts for Time {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Time,
-            ParameterList::builder().maybe_with_final(self.0),
+            ParameterList::builder().maybe_with_final(self.server),
         )
     }
 }
@@ -34,7 +38,7 @@ impl ClientMessageParts for Time {
 impl ToIrcLine for Time {
     fn to_irc_line(&self) -> String {
         let mut s = String::from("TIME");
-        if let Some(ref server) = self.0 {
+        if let Some(ref server) = self.server {
             s.push(' ');
             s.push(':');
             s.push_str(server.as_str());

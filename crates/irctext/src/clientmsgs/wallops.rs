@@ -1,11 +1,17 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Wallops;
 
 impl ClientMessageParts for Wallops {
     fn into_parts(self) -> (Verb, ParameterList) {
+        todo!()
+    }
+}
+
+impl ToIrcLine for Wallops {
+    fn to_irc_line(&self) -> String {
         todo!()
     }
 }

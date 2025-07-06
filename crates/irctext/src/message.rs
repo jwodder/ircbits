@@ -1,4 +1,6 @@
-use crate::{ClientMessage, ClientMessageError, Command, RawMessage, Reply, ReplyError, Source};
+use crate::{
+    ClientMessage, ClientMessageError, Command, RawMessage, Reply, ReplyError, Source, ToIrcLine,
+};
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -19,6 +21,12 @@ impl TryFrom<RawMessage> for Message {
             Command::Reply(code) => Payload::Reply(Reply::from_parts(code, msg.parameters)?),
         };
         Ok(Message { source, payload })
+    }
+}
+
+impl ToIrcLine for Message {
+    fn to_irc_line(&self) -> String {
+        todo!()
     }
 }
 

@@ -1,11 +1,17 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Pass;
 
 impl ClientMessageParts for Pass {
     fn into_parts(self) -> (Verb, ParameterList) {
+        todo!()
+    }
+}
+
+impl ToIrcLine for Pass {
+    fn to_irc_line(&self) -> String {
         todo!()
     }
 }

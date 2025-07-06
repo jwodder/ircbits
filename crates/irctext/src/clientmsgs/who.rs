@@ -1,11 +1,17 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Who;
 
 impl ClientMessageParts for Who {
     fn into_parts(self) -> (Verb, ParameterList) {
+        todo!()
+    }
+}
+
+impl ToIrcLine for Who {
+    fn to_irc_line(&self) -> String {
         todo!()
     }
 }

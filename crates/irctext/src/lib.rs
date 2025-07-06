@@ -22,3 +22,7 @@ pub use crate::reply::*;
 pub use crate::source::*;
 pub use crate::username::*;
 pub use crate::verb::*;
+
+pub trait ToIrcLine {
+    fn to_irc_line(&self) -> String;
+}

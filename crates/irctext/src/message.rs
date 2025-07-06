@@ -1,5 +1,6 @@
 use crate::{
-    ClientMessage, ClientMessageError, Command, RawMessage, Reply, ReplyError, Source, ToIrcLine,
+    ClientMessage, ClientMessageError, Command, ParameterList, RawMessage, Reply, ReplyError,
+    Source, ToIrcLine,
 };
 use thiserror::Error;
 
@@ -14,12 +15,7 @@ impl TryFrom<RawMessage> for Message {
 
     fn try_from(msg: RawMessage) -> Result<Message, MessageError> {
         let source = msg.source;
-        let payload = match msg.command {
-            Command::Verb(v) => {
-                Payload::ClientMessage(ClientMessage::from_parts(v, msg.parameters)?)
-            }
-            Command::Reply(code) => Payload::Reply(Reply::from_parts(code, msg.parameters)?),
-        };
+        let payload = Payload::from_parts(msg.command, msg.parameters)?;
         Ok(Message { source, payload })
     }
 }
@@ -38,6 +34,17 @@ impl ToIrcLine for Message {
 pub enum Payload {
     ClientMessage(ClientMessage),
     Reply(Reply),
+}
+
+impl Payload {
+    pub fn from_parts(cmd: Command, params: ParameterList) -> Result<Payload, MessageError> {
+        match cmd {
+            Command::Verb(v) => Ok(Payload::ClientMessage(ClientMessage::from_parts(
+                v, params,
+            )?)),
+            Command::Reply(code) => Ok(Payload::Reply(Reply::from_parts(code, params)?)),
+        }
+    }
 }
 
 impl ToIrcLine for Payload {

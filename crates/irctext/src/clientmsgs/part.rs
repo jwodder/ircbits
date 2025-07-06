@@ -107,11 +107,8 @@ impl TryFrom<ParameterList> for Part {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Part, ClientMessageError> {
-        let (p1, p2): (_, Option<FinalParam>) = params.try_into()?;
+        let (p1, reason): (_, Option<FinalParam>) = params.try_into()?;
         let channels = split_channels(p1.into_inner())?;
-        Ok(Part {
-            channels,
-            reason: p2,
-        })
+        Ok(Part { channels, reason })
     }
 }

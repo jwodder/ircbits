@@ -88,7 +88,7 @@ impl TryFrom<ParameterList> for () {
         if params.is_empty() {
             Ok(())
         } else {
-            Err(ParameterListSizeError {
+            Err(ParameterListSizeError::Exact {
                 requested: 0,
                 received: params.len(),
             })
@@ -109,7 +109,7 @@ impl TryFrom<ParameterList> for (FinalParam,) {
                 .expect("There should be something to unwrap when len is 1");
             Ok((p,))
         } else {
-            Err(ParameterListSizeError {
+            Err(ParameterListSizeError::Exact {
                 requested: 1,
                 received: params.len(),
             })
@@ -124,8 +124,9 @@ impl TryFrom<ParameterList> for (Option<FinalParam>,) {
         match (params.len(), params.finalp.is_some()) {
             (1, false) => Ok((params.medial.into_iter().next().map(FinalParam::from),)),
             (0, _) => Ok((params.finalp,)),
-            _ => Err(ParameterListSizeError {
-                requested: 1, // TODO: Change to "0 or 1"
+            _ => Err(ParameterListSizeError::Range {
+                min_requested: 0,
+                max_requested: 1,
                 received: params.len(),
             }),
         }
@@ -150,7 +151,7 @@ impl TryFrom<ParameterList> for (MedialParam, FinalParam) {
                 .expect("Second element should exist when len is 2");
             Ok((p1, p2))
         } else {
-            Err(ParameterListSizeError {
+            Err(ParameterListSizeError::Exact {
                 requested: 2,
                 received: params.len(),
             })
@@ -181,12 +182,11 @@ impl TryFrom<ParameterList> for (MedialParam, Option<FinalParam>) {
                 let p2 = params.finalp;
                 Ok((p1, p2))
             }
-            _ => {
-                Err(ParameterListSizeError {
-                    requested: 2, // TODO: Change this to "1 or 2"
-                    received: params.len(),
-                })
-            }
+            _ => Err(ParameterListSizeError::Range {
+                min_requested: 1,
+                max_requested: 2,
+                received: params.len(),
+            }),
         }
     }
 }
@@ -215,7 +215,7 @@ impl TryFrom<ParameterList> for (MedialParam, MedialParam, MedialParam, FinalPar
                 .expect("Fourth element should exist when len is 4");
             Ok((p1, p2, p3, p4))
         } else {
-            Err(ParameterListSizeError {
+            Err(ParameterListSizeError::Exact {
                 requested: 4,
                 received: params.len(),
             })
@@ -232,10 +232,15 @@ pub enum ParameterListError {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-#[error("invalid number of parameters: expected {requested}, received {received}")]
-pub struct ParameterListSizeError {
-    pub requested: usize,
-    pub received: usize,
+pub enum ParameterListSizeError {
+    #[error("invalid number of parameters: expected {requested}, received {received}")]
+    Exact { requested: usize, received: usize },
+    #[error("invalid number of parameters: expected {min_requested}-{max_requested}, received {received}")]
+    Range {
+        min_requested: usize,
+        max_requested: usize,
+        received: usize,
+    },
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

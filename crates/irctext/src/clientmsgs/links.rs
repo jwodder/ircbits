@@ -1,18 +1,18 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Links;
 
 impl ClientMessageParts for Links {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (Verb::Links, ParameterList::default())
     }
 }
 
 impl ToIrcLine for Links {
     fn to_irc_line(&self) -> String {
-        todo!()
+        String::from("LINKS")
     }
 }
 
@@ -32,6 +32,7 @@ impl TryFrom<ParameterList> for Links {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Links, ClientMessageError> {
-        todo!()
+        let () = params.try_into()?;
+        Ok(Links)
     }
 }

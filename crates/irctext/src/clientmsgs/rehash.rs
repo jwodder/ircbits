@@ -1,18 +1,18 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Rehash;
 
 impl ClientMessageParts for Rehash {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (Verb::Rehash, ParameterList::default())
     }
 }
 
 impl ToIrcLine for Rehash {
     fn to_irc_line(&self) -> String {
-        todo!()
+        String::from("REHASH")
     }
 }
 
@@ -32,6 +32,7 @@ impl TryFrom<ParameterList> for Rehash {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Rehash, ClientMessageError> {
-        todo!()
+        let () = params.try_into()?;
+        Ok(Rehash)
     }
 }

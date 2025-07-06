@@ -32,13 +32,7 @@ impl TryFrom<ParameterList> for Lusers {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Lusers, ClientMessageError> {
-        if params.is_empty() {
-            Ok(Lusers)
-        } else {
-            Err(ClientMessageError::ParamQty(ParameterListSizeError {
-                requested: 0,
-                received: params.len(),
-            }))
-        }
+        let () = params.try_into()?;
+        Ok(Lusers)
     }
 }

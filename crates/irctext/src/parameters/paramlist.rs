@@ -81,6 +81,21 @@ impl TryFrom<String> for ParameterList {
     }
 }
 
+impl TryFrom<ParameterList> for () {
+    type Error = ParameterListSizeError;
+
+    fn try_from(params: ParameterList) -> Result<(), ParameterListSizeError> {
+        if params.is_empty() {
+            Ok(())
+        } else {
+            Err(ParameterListSizeError {
+                requested: 0,
+                received: params.len(),
+            })
+        }
+    }
+}
+
 impl TryFrom<ParameterList> for (FinalParam,) {
     type Error = ParameterListSizeError;
 

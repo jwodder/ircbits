@@ -1,4 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
+use crate::util::DisplayMaybeFinal;
 use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -37,13 +38,7 @@ impl ClientMessageParts for Time {
 
 impl ToIrcLine for Time {
     fn to_irc_line(&self) -> String {
-        let mut s = String::from("TIME");
-        if let Some(ref server) = self.server {
-            s.push(' ');
-            s.push(':');
-            s.push_str(server.as_str());
-        }
-        s
+        format!("TIME{}", DisplayMaybeFinal(self.server.as_ref()))
     }
 }
 

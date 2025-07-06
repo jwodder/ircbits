@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::util::{join_with_commas, split_channels, split_keys};
+use crate::util::{join_with_commas, split_channels, split_keys, DisplayMaybeFinal};
 use crate::{
     Channel, FinalParam, Key, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Verb,
 };
@@ -98,13 +98,11 @@ impl ClientMessageParts for Join {
 
 impl ToIrcLine for Join {
     fn to_irc_line(&self) -> String {
-        let mut s = format!("JOIN {}", self.channels_param());
-        if let Some(keys_param) = self.keys_param() {
-            s.push(' ');
-            s.push(':');
-            s.push_str(keys_param.as_str());
-        }
-        s
+        format!(
+            "JOIN {}{}",
+            self.channels_param(),
+            DisplayMaybeFinal(self.keys_param())
+        )
     }
 }
 

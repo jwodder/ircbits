@@ -1,4 +1,5 @@
 use crate::{Channel, ClientMessageError, Key, Target};
+use std::fmt;
 
 pub(crate) fn split_word(s: &str) -> (&str, &str) {
     match s.split_once(' ') {
@@ -66,5 +67,18 @@ pub(crate) fn split_targets(s: String) -> Result<Vec<Target>, ClientMessageError
             raw: s,
             source: Box::new(source),
         }),
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct DisplayMaybeFinal<T>(pub Option<T>);
+
+impl<T: fmt::Display> fmt::Display for DisplayMaybeFinal<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(ref value) = self.0 {
+            write!(f, " :{value}")
+        } else {
+            Ok(())
+        }
     }
 }

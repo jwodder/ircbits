@@ -1,4 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
+use crate::util::DisplayMaybeFinal;
 use crate::{Channel, FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -42,13 +43,11 @@ impl ClientMessageParts for Topic {
 
 impl ToIrcLine for Topic {
     fn to_irc_line(&self) -> String {
-        let mut s = format!("TOPIC {}", self.channel);
-        if let Some(ref topic) = self.topic {
-            s.push(' ');
-            s.push(':');
-            s.push_str(topic.as_str());
-        }
-        s
+        format!(
+            "TOPIC {}{}",
+            self.channel,
+            DisplayMaybeFinal(self.topic.as_ref())
+        )
     }
 }
 

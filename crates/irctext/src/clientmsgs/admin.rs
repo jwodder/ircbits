@@ -1,4 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
+use crate::util::DisplayMaybeFinal;
 use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -37,13 +38,7 @@ impl ClientMessageParts for Admin {
 
 impl ToIrcLine for Admin {
     fn to_irc_line(&self) -> String {
-        let mut s = String::from("ADMIN");
-        if let Some(ref target) = self.target {
-            s.push(' ');
-            s.push(':');
-            s.push_str(target.as_str());
-        }
-        s
+        format!("ADMIN{}", DisplayMaybeFinal(self.target.as_ref()))
     }
 }
 

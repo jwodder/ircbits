@@ -1,5 +1,6 @@
 use super::{FinalParam, FinalParamError, MedialParam, MedialParamError, ParamRef};
 use crate::util::split_word;
+use std::cmp::Ordering;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -24,12 +25,10 @@ impl ParameterList {
     }
 
     pub fn get(&self, index: usize) -> Option<ParamRef<'_>> {
-        if index < self.medial.len() {
-            self.medial.get(index).map(ParamRef::Medial)
-        } else if index == self.medial.len() {
-            self.finalp.as_ref().map(ParamRef::Final)
-        } else {
-            None
+        match index.cmp(&self.medial.len()) {
+            Ordering::Less => self.medial.get(index).map(ParamRef::Medial),
+            Ordering::Equal => self.finalp.as_ref().map(ParamRef::Final),
+            Ordering::Greater => None,
         }
     }
 

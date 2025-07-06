@@ -63,11 +63,7 @@ impl TryFrom<ParameterList> for Time {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Time, ClientMessageError> {
-        if params.is_empty() {
-            Ok(Time::new())
-        } else {
-            let (p,) = params.try_into()?;
-            Ok(Time::new_with_server(p))
-        }
+        let (server,) = params.try_into()?;
+        Ok(Time { server })
     }
 }

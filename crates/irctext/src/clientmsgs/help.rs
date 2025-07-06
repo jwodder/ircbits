@@ -63,11 +63,7 @@ impl TryFrom<ParameterList> for Help {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Help, ClientMessageError> {
-        if params.is_empty() {
-            Ok(Help::new())
-        } else {
-            let (p,) = params.try_into()?;
-            Ok(Help::new_with_subject(p))
-        }
+        let (subject,) = params.try_into()?;
+        Ok(Help { subject })
     }
 }

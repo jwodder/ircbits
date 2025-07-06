@@ -63,11 +63,7 @@ impl TryFrom<ParameterList> for Admin {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Admin, ClientMessageError> {
-        if params.is_empty() {
-            Ok(Admin::new())
-        } else {
-            let (p,) = params.try_into()?;
-            Ok(Admin::new_with_target(p))
-        }
+        let (target,) = params.try_into()?;
+        Ok(Admin { target })
     }
 }

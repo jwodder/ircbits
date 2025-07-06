@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, Nickname, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, Nickname, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Nick {
@@ -51,7 +51,7 @@ impl TryFrom<ParameterList> for Nick {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Nick, ClientMessageError> {
-        let (p,) = params.try_into()?;
+        let (p,): (FinalParam,) = params.try_into()?;
         match p.as_str().parse::<Nickname>() {
             Ok(nickname) => Ok(Nick { nickname }),
             Err(source) => Err(ClientMessageError::ParseParam {

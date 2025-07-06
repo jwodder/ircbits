@@ -63,11 +63,7 @@ impl TryFrom<ParameterList> for Quit {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Quit, ClientMessageError> {
-        if params.is_empty() {
-            Ok(Quit::new())
-        } else {
-            let (reason,) = params.try_into()?;
-            Ok(Quit::new_with_reason(reason))
-        }
+        let (reason,) = params.try_into()?;
+        Ok(Quit { reason })
     }
 }

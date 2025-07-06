@@ -117,6 +117,21 @@ impl TryFrom<ParameterList> for (FinalParam,) {
     }
 }
 
+impl TryFrom<ParameterList> for (Option<FinalParam>,) {
+    type Error = ParameterListSizeError;
+
+    fn try_from(params: ParameterList) -> Result<(Option<FinalParam>,), ParameterListSizeError> {
+        match (params.len(), params.finalp.is_some()) {
+            (1, false) => Ok((params.medial.into_iter().next().map(FinalParam::from),)),
+            (0, _) => Ok((params.finalp,)),
+            _ => Err(ParameterListSizeError {
+                requested: 1, // TODO: Change to "0 or 1"
+                received: params.len(),
+            }),
+        }
+    }
+}
+
 impl TryFrom<ParameterList> for (MedialParam, FinalParam) {
     type Error = ParameterListSizeError;
 
@@ -149,18 +164,29 @@ impl TryFrom<ParameterList> for (MedialParam, Option<FinalParam>) {
     fn try_from(
         params: ParameterList,
     ) -> Result<(MedialParam, Option<FinalParam>), ParameterListSizeError> {
-        if params.medial.len() == 1 {
-            let mut medials = params.medial.into_iter();
-            let p1 = medials
-                .next()
-                .expect("First element should exist when len is 1");
-            let p2 = params.finalp;
-            Ok((p1, p2))
-        } else {
-            Err(ParameterListSizeError {
-                requested: 2, // TODO: Change this to "1 or 2"
-                received: params.len(),
-            })
+        match (params.len(), params.finalp.is_some()) {
+            (2, false) => {
+                let mut medials = params.medial.into_iter();
+                let p1 = medials
+                    .next()
+                    .expect("First element should exist when len is 1");
+                let p2 = medials.next().map(FinalParam::from);
+                Ok((p1, p2))
+            }
+            (1, _) => {
+                let mut medials = params.medial.into_iter();
+                let p1 = medials
+                    .next()
+                    .expect("First element should exist when len is 1");
+                let p2 = params.finalp;
+                Ok((p1, p2))
+            }
+            _ => {
+                Err(ParameterListSizeError {
+                    requested: 2, // TODO: Change this to "1 or 2"
+                    received: params.len(),
+                })
+            }
         }
     }
 }

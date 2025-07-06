@@ -63,11 +63,7 @@ impl TryFrom<ParameterList> for Version {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Version, ClientMessageError> {
-        if params.is_empty() {
-            Ok(Version::new())
-        } else {
-            let (target,) = params.try_into()?;
-            Ok(Version::new_with_target(target))
-        }
+        let (target,) = params.try_into()?;
+        Ok(Version { target })
     }
 }

@@ -63,11 +63,7 @@ impl TryFrom<ParameterList> for Motd {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Motd, ClientMessageError> {
-        if params.is_empty() {
-            Ok(Motd::new())
-        } else {
-            let (p,) = params.try_into()?;
-            Ok(Motd::new_with_target(p))
-        }
+        let (target,) = params.try_into()?;
+        Ok(Motd { target })
     }
 }

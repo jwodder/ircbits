@@ -3,8 +3,6 @@ use crate::{
     FinalParam, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Username, Verb,
 };
 
-pub type Realname = FinalParam;
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct User {
     username: Username,
@@ -12,7 +10,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(username: Username, realname: Realname) -> User {
+    pub fn new(username: Username, realname: FinalParam) -> User {
         User { username, realname }
     }
 
@@ -20,7 +18,7 @@ impl User {
         &self.username
     }
 
-    pub fn realname(&self) -> &Realname {
+    pub fn realname(&self) -> &FinalParam {
         &self.realname
     }
 }

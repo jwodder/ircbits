@@ -1,21 +1,19 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
-pub type Password = FinalParam;
-
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Pass(Password);
+pub struct Pass(FinalParam);
 
 impl Pass {
-    pub fn new(password: Password) -> Pass {
+    pub fn new(password: FinalParam) -> Pass {
         Pass(password)
     }
 
-    pub fn password(&self) -> &Password {
+    pub fn password(&self) -> &FinalParam {
         &self.0
     }
 
-    pub fn into_password(self) -> Password {
+    pub fn into_password(self) -> FinalParam {
         self.0
     }
 }

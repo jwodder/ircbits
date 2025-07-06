@@ -1,18 +1,37 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Wallops;
+pub struct Wallops {
+    text: FinalParam,
+}
+
+impl Wallops {
+    pub fn new(text: FinalParam) -> Wallops {
+        Wallops { text }
+    }
+
+    pub fn text(&self) -> &FinalParam {
+        &self.text
+    }
+
+    pub fn into_text(self) -> FinalParam {
+        self.text
+    }
+}
 
 impl ClientMessageParts for Wallops {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (
+            Verb::Wallops,
+            ParameterList::builder().with_final(self.text),
+        )
     }
 }
 
 impl ToIrcLine for Wallops {
     fn to_irc_line(&self) -> String {
-        todo!()
+        format!("WALLOPS :{}", self.text)
     }
 }
 
@@ -32,6 +51,7 @@ impl TryFrom<ParameterList> for Wallops {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Wallops, ClientMessageError> {
-        todo!()
+        let (text,) = params.try_into()?;
+        Ok(Wallops { text })
     }
 }

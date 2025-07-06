@@ -1,18 +1,45 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Admin;
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct Admin(Option<FinalParam>);
+
+impl Admin {
+    pub fn new() -> Admin {
+        Admin(None)
+    }
+
+    pub fn new_with_target(target: FinalParam) -> Admin {
+        Admin(Some(target))
+    }
+
+    pub fn target(&self) -> Option<&FinalParam> {
+        self.0.as_ref()
+    }
+
+    pub fn into_target(self) -> Option<FinalParam> {
+        self.0
+    }
+}
 
 impl ClientMessageParts for Admin {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (
+            Verb::Admin,
+            ParameterList::builder().maybe_with_final(self.0),
+        )
     }
 }
 
 impl ToIrcLine for Admin {
     fn to_irc_line(&self) -> String {
-        todo!()
+        let mut s = String::from("ADMIN");
+        if let Some(ref target) = self.0 {
+            s.push(' ');
+            s.push(':');
+            s.push_str(target.as_str());
+        }
+        s
     }
 }
 
@@ -32,6 +59,11 @@ impl TryFrom<ParameterList> for Admin {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Admin, ClientMessageError> {
-        todo!()
+        if params.is_empty() {
+            Ok(Admin::new())
+        } else {
+            let (p,) = params.try_into()?;
+            Ok(Admin::new_with_target(p))
+        }
     }
 }

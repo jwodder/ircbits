@@ -193,8 +193,8 @@ pub enum ParameterListError {
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 #[error("invalid number of parameters: expected {requested}, received {received}")]
 pub struct ParameterListSizeError {
-    requested: usize,
-    received: usize,
+    pub requested: usize,
+    pub received: usize,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

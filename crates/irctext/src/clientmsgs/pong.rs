@@ -1,18 +1,32 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Pong;
+pub struct Pong(FinalParam);
+
+impl Pong {
+    pub fn new(token: FinalParam) -> Pong {
+        Pong(token)
+    }
+
+    pub fn token(&self) -> &FinalParam {
+        &self.0
+    }
+
+    pub fn into_token(self) -> FinalParam {
+        self.0
+    }
+}
 
 impl ClientMessageParts for Pong {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (Verb::Pong, ParameterList::builder().with_final(self.0))
     }
 }
 
 impl ToIrcLine for Pong {
     fn to_irc_line(&self) -> String {
-        todo!()
+        format!("PONG :{}", self.0)
     }
 }
 
@@ -32,6 +46,7 @@ impl TryFrom<ParameterList> for Pong {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Pong, ClientMessageError> {
-        todo!()
+        let (p,) = params.try_into()?;
+        Ok(Pong(p))
     }
 }

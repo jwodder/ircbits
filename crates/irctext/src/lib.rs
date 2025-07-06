@@ -24,5 +24,6 @@ pub use crate::username::*;
 pub use crate::verb::*;
 
 pub trait ToIrcLine {
+    // Does not include the terminating CR LF
     fn to_irc_line(&self) -> String;
 }

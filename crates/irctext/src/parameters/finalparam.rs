@@ -8,7 +8,7 @@ validstr!(FinalParam, ParseFinalParamError, validate);
 
 impl From<MedialParam> for FinalParam {
     fn from(value: MedialParam) -> FinalParam {
-        FinalParam::try_from(value.into_inner()).expect("MedialParam should be valid FinalParam")
+        FinalParam(value.into_inner())
     }
 }
 

@@ -1,4 +1,3 @@
-use crate::client::MAX_LINE_LENGTH;
 use crate::codec::IrcLinesCodec;
 use itertools::Itertools; // join
 use rustls_pki_types::{InvalidDnsNameError, ServerName};
@@ -10,6 +9,14 @@ use tokio_rustls::{
     TlsConnector,
 };
 use tokio_util::{codec::Framed, either::Either};
+
+pub const PLAIN_PORT: u16 = 6667;
+
+pub const TLS_PORT: u16 = 6697;
+
+// Both RFC 2812 and <https://modern.ircdocs.horse> say that IRC messages (when
+// tags aren't involved) are limited to 512 characters, counting the CR LF.
+pub const MAX_LINE_LENGTH: usize = 512;
 
 pub type IrcConnection = Framed<Either<TcpStream, TlsStream>, IrcLinesCodec>;
 

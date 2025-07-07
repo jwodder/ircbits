@@ -1,18 +1,37 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Who;
+pub struct Who {
+    mask: MedialParam,
+}
+
+impl Who {
+    pub fn new<P: Into<MedialParam>>(mask: P) -> Who {
+        Who { mask: mask.into() }
+    }
+
+    pub fn mask(&self) -> &MedialParam {
+        &self.mask
+    }
+
+    pub fn into_mask(self) -> MedialParam {
+        self.mask
+    }
+}
 
 impl ClientMessageParts for Who {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (
+            Verb::Who,
+            ParameterList::builder().with_medial(self.mask).finish(),
+        )
     }
 }
 
 impl ToIrcLine for Who {
     fn to_irc_line(&self) -> String {
-        todo!()
+        format!("WHO {}", self.mask)
     }
 }
 
@@ -32,6 +51,14 @@ impl TryFrom<ParameterList> for Who {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Who, ClientMessageError> {
-        todo!()
+        let (p,): (FinalParam,) = params.try_into()?;
+        match p.as_str().parse::<MedialParam>() {
+            Ok(mask) => Ok(Who { mask }),
+            Err(source) => Err(ClientMessageError::ParseParam {
+                index: 0,
+                raw: p.into_inner(),
+                source: Box::new(source),
+            }),
+        }
     }
 }

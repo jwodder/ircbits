@@ -1,4 +1,4 @@
-use crate::linestream::IrcLineStream;
+use crate::connection::IrcConnection;
 use irctext::{FinalParam, Nickname, Username};
 
 pub const PLAIN_PORT: u16 = 6667;
@@ -11,11 +11,11 @@ pub const MAX_LINE_LENGTH: usize = 512;
 
 #[derive(Debug)]
 pub struct Client {
-    stream: IrcLineStream,
+    stream: IrcConnection,
 }
 
 impl Client {
-    pub fn new(stream: IrcLineStream) -> Client {
+    pub fn new(stream: IrcConnection) -> Client {
         Client { stream }
     }
 

@@ -11,7 +11,7 @@ use tokio_rustls::{
 };
 use tokio_util::{codec::Framed, either::Either};
 
-pub type IrcLineStream = Framed<Either<TcpStream, TlsStream>, IrcLinesCodec>;
+pub type IrcConnection = Framed<Either<TcpStream, TlsStream>, IrcLinesCodec>;
 
 pub type TlsStream = tokio_rustls::client::TlsStream<TcpStream>;
 
@@ -29,7 +29,7 @@ pub enum ConnectionError {
     TlsConnect(#[source] std::io::Error),
 }
 
-pub async fn connect(server: &str, port: u16, tls: bool) -> Result<IrcLineStream, ConnectionError> {
+pub async fn connect(server: &str, port: u16, tls: bool) -> Result<IrcConnection, ConnectionError> {
     log::trace!("Connecting to {server:?} on port {port} ...");
     let conn = TcpStream::connect((server, port))
         .await

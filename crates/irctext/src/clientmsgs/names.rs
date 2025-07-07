@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::util::{join_with_commas, split_param};
-use crate::{Channel, FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Channel, FinalParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Names {
@@ -31,13 +31,9 @@ impl Names {
         self.channels
     }
 
-    fn channels_param(&self) -> MedialParam {
-        assert!(
-            !self.channels.is_empty(),
-            "Names.channels should always be nonempty"
-        );
+    fn channels_param(&self) -> FinalParam {
         let s = join_with_commas(&self.channels);
-        MedialParam::try_from(s).expect("comma-separated channels should be a valid MedialParam")
+        FinalParam::try_from(s).expect("comma-separated channels should be a valid MedialParam")
     }
 }
 
@@ -45,14 +41,12 @@ impl ClientMessageParts for Names {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Names,
-            ParameterList::builder()
-                .with_medial(self.channels_param())
-                .finish(),
+            ParameterList::builder().with_final(self.channels_param()),
         )
     }
 
     fn to_irc_line(&self) -> String {
-        format!("NAMES {}", self.channels_param())
+        format!("NAMES :{}", self.channels_param())
     }
 }
 
@@ -74,6 +68,7 @@ impl TryFrom<ParameterList> for Names {
     fn try_from(params: ParameterList) -> Result<Names, ClientMessageError> {
         let (p,): (FinalParam,) = params.try_into()?;
         let channels = split_param::<Channel>(p.as_str())?;
+        // TODO: Error if `channels` is empty?
         Ok(Names { channels })
     }
 }

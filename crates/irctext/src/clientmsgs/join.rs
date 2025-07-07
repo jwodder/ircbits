@@ -120,6 +120,10 @@ impl TryFrom<ParameterList> for Join {
     fn try_from(params: ParameterList) -> Result<Join, ClientMessageError> {
         let (p1, p2): (_, Option<FinalParam>) = params.try_into()?;
         let channels = split_param::<Channel>(p1.as_str())?;
+        assert!(
+            !channels.is_empty(),
+            "channels parsed from JOIN message should not be empty"
+        );
         let keys = match p2 {
             Some(p) => split_param::<Key>(p.as_str())?,
             None => Vec::new(),

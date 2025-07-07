@@ -81,6 +81,10 @@ impl TryFrom<ParameterList> for Notice {
     fn try_from(params: ParameterList) -> Result<Notice, ClientMessageError> {
         let (p1, text): (_, FinalParam) = params.try_into()?;
         let targets = split_param::<Target>(p1.as_str())?;
+        assert!(
+            !targets.is_empty(),
+            "targets parsed from NOTICE message should not be empty"
+        );
         Ok(Notice { targets, text })
     }
 }

@@ -119,6 +119,10 @@ impl TryFrom<ParameterList> for Kick {
         let (p1, p2, comment): (_, _, Option<FinalParam>) = params.try_into()?;
         let channel = Channel::try_from(p1.into_inner())?;
         let users = split_param::<Nickname>(p2.as_str())?;
+        assert!(
+            !users.is_empty(),
+            "users parsed from KICK message should not be empty"
+        );
         Ok(Kick {
             channel,
             users,

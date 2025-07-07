@@ -103,6 +103,10 @@ impl TryFrom<ParameterList> for Part {
     fn try_from(params: ParameterList) -> Result<Part, ClientMessageError> {
         let (p1, reason): (_, Option<FinalParam>) = params.try_into()?;
         let channels = split_param::<Channel>(p1.as_str())?;
+        assert!(
+            !channels.is_empty(),
+            "channels parsed from PART message should not be empty"
+        );
         Ok(Part { channels, reason })
     }
 }

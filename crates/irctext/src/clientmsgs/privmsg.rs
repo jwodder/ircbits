@@ -81,6 +81,10 @@ impl TryFrom<ParameterList> for PrivMsg {
     fn try_from(params: ParameterList) -> Result<PrivMsg, ClientMessageError> {
         let (p1, text): (_, FinalParam) = params.try_into()?;
         let targets = split_param::<Target>(p1.as_str())?;
+        assert!(
+            !targets.is_empty(),
+            "targets parsed from PRIVMSG message should not be empty"
+        );
         Ok(PrivMsg { targets, text })
     }
 }

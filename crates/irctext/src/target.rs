@@ -1,4 +1,4 @@
-use crate::{Channel, Nickname, ParseChannelError, ParseNicknameError};
+use crate::{Channel, Nickname, ParseChannelError, ParseNicknameError, TryFromStringError};
 use thiserror::Error;
 
 /// The target of a `PRIVMSG` or `NOTICE` message
@@ -22,6 +22,33 @@ impl std::str::FromStr for Target {
         } else {
             let nickname = s.parse::<Nickname>()?;
             Ok(Target::User(nickname))
+        }
+    }
+}
+
+impl TryFrom<String> for Target {
+    type Error = TryFromStringError<ParseTargetError>;
+
+    fn try_from(value: String) -> Result<Target, TryFromStringError<ParseTargetError>> {
+        if value == "*" {
+            Ok(Target::Star)
+        // TODO: Improve this!
+        } else if value.starts_with(['#', '&']) {
+            match Channel::try_from(value) {
+                Ok(channel) => Ok(Target::Channel(channel)),
+                Err(TryFromStringError { source, string }) => Err(TryFromStringError {
+                    source: ParseTargetError::Channel(source),
+                    string,
+                }),
+            }
+        } else {
+            match Nickname::try_from(value) {
+                Ok(nickname) => Ok(Target::User(nickname)),
+                Err(TryFromStringError { source, string }) => Err(TryFromStringError {
+                    source: ParseTargetError::Nickname(source),
+                    string,
+                }),
+            }
         }
     }
 }

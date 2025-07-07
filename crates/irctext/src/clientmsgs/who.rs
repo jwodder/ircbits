@@ -50,13 +50,9 @@ impl TryFrom<ParameterList> for Who {
 
     fn try_from(params: ParameterList) -> Result<Who, ClientMessageError> {
         let (p,): (FinalParam,) = params.try_into()?;
-        match p.as_str().parse::<MedialParam>() {
+        match MedialParam::try_from(p.into_inner()) {
             Ok(mask) => Ok(Who { mask }),
-            Err(source) => Err(ClientMessageError::ParseParam {
-                index: 0,
-                raw: p.into_inner(),
-                source: Box::new(source),
-            }),
+            Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
         }
     }
 }

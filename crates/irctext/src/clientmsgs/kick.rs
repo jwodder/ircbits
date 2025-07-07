@@ -117,29 +117,21 @@ impl TryFrom<ParameterList> for Kick {
 
     fn try_from(params: ParameterList) -> Result<Kick, ClientMessageError> {
         let (p1, p2, comment): (_, _, Option<FinalParam>) = params.try_into()?;
-        let channel = match p1.as_str().parse::<Channel>() {
+        let channel = match Channel::try_from(p1.into_inner()) {
             Ok(channel) => channel,
             Err(source) => {
-                return Err(ClientMessageError::ParseParam {
-                    index: 0,
-                    raw: p1.into_inner(),
-                    source: Box::new(source),
-                })
+                return Err(ClientMessageError::ParseParam(Box::new(source)));
             }
         };
         let users = match p2
             .as_str()
             .split(',')
-            .map(str::parse::<Nickname>)
+            .map(|s| Nickname::try_from(s.to_owned()))
             .collect::<Result<Vec<_>, _>>()
         {
             Ok(channels) => channels,
             Err(source) => {
-                return Err(ClientMessageError::ParseParam {
-                    index: 1,
-                    raw: p2.into_inner(),
-                    source: Box::new(source),
-                })
+                return Err(ClientMessageError::ParseParam(Box::new(source)));
             }
         };
         Ok(Kick {

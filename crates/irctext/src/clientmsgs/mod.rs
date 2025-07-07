@@ -210,10 +210,6 @@ pub enum ClientMessageError {
     #[error(transparent)]
     ParamQty(#[from] ParameterListSizeError),
 
-    #[error("failed to parse parameter #{}: {raw:?}", .index + 1)]
-    ParseParam {
-        index: usize,
-        raw: String,
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
+    #[error("failed to parse parameter")]
+    ParseParam(#[source] Box<dyn std::error::Error + Send + Sync>),
 }

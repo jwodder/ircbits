@@ -59,13 +59,9 @@ impl TryFrom<ParameterList> for User {
 
     fn try_from(params: ParameterList) -> Result<User, ClientMessageError> {
         let (username, _, _, realname) = params.try_into()?;
-        match username.as_str().parse::<Username>() {
+        match Username::try_from(username.into_inner()) {
             Ok(username) => Ok(User { username, realname }),
-            Err(source) => Err(ClientMessageError::ParseParam {
-                index: 0,
-                raw: username.into_inner(),
-                source: Box::new(source),
-            }),
+            Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
         }
     }
 }

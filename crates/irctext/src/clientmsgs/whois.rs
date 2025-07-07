@@ -69,13 +69,9 @@ impl TryFrom<ParameterList> for WhoIs {
         } else {
             (None, p1.into_inner(), 0)
         };
-        match rawnick.parse::<Nickname>() {
+        match Nickname::try_from(rawnick) {
             Ok(nick) => Ok(WhoIs { target, nick }),
-            Err(source) => Err(ClientMessageError::ParseParam {
-                index,
-                raw: rawnick,
-                source: Box::new(source),
-            }),
+            Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
         }
     }
 }

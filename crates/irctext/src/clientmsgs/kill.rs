@@ -53,13 +53,9 @@ impl TryFrom<ParameterList> for Kill {
 
     fn try_from(params: ParameterList) -> Result<Kill, ClientMessageError> {
         let (p1, comment): (_, FinalParam) = params.try_into()?;
-        match p1.as_str().parse::<Nickname>() {
+        match Nickname::try_from(p1.into_inner()) {
             Ok(nickname) => Ok(Kill { nickname, comment }),
-            Err(source) => Err(ClientMessageError::ParseParam {
-                index: 0,
-                raw: p1.into_inner(),
-                source: Box::new(source),
-            }),
+            Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
         }
     }
 }

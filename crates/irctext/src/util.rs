@@ -27,30 +27,22 @@ where
 pub(crate) fn split_channels(s: String) -> Result<Vec<Channel>, ClientMessageError> {
     match s
         .split(',')
-        .map(str::parse::<Channel>)
+        .map(|s| Channel::try_from(s.to_owned()))
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(channels) => Ok(channels),
-        Err(source) => Err(ClientMessageError::ParseParam {
-            index: 0,
-            raw: s,
-            source: Box::new(source),
-        }),
+        Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
     }
 }
 
 pub(crate) fn split_keys(s: String) -> Result<Vec<Key>, ClientMessageError> {
     match s
         .split(',')
-        .map(str::parse::<Key>)
+        .map(|s| Key::try_from(s.to_owned()))
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(keys) => Ok(keys),
-        Err(source) => Err(ClientMessageError::ParseParam {
-            index: 1,
-            raw: s,
-            source: Box::new(source),
-        }),
+        Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
     }
 }
 
@@ -58,15 +50,11 @@ pub(crate) fn split_targets(s: String) -> Result<Vec<Target>, ClientMessageError
     match s
         .as_str()
         .split(',')
-        .map(str::parse::<Target>)
+        .map(|s| Target::try_from(s.to_owned()))
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(targets) => Ok(targets),
-        Err(source) => Err(ClientMessageError::ParseParam {
-            index: 0,
-            raw: s,
-            source: Box::new(source),
-        }),
+        Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
     }
 }
 

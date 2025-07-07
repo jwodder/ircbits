@@ -169,7 +169,7 @@ impl TryFrom<ParameterList> for (MedialParam, Option<FinalParam>) {
                 let mut medials = params.medial.into_iter();
                 let p1 = medials
                     .next()
-                    .expect("First element should exist when len is 1");
+                    .expect("First element should exist when len is 2");
                 let p2 = medials.next().map(FinalParam::from);
                 Ok((p1, p2))
             }
@@ -184,6 +184,44 @@ impl TryFrom<ParameterList> for (MedialParam, Option<FinalParam>) {
             _ => Err(ParameterListSizeError::Range {
                 min_requested: 1,
                 max_requested: 2,
+                received: params.len(),
+            }),
+        }
+    }
+}
+
+impl TryFrom<ParameterList> for (MedialParam, MedialParam, Option<FinalParam>) {
+    type Error = ParameterListSizeError;
+
+    fn try_from(
+        params: ParameterList,
+    ) -> Result<(MedialParam, MedialParam, Option<FinalParam>), ParameterListSizeError> {
+        match (params.len(), params.finalp.is_some()) {
+            (3, false) => {
+                let mut medials = params.medial.into_iter();
+                let p1 = medials
+                    .next()
+                    .expect("First element should exist when len is 3");
+                let p2 = medials
+                    .next()
+                    .expect("Second element should exist when len is 3");
+                let p3 = medials.next().map(FinalParam::from);
+                Ok((p1, p2, p3))
+            }
+            (2, _) => {
+                let mut medials = params.medial.into_iter();
+                let p1 = medials
+                    .next()
+                    .expect("First element should exist when len is 2");
+                let p2 = medials
+                    .next()
+                    .expect("Second element should exist when len is 2");
+                let p3 = params.finalp;
+                Ok((p1, p2, p3))
+            }
+            _ => Err(ParameterListSizeError::Range {
+                min_requested: 2,
+                max_requested: 3,
                 received: params.len(),
             }),
         }

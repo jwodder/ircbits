@@ -1,4 +1,4 @@
-use super::{FinalParam, FinalParamError, MedialParam, MedialParamError, ParamRef};
+use super::{FinalParam, FinalParamError, MedialParam, MedialParamError, ParamRef, Parameter};
 use crate::util::split_word;
 use std::cmp::Ordering;
 use thiserror::Error;
@@ -49,6 +49,15 @@ impl<const N: usize> PartialEq<[&str; N]> for ParameterList {
 impl<const N: usize> PartialEq<[&str; N]> for &ParameterList {
     fn eq(&self, other: &[&str; N]) -> bool {
         *self == other
+    }
+}
+
+impl IntoIterator for ParameterList {
+    type IntoIter = ParameterListIntoIter;
+    type Item = Parameter;
+
+    fn into_iter(self) -> ParameterListIntoIter {
+        ParameterListIntoIter::new(self)
     }
 }
 
@@ -311,3 +320,40 @@ impl ParameterListBuilder {
         self.0
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct ParameterListIntoIter(std::vec::IntoIter<Parameter>);
+
+impl ParameterListIntoIter {
+    fn new(params: ParameterList) -> Self {
+        let mut paramvec = params
+            .medial
+            .into_iter()
+            .map(Parameter::Medial)
+            .collect::<Vec<_>>();
+        paramvec.extend(params.finalp.map(Parameter::Final));
+        ParameterListIntoIter(paramvec.into_iter())
+    }
+}
+
+impl Iterator for ParameterListIntoIter {
+    type Item = Parameter;
+
+    fn next(&mut self) -> Option<Parameter> {
+        self.0.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
+}
+
+impl DoubleEndedIterator for ParameterListIntoIter {
+    fn next_back(&mut self) -> Option<Parameter> {
+        self.0.next_back()
+    }
+}
+
+impl ExactSizeIterator for ParameterListIntoIter {}
+
+impl std::iter::FusedIterator for ParameterListIntoIter {}

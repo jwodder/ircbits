@@ -79,7 +79,7 @@ pub use self::wallops::*;
 pub use self::who::*;
 pub use self::whois::*;
 pub use self::whowas::*;
-use crate::{Message, ParameterList, ParameterListSizeError, RawMessage, ToIrcLine, Verb};
+use crate::{Message, ParameterList, ParameterListSizeError, Payload, RawMessage, ToIrcLine, Verb};
 use enum_dispatch::enum_dispatch;
 use thiserror::Error;
 
@@ -233,13 +233,16 @@ impl ToIrcLine for ClientMessage {
 
 impl From<ClientMessage> for Message {
     fn from(value: ClientMessage) -> Message {
-        todo!()
+        Message {
+            source: None,
+            payload: Payload::ClientMessage(value),
+        }
     }
 }
 
 impl From<ClientMessage> for RawMessage {
     fn from(value: ClientMessage) -> RawMessage {
-        todo!()
+        RawMessage::from(Message::from(value))
     }
 }
 

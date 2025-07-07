@@ -20,6 +20,12 @@ impl TryFrom<RawMessage> for Message {
     }
 }
 
+impl From<Message> for RawMessage {
+    fn from(value: Message) -> RawMessage {
+        todo!()
+    }
+}
+
 impl ToIrcLine for Message {
     fn to_irc_line(&self) -> String {
         if let Some(ref src) = self.source {

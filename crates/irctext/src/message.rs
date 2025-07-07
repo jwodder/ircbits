@@ -1,6 +1,6 @@
 use crate::{
     ClientMessage, ClientMessageError, Command, ParameterList, RawMessage, Reply, ReplyError,
-    Source, ToIrcLine,
+    Source,
 };
 use thiserror::Error;
 
@@ -27,16 +27,6 @@ impl From<Message> for RawMessage {
     }
 }
 
-impl ToIrcLine for Message {
-    fn to_irc_line(&self) -> String {
-        if let Some(ref src) = self.source {
-            format!(":{src} {}", self.payload.to_irc_line())
-        } else {
-            self.payload.to_irc_line()
-        }
-    }
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Payload {
     ClientMessage(ClientMessage),
@@ -50,15 +40,6 @@ impl Payload {
                 v, params,
             )?)),
             Command::Reply(code) => Ok(Payload::Reply(Reply::from_parts(code, params)?)),
-        }
-    }
-}
-
-impl ToIrcLine for Payload {
-    fn to_irc_line(&self) -> String {
-        match self {
-            Payload::ClientMessage(msg) => msg.to_irc_line(),
-            Payload::Reply(r) => r.to_irc_line(),
         }
     }
 }

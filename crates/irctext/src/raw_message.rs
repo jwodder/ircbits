@@ -1,7 +1,5 @@
 use crate::util::split_word;
-use crate::{
-    Command, CommandError, ParameterList, ParameterListError, Source, SourceError, ToIrcLine,
-};
+use crate::{Command, CommandError, ParameterList, ParameterListError, Source, SourceError};
 use std::fmt;
 use thiserror::Error;
 
@@ -10,12 +8,6 @@ pub struct RawMessage {
     pub source: Option<Source>,
     pub command: Command,
     pub parameters: ParameterList,
-}
-
-impl ToIrcLine for RawMessage {
-    fn to_irc_line(&self) -> String {
-        self.to_string()
-    }
 }
 
 impl fmt::Display for RawMessage {

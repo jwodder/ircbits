@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::util::{join_with_commas, split_targets};
-use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Target, ToIrcLine, Verb};
+use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Target, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PrivMsg {
@@ -57,9 +57,7 @@ impl ClientMessageParts for PrivMsg {
                 .with_final(self.text),
         )
     }
-}
 
-impl ToIrcLine for PrivMsg {
     fn to_irc_line(&self) -> String {
         format!("PRIVMSG {} :{}", self.targets_param(), self.text)
     }

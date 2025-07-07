@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Admin {
@@ -34,9 +34,7 @@ impl ClientMessageParts for Admin {
             ParameterList::builder().maybe_with_final(self.target),
         )
     }
-}
 
-impl ToIrcLine for Admin {
     fn to_irc_line(&self) -> String {
         format!("ADMIN{}", DisplayMaybeFinal(self.target.as_ref()))
     }

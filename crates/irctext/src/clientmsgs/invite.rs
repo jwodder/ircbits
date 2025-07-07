@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Channel, FinalParam, Message, Nickname, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{Channel, FinalParam, Message, Nickname, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Invite {
@@ -29,9 +29,7 @@ impl ClientMessageParts for Invite {
             .finish();
         (Verb::Invite, params)
     }
-}
 
-impl ToIrcLine for Invite {
     fn to_irc_line(&self) -> String {
         format!("INVITE {} {}", self.nickname, self.channel)
     }

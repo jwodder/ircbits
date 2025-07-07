@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Wallops {
@@ -27,9 +27,7 @@ impl ClientMessageParts for Wallops {
             ParameterList::builder().with_final(self.text),
         )
     }
-}
 
-impl ToIrcLine for Wallops {
     fn to_irc_line(&self) -> String {
         format!("WALLOPS :{}", self.text)
     }

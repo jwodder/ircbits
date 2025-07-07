@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Pass {
@@ -27,9 +27,7 @@ impl ClientMessageParts for Pass {
             ParameterList::builder().with_final(self.password),
         )
     }
-}
 
-impl ToIrcLine for Pass {
     fn to_irc_line(&self) -> String {
         format!("PASS :{}", self.password)
     }

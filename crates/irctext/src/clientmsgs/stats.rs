@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Stats {
@@ -41,9 +41,7 @@ impl ClientMessageParts for Stats {
                 .maybe_with_final(self.server),
         )
     }
-}
 
-impl ToIrcLine for Stats {
     fn to_irc_line(&self) -> String {
         format!(
             "STATS {}{}",

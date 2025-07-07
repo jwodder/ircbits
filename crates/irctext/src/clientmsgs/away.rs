@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Away {
@@ -32,9 +32,7 @@ impl ClientMessageParts for Away {
             ParameterList::builder().maybe_with_final(self.text),
         )
     }
-}
 
-impl ToIrcLine for Away {
     fn to_irc_line(&self) -> String {
         format!("AWAY{}", DisplayMaybeFinal(self.text.as_ref()))
     }

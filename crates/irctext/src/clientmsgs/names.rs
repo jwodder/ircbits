@@ -1,8 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::util::{join_with_commas, split_channels};
-use crate::{
-    Channel, FinalParam, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Verb,
-};
+use crate::{Channel, FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Names {
@@ -52,9 +50,7 @@ impl ClientMessageParts for Names {
                 .finish(),
         )
     }
-}
 
-impl ToIrcLine for Names {
     fn to_irc_line(&self) -> String {
         format!("NAMES {}", self.channels_param())
     }

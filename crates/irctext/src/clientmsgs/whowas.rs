@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, Nickname, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, Nickname, ParameterList, RawMessage, Verb};
 use std::num::NonZeroUsize;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -42,9 +42,7 @@ impl ClientMessageParts for WhoWas {
             }));
         (Verb::WhoWas, params)
     }
-}
 
-impl ToIrcLine for WhoWas {
     fn to_irc_line(&self) -> String {
         format!("WHOWAS {}{}", self.nick, DisplayMaybeFinal(self.count))
     }

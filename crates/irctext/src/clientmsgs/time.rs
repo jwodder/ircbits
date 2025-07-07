@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Time {
@@ -34,9 +34,7 @@ impl ClientMessageParts for Time {
             ParameterList::builder().maybe_with_final(self.server),
         )
     }
-}
 
-impl ToIrcLine for Time {
     fn to_irc_line(&self) -> String {
         format!("TIME{}", DisplayMaybeFinal(self.server.as_ref()))
     }

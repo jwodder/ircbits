@@ -1,7 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{
-    Message, Nickname, ParameterList, ParameterListSizeError, RawMessage, ToIrcLine, Verb,
-};
+use crate::{Message, Nickname, ParameterList, ParameterListSizeError, RawMessage, Verb};
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -36,9 +34,7 @@ impl ClientMessageParts for UserHost {
         }
         (Verb::UserHost, builder.finish())
     }
-}
 
-impl ToIrcLine for UserHost {
     fn to_irc_line(&self) -> String {
         let mut s = String::from("USERHOST");
         for nick in self.nicknames() {

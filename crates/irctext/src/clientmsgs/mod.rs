@@ -79,13 +79,16 @@ pub use self::wallops::*;
 pub use self::who::*;
 pub use self::whois::*;
 pub use self::whowas::*;
-use crate::{Message, ParameterList, ParameterListSizeError, Payload, RawMessage, ToIrcLine, Verb};
+use crate::{Message, ParameterList, ParameterListSizeError, Payload, RawMessage, Verb};
 use enum_dispatch::enum_dispatch;
 use thiserror::Error;
 
 #[enum_dispatch]
 pub trait ClientMessageParts {
     fn into_parts(self) -> (Verb, ParameterList);
+
+    // Does not include the terminating CR LF
+    fn to_irc_line(&self) -> String;
 }
 
 #[enum_dispatch(ClientMessageParts)] // This also gives us From and TryInto
@@ -180,53 +183,6 @@ impl ClientMessage {
             Verb::WhoIs => WhoIs::try_from(params).map(ClientMessage::WhoIs),
             Verb::WhoWas => WhoWas::try_from(params).map(ClientMessage::WhoWas),
             Verb::Unknown(v) => Err(ClientMessageError::Unknown(v)),
-        }
-    }
-}
-
-impl ToIrcLine for ClientMessage {
-    fn to_irc_line(&self) -> String {
-        match self {
-            ClientMessage::Admin(msg) => msg.to_irc_line(),
-            ClientMessage::Authenticate(msg) => msg.to_irc_line(),
-            ClientMessage::Away(msg) => msg.to_irc_line(),
-            ClientMessage::Cap(msg) => msg.to_irc_line(),
-            ClientMessage::Connect(msg) => msg.to_irc_line(),
-            ClientMessage::Error(msg) => msg.to_irc_line(),
-            ClientMessage::Help(msg) => msg.to_irc_line(),
-            ClientMessage::Info(msg) => msg.to_irc_line(),
-            ClientMessage::Invite(msg) => msg.to_irc_line(),
-            ClientMessage::Join(msg) => msg.to_irc_line(),
-            ClientMessage::Kick(msg) => msg.to_irc_line(),
-            ClientMessage::Kill(msg) => msg.to_irc_line(),
-            ClientMessage::Links(msg) => msg.to_irc_line(),
-            ClientMessage::List(msg) => msg.to_irc_line(),
-            ClientMessage::Lusers(msg) => msg.to_irc_line(),
-            ClientMessage::Mode(msg) => msg.to_irc_line(),
-            ClientMessage::Motd(msg) => msg.to_irc_line(),
-            ClientMessage::Names(msg) => msg.to_irc_line(),
-            ClientMessage::Nick(msg) => msg.to_irc_line(),
-            ClientMessage::Notice(msg) => msg.to_irc_line(),
-            ClientMessage::Oper(msg) => msg.to_irc_line(),
-            ClientMessage::Part(msg) => msg.to_irc_line(),
-            ClientMessage::Pass(msg) => msg.to_irc_line(),
-            ClientMessage::Ping(msg) => msg.to_irc_line(),
-            ClientMessage::Pong(msg) => msg.to_irc_line(),
-            ClientMessage::PrivMsg(msg) => msg.to_irc_line(),
-            ClientMessage::Quit(msg) => msg.to_irc_line(),
-            ClientMessage::Rehash(msg) => msg.to_irc_line(),
-            ClientMessage::Restart(msg) => msg.to_irc_line(),
-            ClientMessage::Squit(msg) => msg.to_irc_line(),
-            ClientMessage::Stats(msg) => msg.to_irc_line(),
-            ClientMessage::Time(msg) => msg.to_irc_line(),
-            ClientMessage::Topic(msg) => msg.to_irc_line(),
-            ClientMessage::User(msg) => msg.to_irc_line(),
-            ClientMessage::UserHost(msg) => msg.to_irc_line(),
-            ClientMessage::Version(msg) => msg.to_irc_line(),
-            ClientMessage::Wallops(msg) => msg.to_irc_line(),
-            ClientMessage::Who(msg) => msg.to_irc_line(),
-            ClientMessage::WhoIs(msg) => msg.to_irc_line(),
-            ClientMessage::WhoWas(msg) => msg.to_irc_line(),
         }
     }
 }

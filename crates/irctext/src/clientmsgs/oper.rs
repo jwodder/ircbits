@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Oper {
@@ -30,9 +30,7 @@ impl ClientMessageParts for Oper {
                 .with_final(self.password),
         )
     }
-}
 
-impl ToIrcLine for Oper {
     fn to_irc_line(&self) -> String {
         format!("OPER {} :{}", self.name, self.password)
     }

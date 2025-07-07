@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Pong {
@@ -24,9 +24,7 @@ impl ClientMessageParts for Pong {
     fn into_parts(self) -> (Verb, ParameterList) {
         (Verb::Pong, ParameterList::builder().with_final(self.token))
     }
-}
 
-impl ToIrcLine for Pong {
     fn to_irc_line(&self) -> String {
         format!("PONG :{}", self.token)
     }

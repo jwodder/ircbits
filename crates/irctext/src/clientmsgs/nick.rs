@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, Message, Nickname, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, Nickname, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Nick {
@@ -27,9 +27,7 @@ impl ClientMessageParts for Nick {
             ParameterList::builder().with_medial(self.nickname).finish(),
         )
     }
-}
 
-impl ToIrcLine for Nick {
     fn to_irc_line(&self) -> String {
         format!("NICK {}", self.nickname)
     }

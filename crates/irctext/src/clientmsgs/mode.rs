@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Mode;
@@ -8,9 +8,7 @@ impl ClientMessageParts for Mode {
     fn into_parts(self) -> (Verb, ParameterList) {
         todo!()
     }
-}
 
-impl ToIrcLine for Mode {
     fn to_irc_line(&self) -> String {
         todo!()
     }

@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Lusers;
@@ -8,9 +8,7 @@ impl ClientMessageParts for Lusers {
     fn into_parts(self) -> (Verb, ParameterList) {
         (Verb::Lusers, ParameterList::default())
     }
-}
 
-impl ToIrcLine for Lusers {
     fn to_irc_line(&self) -> String {
         String::from("LUSERS")
     }

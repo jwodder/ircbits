@@ -1,7 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{
-    FinalParam, MedialParam, Message, Nickname, ParameterList, RawMessage, ToIrcLine, Verb,
-};
+use crate::{FinalParam, MedialParam, Message, Nickname, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WhoIs {
@@ -39,9 +37,7 @@ impl ClientMessageParts for WhoIs {
         let params = builder.with_medial(self.nick).finish();
         (Verb::WhoIs, params)
     }
-}
 
-impl ToIrcLine for WhoIs {
     fn to_irc_line(&self) -> String {
         if let Some(ref target) = self.target {
             format!("WHOIS {target} {}", self.nick)

@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Links;
@@ -8,9 +8,7 @@ impl ClientMessageParts for Links {
     fn into_parts(self) -> (Verb, ParameterList) {
         (Verb::Links, ParameterList::default())
     }
-}
 
-impl ToIrcLine for Links {
     fn to_irc_line(&self) -> String {
         String::from("LINKS")
     }

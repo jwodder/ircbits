@@ -1,8 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::util::{join_with_commas, split_channels, DisplayMaybeFinal};
-use crate::{
-    Channel, FinalParam, MedialParam, Message, ParameterList, RawMessage, ToIrcLine, Verb,
-};
+use crate::{Channel, FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Part {
@@ -77,9 +75,7 @@ impl ClientMessageParts for Part {
             .maybe_with_final(self.reason);
         (Verb::Part, params)
     }
-}
 
-impl ToIrcLine for Part {
     fn to_irc_line(&self) -> String {
         format!(
             "PART {}{}",

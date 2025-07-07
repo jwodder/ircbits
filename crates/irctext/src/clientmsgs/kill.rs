@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, Message, Nickname, ParameterList, RawMessage, ToIrcLine, Verb};
+use crate::{FinalParam, Message, Nickname, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Kill {
@@ -30,9 +30,7 @@ impl ClientMessageParts for Kill {
                 .with_final(self.comment),
         )
     }
-}
 
-impl ToIrcLine for Kill {
     fn to_irc_line(&self) -> String {
         format!("KILL {} :{}", self.nickname, self.comment)
     }

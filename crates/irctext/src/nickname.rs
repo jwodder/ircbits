@@ -29,26 +29,12 @@
 // contain NUL, CR, or LF.
 
 use crate::{FinalParam, MedialParam};
-use nutype::nutype;
 use thiserror::Error;
 
-#[nutype(
-    validate(with = validate, error = ParseNicknameError),
-    derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
-)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Nickname(String);
 
-impl PartialEq<str> for Nickname {
-    fn eq(&self, other: &str) -> bool {
-        self.as_ref() == other
-    }
-}
-
-impl<'a> PartialEq<&'a str> for Nickname {
-    fn eq(&self, other: &&'a str) -> bool {
-        self.as_ref() == *other
-    }
-}
+validstr!(Nickname, ParseNicknameError, validate);
 
 fn validate(s: &str) -> Result<(), ParseNicknameError> {
     if s.is_empty() {

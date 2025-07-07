@@ -1,26 +1,12 @@
 // <https://modern.ircdocs.horse> does not specify a format for channel
 // keys, leaving that large to individual server implementations, though we can
 // deduce that they cannot contain commas.
-use nutype::nutype;
 use thiserror::Error;
 
-#[nutype(
-    validate(with = validate, error = ParseKeyError),
-    derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
-)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Key(String);
 
-impl PartialEq<str> for Key {
-    fn eq(&self, other: &str) -> bool {
-        self.as_ref() == other
-    }
-}
-
-impl<'a> PartialEq<&'a str> for Key {
-    fn eq(&self, other: &&'a str) -> bool {
-        self.as_ref() == *other
-    }
-}
+validstr!(Key, ParseKeyError, validate);
 
 fn validate(s: &str) -> Result<(), ParseKeyError> {
     if s.contains(['\0', '\r', '\n', ',']) {

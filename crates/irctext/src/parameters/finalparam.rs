@@ -1,24 +1,10 @@
 use super::MedialParam;
-use nutype::nutype;
 use thiserror::Error;
 
-#[nutype(
-    validate(with = validate, error = ParseFinalParamError),
-    derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
-)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct FinalParam(String);
 
-impl PartialEq<str> for FinalParam {
-    fn eq(&self, other: &str) -> bool {
-        self.as_ref() == other
-    }
-}
-
-impl<'a> PartialEq<&'a str> for FinalParam {
-    fn eq(&self, other: &&'a str) -> bool {
-        self.as_ref() == *other
-    }
-}
+validstr!(FinalParam, ParseFinalParamError, validate);
 
 impl From<MedialParam> for FinalParam {
     fn from(value: MedialParam) -> FinalParam {

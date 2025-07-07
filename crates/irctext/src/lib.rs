@@ -1,4 +1,8 @@
 #![expect(clippy::todo)]
+
+#[macro_use]
+mod validstr;
+
 mod channel;
 pub mod clientmsgs;
 mod command;
@@ -25,4 +29,5 @@ pub use crate::reply::*;
 pub use crate::source::*;
 pub use crate::target::*;
 pub use crate::username::*;
+pub use crate::validstr::TryFromStringError;
 pub use crate::verb::*;

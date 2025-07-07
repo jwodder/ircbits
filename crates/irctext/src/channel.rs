@@ -13,26 +13,12 @@
 // does require that channel names not start with a colon (':', 0x3A), which is
 // necessary in order to be able to pass parameters after a channel parameter.
 use crate::{FinalParam, MedialParam};
-use nutype::nutype;
 use thiserror::Error;
 
-#[nutype(
-    validate(with = validate, error = ParseChannelError),
-    derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
-)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Channel(String);
 
-impl PartialEq<str> for Channel {
-    fn eq(&self, other: &str) -> bool {
-        self.as_ref() == other
-    }
-}
-
-impl<'a> PartialEq<&'a str> for Channel {
-    fn eq(&self, other: &&'a str) -> bool {
-        self.as_ref() == *other
-    }
-}
+validstr!(Channel, ParseChannelError, validate);
 
 fn validate(s: &str) -> Result<(), ParseChannelError> {
     if s.is_empty() {

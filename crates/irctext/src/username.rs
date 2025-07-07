@@ -1,26 +1,12 @@
 // See <https://github.com/ircdocs/modern-irc/issues/226> for notes on username
 // format.
 use crate::parameters::{FinalParam, MedialParam};
-use nutype::nutype;
 use thiserror::Error;
 
-#[nutype(
-    validate(with = validate, error = ParseUsernameError),
-    derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
-)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Username(String);
 
-impl PartialEq<str> for Username {
-    fn eq(&self, other: &str) -> bool {
-        self.as_ref() == other
-    }
-}
-
-impl<'a> PartialEq<&'a str> for Username {
-    fn eq(&self, other: &&'a str) -> bool {
-        self.as_ref() == *other
-    }
-}
+validstr!(Username, ParseUsernameError, validate);
 
 fn validate(s: &str) -> Result<(), ParseUsernameError> {
     if s.is_empty() {

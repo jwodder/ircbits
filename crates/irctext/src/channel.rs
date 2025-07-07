@@ -6,12 +6,9 @@
 // > 0x07)`, or a comma `(',', 0x2C)` (which is used as a list item separator
 // > by the protocol).
 //
-// Note that this implementation does not enforce the requirement on the first
-// character, as the set of valid channel type prefixes varies from server to
-// server, and we have chosen to implement the `JOIN 0` command by specifying a
-// prefixless channel of "0" for the "JOIN" verb.  However, this implementation
-// does require that channel names not start with a colon (':', 0x3A), which is
-// necessary in order to be able to pass parameters after a channel parameter.
+// Note that the set of valid channel type prefixes varies from server to
+// server, but for now, to keep things simple, this library treats '#' and '&'
+// — and only those characters — as channel type prefixes.
 use crate::{FinalParam, MedialParam};
 use thiserror::Error;
 
@@ -21,10 +18,8 @@ pub struct Channel(String);
 validstr!(Channel, ParseChannelError, validate);
 
 fn validate(s: &str) -> Result<(), ParseChannelError> {
-    if s.is_empty() {
-        Err(ParseChannelError::Empty)
-    } else if s.starts_with(':') {
-        Err(ParseChannelError::StartsWithColon)
+    if !channel_prefixed(s) {
+        Err(ParseChannelError::BadStart)
     } else if s.contains(['\0', '\r', '\n', ' ', '\x07', ',']) {
         Err(ParseChannelError::BadCharacter)
     } else {
@@ -46,10 +41,14 @@ impl From<Channel> for FinalParam {
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum ParseChannelError {
-    #[error("channels cannot be empty")]
-    Empty,
-    #[error("channels cannot start with a colon")]
-    StartsWithColon,
+    #[error("channels must start with '#' or '&'")]
+    BadStart,
     #[error("channels cannot contain NUL, CR, LF, SPACE, BELL, or comma")]
     BadCharacter,
+}
+
+/// Returns `true` if `s` starts with one of the channel type prefixes
+/// recognized by this library
+pub(crate) fn channel_prefixed(s: &str) -> bool {
+    s.starts_with(['#', '&'])
 }

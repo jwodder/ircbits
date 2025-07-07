@@ -1,3 +1,4 @@
+use crate::channel::channel_prefixed;
 use crate::{Channel, Nickname, ParseChannelError, ParseNicknameError, TryFromStringError};
 use thiserror::Error;
 
@@ -15,8 +16,7 @@ impl std::str::FromStr for Target {
     fn from_str(s: &str) -> Result<Target, ParseTargetError> {
         if s == "*" {
             Ok(Target::Star)
-        // TODO: Improve this!
-        } else if s.starts_with(['#', '&']) {
+        } else if channel_prefixed(s) {
             let channel = s.parse::<Channel>()?;
             Ok(Target::Channel(channel))
         } else {
@@ -32,8 +32,7 @@ impl TryFrom<String> for Target {
     fn try_from(value: String) -> Result<Target, TryFromStringError<ParseTargetError>> {
         if value == "*" {
             Ok(Target::Star)
-        // TODO: Improve this!
-        } else if value.starts_with(['#', '&']) {
+        } else if channel_prefixed(&value) {
             match Channel::try_from(value) {
                 Ok(channel) => Ok(Target::Channel(channel)),
                 Err(TryFromStringError { inner, string }) => Err(TryFromStringError {

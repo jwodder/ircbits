@@ -1,26 +1,35 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::util::{join_with_commas, split_param, DisplayMaybeFinal};
-use crate::{Channel, FinalParam, Key, MedialParam, Message, ParameterList, RawMessage, Verb};
+use crate::{
+    Channel, FinalParam, Key, MedialParam, Message, ParameterList, ParameterListSizeError,
+    RawMessage, Verb,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Join {
-    channels: Vec<Channel>,
-    keys: Vec<Key>,
+pub struct Join(InnerJoin);
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum InnerJoin {
+    Channels {
+        channels: Vec<Channel>,
+        keys: Vec<Key>,
+    },
+    Zero,
 }
 
 impl Join {
     pub fn new_channel(channel: Channel) -> Join {
-        Join {
+        Join(InnerJoin::Channels {
             channels: vec![channel],
             keys: Vec::new(),
-        }
+        })
     }
 
     pub fn new_channel_with_key(channel: Channel, key: Key) -> Join {
-        Join {
+        Join(InnerJoin::Channels {
             channels: vec![channel],
             keys: vec![key],
-        }
+        })
     }
 
     pub fn new_channels<I: IntoIterator<Item = Channel>>(channels: I) -> Option<Join> {
@@ -28,10 +37,10 @@ impl Join {
         if channels.is_empty() {
             None
         } else {
-            Some(Join {
+            Some(Join(InnerJoin::Channels {
                 channels,
                 keys: Vec::new(),
-            })
+            }))
         }
     }
 
@@ -45,39 +54,54 @@ impl Join {
         if channels.is_empty() {
             None
         } else {
-            Some(Join { channels, keys })
+            Some(Join(InnerJoin::Channels { channels, keys }))
         }
     }
 
     pub fn new_zero() -> Join {
-        let Ok(zero) = "0".parse::<Channel>() else {
-            unreachable!(r#""0" should be a valid Channel"#);
-        };
-        Join::new_channel(zero)
+        Join(InnerJoin::Zero)
+    }
+
+    pub fn is_zero(&self) -> bool {
+        matches!(self.0, InnerJoin::Zero)
     }
 
     pub fn channels(&self) -> &[Channel] {
-        &self.channels
+        match &self.0 {
+            InnerJoin::Channels { channels, .. } => channels,
+            InnerJoin::Zero => &[],
+        }
     }
 
     pub fn keys(&self) -> &[Key] {
-        &self.keys
+        match &self.0 {
+            InnerJoin::Channels { keys, .. } => keys,
+            InnerJoin::Zero => &[],
+        }
     }
 
     fn channels_param(&self) -> MedialParam {
-        assert!(
-            !self.channels.is_empty(),
-            "Join.channels should always be nonempty"
-        );
-        let s = join_with_commas(&self.channels);
-        MedialParam::try_from(s).expect("comma-separated channels should be a valid MedialParam")
+        if self.is_zero() {
+            "0".parse::<MedialParam>()
+                .expect(r#""0" should be a valid MedialParam"#)
+        } else {
+            let channels = self.channels();
+            assert!(
+                !channels.is_empty(),
+                "Join.channels should always be nonempty"
+            );
+            let s = join_with_commas(channels);
+            MedialParam::try_from(s)
+                .expect("comma-separated channels should be a valid MedialParam")
+        }
     }
 
     fn keys_param(&self) -> Option<FinalParam> {
-        if self.keys.is_empty() {
+        let keys = self.keys();
+        if keys.is_empty() {
             None
         } else {
-            let s = join_with_commas(&self.keys);
+            let s = join_with_commas(keys);
             Some(
                 FinalParam::try_from(s).expect("comma-separated keys should be a valid FinalParam"),
             )
@@ -119,15 +143,27 @@ impl TryFrom<ParameterList> for Join {
 
     fn try_from(params: ParameterList) -> Result<Join, ClientMessageError> {
         let (p1, p2): (_, Option<FinalParam>) = params.try_into()?;
-        let channels = split_param::<Channel>(p1.as_str())?;
-        assert!(
-            !channels.is_empty(),
-            "channels parsed from JOIN message should not be empty"
-        );
-        let keys = match p2 {
-            Some(p) => split_param::<Key>(p.as_str())?,
-            None => Vec::new(),
-        };
-        Ok(Join { channels, keys })
+        if p1 == "0" {
+            if p2.is_some() {
+                return Err(ClientMessageError::ParamQty(
+                    ParameterListSizeError::Exact {
+                        requested: 1,
+                        received: 2,
+                    },
+                ));
+            }
+            Ok(Join(InnerJoin::Zero))
+        } else {
+            let channels = split_param::<Channel>(p1.as_str())?;
+            assert!(
+                !channels.is_empty(),
+                "channels parsed from JOIN message should not be empty"
+            );
+            let keys = match p2 {
+                Some(p) => split_param::<Key>(p.as_str())?,
+                None => Vec::new(),
+            };
+            Ok(Join(InnerJoin::Channels { channels, keys }))
+        }
     }
 }

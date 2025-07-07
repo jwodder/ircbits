@@ -1,3 +1,4 @@
+use crate::channel::channel_prefixed;
 use crate::{
     Channel, FinalParam, MedialParam, Nickname, ParseChannelError, ParseNicknameError,
     TryFromStringError,
@@ -25,8 +26,7 @@ impl std::str::FromStr for ModeTarget {
     type Err = ParseModeTargetError;
 
     fn from_str(s: &str) -> Result<ModeTarget, ParseModeTargetError> {
-        // TODO: Improve this!
-        if s.starts_with(['#', '&']) {
+        if channel_prefixed(s) {
             let channel = s.parse::<Channel>()?;
             Ok(ModeTarget::Channel(channel))
         } else {
@@ -49,8 +49,7 @@ impl TryFrom<String> for ModeTarget {
     type Error = TryFromStringError<ParseModeTargetError>;
 
     fn try_from(value: String) -> Result<ModeTarget, TryFromStringError<ParseModeTargetError>> {
-        // TODO: Improve this!
-        if value.starts_with(['#', '&']) {
+        if channel_prefixed(&value) {
             match Channel::try_from(value) {
                 Ok(channel) => Ok(ModeTarget::Channel(channel)),
                 Err(TryFromStringError { inner, string }) => Err(TryFromStringError {

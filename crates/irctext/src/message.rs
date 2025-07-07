@@ -21,6 +21,7 @@ impl TryFrom<RawMessage> for Message {
 }
 
 impl From<Message> for RawMessage {
+    #[expect(unused_variables)]
     fn from(value: Message) -> RawMessage {
         todo!()
     }

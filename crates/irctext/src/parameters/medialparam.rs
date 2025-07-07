@@ -2,7 +2,7 @@ use nutype::nutype;
 use thiserror::Error;
 
 #[nutype(
-    validate(with = validate, error = MedialParamError),
+    validate(with = validate, error = ParseMedialParamError),
     derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
 )]
 pub struct MedialParam(String);
@@ -19,20 +19,20 @@ impl<'a> PartialEq<&'a str> for MedialParam {
     }
 }
 
-fn validate(s: &str) -> Result<(), MedialParamError> {
+fn validate(s: &str) -> Result<(), ParseMedialParamError> {
     if s.is_empty() {
-        Err(MedialParamError::Empty)
+        Err(ParseMedialParamError::Empty)
     } else if s.starts_with(':') {
-        Err(MedialParamError::StartsWithColon)
+        Err(ParseMedialParamError::StartsWithColon)
     } else if s.contains(['\0', '\r', '\n', ' ']) {
-        Err(MedialParamError::BadCharacter)
+        Err(ParseMedialParamError::BadCharacter)
     } else {
         Ok(())
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum MedialParamError {
+pub enum ParseMedialParamError {
     #[error("medial parameters cannot be empty")]
     Empty,
     #[error("medial parameters cannot start with a colon")]

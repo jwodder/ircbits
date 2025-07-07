@@ -5,7 +5,7 @@ use nutype::nutype;
 use thiserror::Error;
 
 #[nutype(
-    validate(with = validate, error = KeyError),
+    validate(with = validate, error = ParseKeyError),
     derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
 )]
 pub struct Key(String);
@@ -22,9 +22,9 @@ impl<'a> PartialEq<&'a str> for Key {
     }
 }
 
-fn validate(s: &str) -> Result<(), KeyError> {
+fn validate(s: &str) -> Result<(), ParseKeyError> {
     if s.contains(['\0', '\r', '\n', ',']) {
-        Err(KeyError)
+        Err(ParseKeyError)
     } else {
         Ok(())
     }
@@ -32,4 +32,4 @@ fn validate(s: &str) -> Result<(), KeyError> {
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 #[error("channel keys cannot contain NUL, CR, LF, or comma")]
-pub struct KeyError;
+pub struct ParseKeyError;

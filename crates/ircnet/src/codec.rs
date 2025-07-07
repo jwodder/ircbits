@@ -42,7 +42,7 @@
 
 use crate::util::decode_utf8_latin1;
 use bytes::{Buf, BufMut, BytesMut};
-use irctext::{ClientMessageParts, Message, MessageError, RawMessage, RawMessageError};
+use irctext::{ClientMessageParts, Message, MessageError, ParseRawMessageError, RawMessage};
 use std::{cmp, io};
 use thiserror::Error;
 use tokio_util::codec::{Decoder, Encoder};
@@ -226,7 +226,7 @@ pub enum IrcCodecError {
     #[error("failed to parse incoming message {line:?}")]
     Parse {
         line: String,
-        source: RawMessageError,
+        source: ParseRawMessageError,
     },
 
     #[error("failed to convert incoming message {line:?} to a known type")]

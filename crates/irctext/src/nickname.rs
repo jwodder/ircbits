@@ -33,7 +33,7 @@ use nutype::nutype;
 use thiserror::Error;
 
 #[nutype(
-    validate(with = validate, error = NicknameError),
+    validate(with = validate, error = ParseNicknameError),
     derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
 )]
 pub struct Nickname(String);
@@ -50,13 +50,13 @@ impl<'a> PartialEq<&'a str> for Nickname {
     }
 }
 
-fn validate(s: &str) -> Result<(), NicknameError> {
+fn validate(s: &str) -> Result<(), ParseNicknameError> {
     if s.is_empty() {
-        Err(NicknameError::Empty)
+        Err(ParseNicknameError::Empty)
     } else if s.starts_with(['$', ':', '#', '&', '~', '@', '%', '+']) {
-        Err(NicknameError::BadStart)
+        Err(ParseNicknameError::BadStart)
     } else if s.contains(['\0', '\r', '\n', ' ', ',', '*', '?', '!', '@']) {
-        Err(NicknameError::BadCharacter)
+        Err(ParseNicknameError::BadCharacter)
     } else {
         Ok(())
     }
@@ -75,7 +75,7 @@ impl From<Nickname> for FinalParam {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum NicknameError {
+pub enum ParseNicknameError {
     #[error("nicknames cannot be empty")]
     Empty,
     #[error("nicknames cannot start with $, :, #, &, ~, @, %, or +")]

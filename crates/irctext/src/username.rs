@@ -5,7 +5,7 @@ use nutype::nutype;
 use thiserror::Error;
 
 #[nutype(
-    validate(with = validate, error = UsernameError),
+    validate(with = validate, error = ParseUsernameError),
     derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
 )]
 pub struct Username(String);
@@ -22,13 +22,13 @@ impl<'a> PartialEq<&'a str> for Username {
     }
 }
 
-fn validate(s: &str) -> Result<(), UsernameError> {
+fn validate(s: &str) -> Result<(), ParseUsernameError> {
     if s.is_empty() {
-        Err(UsernameError::Empty)
+        Err(ParseUsernameError::Empty)
     } else if s.starts_with(':') {
-        Err(UsernameError::StartsWithColon)
+        Err(ParseUsernameError::StartsWithColon)
     } else if s.contains(['\0', '\r', '\n', ' ', '@']) {
-        Err(UsernameError::BadCharacter)
+        Err(ParseUsernameError::BadCharacter)
     } else {
         Ok(())
     }
@@ -47,7 +47,7 @@ impl From<Username> for FinalParam {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum UsernameError {
+pub enum ParseUsernameError {
     #[error("usernames cannot be empty")]
     Empty,
     #[error("usernames cannot start with a colon")]

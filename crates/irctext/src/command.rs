@@ -18,17 +18,17 @@ impl fmt::Display for Command {
 }
 
 impl std::str::FromStr for Command {
-    type Err = CommandError;
+    type Err = ParseCommandError;
 
-    fn from_str(s: &str) -> Result<Command, CommandError> {
+    fn from_str(s: &str) -> Result<Command, ParseCommandError> {
         String::from(s).try_into()
     }
 }
 
 impl TryFrom<String> for Command {
-    type Error = CommandError;
+    type Error = ParseCommandError;
 
-    fn try_from(s: String) -> Result<Command, CommandError> {
+    fn try_from(s: String) -> Result<Command, ParseCommandError> {
         if s.len() == 3 && s.chars().all(|ch| ch.is_ascii_digit()) {
             let code = s
                 .parse::<u16>()
@@ -37,11 +37,11 @@ impl TryFrom<String> for Command {
         } else if let Ok(name) = Verb::try_from(s) {
             Ok(Command::Verb(name))
         } else {
-            Err(CommandError)
+            Err(ParseCommandError)
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 #[error("invalid command")]
-pub struct CommandError;
+pub struct ParseCommandError;

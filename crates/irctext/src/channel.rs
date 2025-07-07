@@ -17,7 +17,7 @@ use nutype::nutype;
 use thiserror::Error;
 
 #[nutype(
-    validate(with = validate, error = ChannelError),
+    validate(with = validate, error = ParseChannelError),
     derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
 )]
 pub struct Channel(String);
@@ -34,13 +34,13 @@ impl<'a> PartialEq<&'a str> for Channel {
     }
 }
 
-fn validate(s: &str) -> Result<(), ChannelError> {
+fn validate(s: &str) -> Result<(), ParseChannelError> {
     if s.is_empty() {
-        Err(ChannelError::Empty)
+        Err(ParseChannelError::Empty)
     } else if s.starts_with(':') {
-        Err(ChannelError::StartsWithColon)
+        Err(ParseChannelError::StartsWithColon)
     } else if s.contains(['\0', '\r', '\n', ' ', '\x07', ',']) {
-        Err(ChannelError::BadCharacter)
+        Err(ParseChannelError::BadCharacter)
     } else {
         Ok(())
     }
@@ -59,7 +59,7 @@ impl From<Channel> for FinalParam {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum ChannelError {
+pub enum ParseChannelError {
     #[error("channels cannot be empty")]
     Empty,
     #[error("channels cannot start with a colon")]

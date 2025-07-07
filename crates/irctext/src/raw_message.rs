@@ -1,5 +1,7 @@
 use crate::util::split_word;
-use crate::{Command, CommandError, ParameterList, ParameterListError, Source, SourceError};
+use crate::{
+    Command, ParameterList, ParseCommandError, ParseParameterListError, ParseSourceError, Source,
+};
 use std::fmt;
 use thiserror::Error;
 
@@ -28,18 +30,18 @@ impl fmt::Display for RawMessage {
 }
 
 impl std::str::FromStr for RawMessage {
-    type Err = RawMessageError;
+    type Err = ParseRawMessageError;
 
-    fn from_str(s: &str) -> Result<RawMessage, RawMessageError> {
+    fn from_str(s: &str) -> Result<RawMessage, ParseRawMessageError> {
         String::from(s).try_into()
     }
 }
 
 impl TryFrom<String> for RawMessage {
-    type Error = RawMessageError;
+    type Error = ParseRawMessageError;
 
     // `s` may optionally end with LF, CR LF, or CR.
-    fn try_from(s: String) -> Result<RawMessage, RawMessageError> {
+    fn try_from(s: String) -> Result<RawMessage, ParseRawMessageError> {
         let mut s = s.strip_suffix('\n').unwrap_or(&*s);
         s = s.strip_suffix('\r').unwrap_or(s);
         let source = if let Some(s2) = s.strip_prefix(':') {
@@ -61,13 +63,13 @@ impl TryFrom<String> for RawMessage {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum RawMessageError {
+pub enum ParseRawMessageError {
     #[error("invalid source prefix")]
-    Source(#[from] SourceError),
+    Source(#[from] ParseSourceError),
     #[error("invalid command")]
-    Command(#[from] CommandError),
+    Command(#[from] ParseCommandError),
     #[error("invalid parameter")]
-    Parameter(#[from] ParameterListError),
+    Parameter(#[from] ParseParameterListError),
 }
 
 #[cfg(test)]

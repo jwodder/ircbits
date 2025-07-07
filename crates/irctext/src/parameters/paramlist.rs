@@ -1,4 +1,6 @@
-use super::{FinalParam, FinalParamError, MedialParam, MedialParamError, ParamRef, Parameter};
+use super::{
+    FinalParam, MedialParam, ParamRef, Parameter, ParseFinalParamError, ParseMedialParamError,
+};
 use crate::util::split_word;
 use std::cmp::Ordering;
 use thiserror::Error;
@@ -62,9 +64,9 @@ impl IntoIterator for ParameterList {
 }
 
 impl std::str::FromStr for ParameterList {
-    type Err = ParameterListError;
+    type Err = ParseParameterListError;
 
-    fn from_str(mut s: &str) -> Result<ParameterList, ParameterListError> {
+    fn from_str(mut s: &str) -> Result<ParameterList, ParseParameterListError> {
         let mut medial = Vec::new();
         let mut finalp = None;
         while !s.is_empty() {
@@ -82,9 +84,9 @@ impl std::str::FromStr for ParameterList {
 }
 
 impl TryFrom<String> for ParameterList {
-    type Error = ParameterListError;
+    type Error = ParseParameterListError;
 
-    fn try_from(s: String) -> Result<ParameterList, ParameterListError> {
+    fn try_from(s: String) -> Result<ParameterList, ParseParameterListError> {
         s.parse::<ParameterList>()
     }
 }
@@ -270,11 +272,11 @@ impl TryFrom<ParameterList> for (MedialParam, MedialParam, MedialParam, FinalPar
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum ParameterListError {
+pub enum ParseParameterListError {
     #[error(transparent)]
-    Medial(#[from] MedialParamError),
+    Medial(#[from] ParseMedialParamError),
     #[error(transparent)]
-    Final(#[from] FinalParamError),
+    Final(#[from] ParseFinalParamError),
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]

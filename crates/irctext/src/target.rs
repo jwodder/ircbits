@@ -1,4 +1,4 @@
-use crate::{Channel, ChannelError, Nickname, NicknameError};
+use crate::{Channel, Nickname, ParseChannelError, ParseNicknameError};
 use thiserror::Error;
 
 /// The target of a `PRIVMSG` or `NOTICE` message
@@ -10,9 +10,9 @@ pub enum Target {
 }
 
 impl std::str::FromStr for Target {
-    type Err = TargetError;
+    type Err = ParseTargetError;
 
-    fn from_str(s: &str) -> Result<Target, TargetError> {
+    fn from_str(s: &str) -> Result<Target, ParseTargetError> {
         if s == "*" {
             Ok(Target::Star)
         // TODO: Improve this!
@@ -49,9 +49,9 @@ impl From<Nickname> for Target {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum TargetError {
+pub enum ParseTargetError {
     #[error(transparent)]
-    Channel(#[from] ChannelError),
+    Channel(#[from] ParseChannelError),
     #[error(transparent)]
-    Nickname(#[from] NicknameError),
+    Nickname(#[from] ParseNicknameError),
 }

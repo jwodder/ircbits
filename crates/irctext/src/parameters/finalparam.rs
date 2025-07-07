@@ -3,7 +3,7 @@ use nutype::nutype;
 use thiserror::Error;
 
 #[nutype(
-    validate(with = validate, error = FinalParamError),
+    validate(with = validate, error = ParseFinalParamError),
     derive(AsRef, Clone, Debug, Deref, Display, Eq, FromStr, Into, PartialEq, TryFrom),
 )]
 pub struct FinalParam(String);
@@ -26,9 +26,9 @@ impl From<MedialParam> for FinalParam {
     }
 }
 
-fn validate(s: &str) -> Result<(), FinalParamError> {
+fn validate(s: &str) -> Result<(), ParseFinalParamError> {
     if s.contains(['\0', '\r', '\n']) {
-        Err(FinalParamError)
+        Err(ParseFinalParamError)
     } else {
         Ok(())
     }
@@ -36,4 +36,4 @@ fn validate(s: &str) -> Result<(), FinalParamError> {
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 #[error("parameters cannot contain NUL, CR, or LF")]
-pub struct FinalParamError;
+pub struct ParseFinalParamError;

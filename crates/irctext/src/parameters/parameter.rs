@@ -35,6 +35,15 @@ impl AsRef<str> for Parameter {
     }
 }
 
+impl From<Parameter> for String {
+    fn from(value: Parameter) -> String {
+        match value {
+            Parameter::Medial(param) => param.into(),
+            Parameter::Final(param) => param.into(),
+        }
+    }
+}
+
 impl PartialEq<str> for Parameter {
     fn eq(&self, other: &str) -> bool {
         self.as_ref() == other

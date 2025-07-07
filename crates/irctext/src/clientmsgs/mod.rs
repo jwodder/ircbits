@@ -220,7 +220,7 @@ pub enum ClientMessageError {
     #[error("failed to parse key string")]
     Key(#[from] TryFromStringError<ParseKeyError>),
 
-    #[error("failed to parse medial parameter")]
+    #[error("failed to parse parameter as medial")]
     MedialParam(#[from] TryFromStringError<ParseMedialParamError>),
 
     #[error("failed to parse nickname string")]

@@ -1,4 +1,4 @@
-use crate::{Channel, ClientMessageError, Key, Target};
+use crate::ClientMessageError;
 use std::fmt;
 
 pub(crate) fn split_word(s: &str) -> (&str, &str) {
@@ -24,38 +24,15 @@ where
     s
 }
 
-pub(crate) fn split_channels(s: String) -> Result<Vec<Channel>, ClientMessageError> {
-    match s
-        .split(',')
-        .map(|s| Channel::try_from(s.to_owned()))
+pub(crate) fn split_param<T>(s: &str) -> Result<Vec<T>, ClientMessageError>
+where
+    T: TryFrom<String>,
+    <T as TryFrom<String>>::Error: Into<ClientMessageError>,
+{
+    s.split(',')
+        .map(|s| T::try_from(s.to_owned()))
         .collect::<Result<Vec<_>, _>>()
-    {
-        Ok(channels) => Ok(channels),
-        Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
-    }
-}
-
-pub(crate) fn split_keys(s: String) -> Result<Vec<Key>, ClientMessageError> {
-    match s
-        .split(',')
-        .map(|s| Key::try_from(s.to_owned()))
-        .collect::<Result<Vec<_>, _>>()
-    {
-        Ok(keys) => Ok(keys),
-        Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
-    }
-}
-
-pub(crate) fn split_targets(s: String) -> Result<Vec<Target>, ClientMessageError> {
-    match s
-        .as_str()
-        .split(',')
-        .map(|s| Target::try_from(s.to_owned()))
-        .collect::<Result<Vec<_>, _>>()
-    {
-        Ok(targets) => Ok(targets),
-        Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
-    }
+        .map_err(Into::into)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

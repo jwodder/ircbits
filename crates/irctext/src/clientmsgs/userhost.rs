@@ -62,13 +62,10 @@ impl TryFrom<ParameterList> for UserHost {
 
     fn try_from(params: ParameterList) -> Result<UserHost, ClientMessageError> {
         if (1..=5).contains(&params.len()) {
-            let mut nicknames = Vec::with_capacity(params.len());
-            for raw in params.into_iter().map(String::from) {
-                match Nickname::try_from(raw) {
-                    Ok(nick) => nicknames.push(nick),
-                    Err(source) => return Err(ClientMessageError::ParseParam(Box::new(source))),
-                }
-            }
+            let nicknames = params
+                .into_iter()
+                .map(|p| Nickname::try_from(String::from(p)))
+                .collect::<Result<Vec<_>, _>>()?;
             Ok(UserHost { nicknames })
         } else {
             Err(ClientMessageError::ParamQty(

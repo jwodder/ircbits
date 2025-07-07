@@ -52,14 +52,8 @@ impl TryFrom<ParameterList> for Invite {
 
     fn try_from(params: ParameterList) -> Result<Invite, ClientMessageError> {
         let (p1, p2): (_, FinalParam) = params.try_into()?;
-        let nickname = match Nickname::try_from(p1.into_inner()) {
-            Ok(n) => n,
-            Err(source) => return Err(ClientMessageError::ParseParam(Box::new(source))),
-        };
-        let channel = match Channel::try_from(p2.into_inner()) {
-            Ok(ch) => ch,
-            Err(source) => return Err(ClientMessageError::ParseParam(Box::new(source))),
-        };
+        let nickname = Nickname::try_from(p1.into_inner())?;
+        let channel = Channel::try_from(p2.into_inner())?;
         Ok(Invite { nickname, channel })
     }
 }

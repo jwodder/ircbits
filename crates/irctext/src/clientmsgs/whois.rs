@@ -64,14 +64,12 @@ impl TryFrom<ParameterList> for WhoIs {
 
     fn try_from(params: ParameterList) -> Result<WhoIs, ClientMessageError> {
         let (p1, p2): (_, Option<FinalParam>) = params.try_into()?;
-        let (target, rawnick, index) = if let Some(p2) = p2 {
-            (Some(p1), p2.into_inner(), 1)
+        let (target, rawnick) = if let Some(p2) = p2 {
+            (Some(p1), p2.into_inner())
         } else {
-            (None, p1.into_inner(), 0)
+            (None, p1.into_inner())
         };
-        match Nickname::try_from(rawnick) {
-            Ok(nick) => Ok(WhoIs { target, nick }),
-            Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
-        }
+        let nick = Nickname::try_from(rawnick)?;
+        Ok(WhoIs { target, nick })
     }
 }

@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::util::{join_with_commas, split_channels};
+use crate::util::{join_with_commas, split_param};
 use crate::{Channel, FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -73,7 +73,7 @@ impl TryFrom<ParameterList> for Names {
 
     fn try_from(params: ParameterList) -> Result<Names, ClientMessageError> {
         let (p,): (FinalParam,) = params.try_into()?;
-        let channels = split_channels(p.into_inner())?;
+        let channels = split_param::<Channel>(p.as_str())?;
         Ok(Names { channels })
     }
 }

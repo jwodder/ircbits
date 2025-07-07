@@ -50,9 +50,7 @@ impl TryFrom<ParameterList> for Nick {
 
     fn try_from(params: ParameterList) -> Result<Nick, ClientMessageError> {
         let (p,): (FinalParam,) = params.try_into()?;
-        match Nickname::try_from(p.into_inner()) {
-            Ok(nickname) => Ok(Nick { nickname }),
-            Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
-        }
+        let nickname = Nickname::try_from(p.into_inner())?;
+        Ok(Nick { nickname })
     }
 }

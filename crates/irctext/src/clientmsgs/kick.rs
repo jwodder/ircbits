@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::util::{join_with_commas, DisplayMaybeFinal};
+use crate::util::{join_with_commas, split_param, DisplayMaybeFinal};
 use crate::{Channel, FinalParam, MedialParam, Message, Nickname, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -117,23 +117,8 @@ impl TryFrom<ParameterList> for Kick {
 
     fn try_from(params: ParameterList) -> Result<Kick, ClientMessageError> {
         let (p1, p2, comment): (_, _, Option<FinalParam>) = params.try_into()?;
-        let channel = match Channel::try_from(p1.into_inner()) {
-            Ok(channel) => channel,
-            Err(source) => {
-                return Err(ClientMessageError::ParseParam(Box::new(source)));
-            }
-        };
-        let users = match p2
-            .as_str()
-            .split(',')
-            .map(|s| Nickname::try_from(s.to_owned()))
-            .collect::<Result<Vec<_>, _>>()
-        {
-            Ok(channels) => channels,
-            Err(source) => {
-                return Err(ClientMessageError::ParseParam(Box::new(source)));
-            }
-        };
+        let channel = Channel::try_from(p1.into_inner())?;
+        let users = split_param::<Nickname>(p2.as_str())?;
         Ok(Kick {
             channel,
             users,

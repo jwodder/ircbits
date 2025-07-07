@@ -66,9 +66,7 @@ impl TryFrom<ParameterList> for Topic {
 
     fn try_from(params: ParameterList) -> Result<Topic, ClientMessageError> {
         let (p1, topic): (_, Option<FinalParam>) = params.try_into()?;
-        match Channel::try_from(p1.into_inner()) {
-            Ok(channel) => Ok(Topic { channel, topic }),
-            Err(source) => Err(ClientMessageError::ParseParam(Box::new(source))),
-        }
+        let channel = Channel::try_from(p1.into_inner())?;
+        Ok(Topic { channel, topic })
     }
 }

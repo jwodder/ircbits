@@ -79,7 +79,11 @@ pub use self::wallops::*;
 pub use self::who::*;
 pub use self::whois::*;
 pub use self::whowas::*;
-use crate::{Message, ParameterList, ParameterListSizeError, Payload, RawMessage, Verb};
+use crate::{
+    Message, ParameterList, ParameterListSizeError, ParseChannelError, ParseKeyError,
+    ParseMedialParamError, ParseNicknameError, ParseTargetError, ParseUsernameError, Payload,
+    RawMessage, TryFromStringError, Verb,
+};
 use enum_dispatch::enum_dispatch;
 use thiserror::Error;
 
@@ -210,6 +214,27 @@ pub enum ClientMessageError {
     #[error(transparent)]
     ParamQty(#[from] ParameterListSizeError),
 
-    #[error("failed to parse parameter")]
-    ParseParam(#[source] Box<dyn std::error::Error + Send + Sync>),
+    #[error("failed to parse channel string")]
+    Channel(#[from] TryFromStringError<ParseChannelError>),
+
+    #[error("failed to parse key string")]
+    Key(#[from] TryFromStringError<ParseKeyError>),
+
+    #[error("failed to parse medial parameter")]
+    MedialParam(#[from] TryFromStringError<ParseMedialParamError>),
+
+    #[error("failed to parse nickname string")]
+    Nickname(#[from] TryFromStringError<ParseNicknameError>),
+
+    #[error("failed to parse target string")]
+    Target(#[from] TryFromStringError<ParseTargetError>),
+
+    #[error("failed to parse username string")]
+    Username(#[from] TryFromStringError<ParseUsernameError>),
+
+    #[error("failed to parse integer string {string:?}: {inner}")]
+    Int {
+        string: String,
+        inner: std::num::ParseIntError,
+    },
 }

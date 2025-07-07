@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::util::{join_with_commas, split_channels, split_keys, DisplayMaybeFinal};
+use crate::util::{join_with_commas, split_param, DisplayMaybeFinal};
 use crate::{Channel, FinalParam, Key, MedialParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -119,9 +119,9 @@ impl TryFrom<ParameterList> for Join {
 
     fn try_from(params: ParameterList) -> Result<Join, ClientMessageError> {
         let (p1, p2): (_, Option<FinalParam>) = params.try_into()?;
-        let channels = split_channels(p1.into_inner())?;
+        let channels = split_param::<Channel>(p1.as_str())?;
         let keys = match p2 {
-            Some(p) => split_keys(p.into_inner())?,
+            Some(p) => split_param::<Key>(p.as_str())?,
             None => Vec::new(),
         };
         Ok(Join { channels, keys })

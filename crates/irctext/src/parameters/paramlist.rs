@@ -3,6 +3,7 @@ use super::{
 };
 use crate::util::split_word;
 use std::cmp::Ordering;
+use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -80,6 +81,23 @@ impl std::str::FromStr for ParameterList {
             }
         }
         Ok(ParameterList { medial, finalp })
+    }
+}
+
+impl fmt::Display for ParameterList {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut first = true;
+        for p in self.iter() {
+            if !std::mem::replace(&mut first, false) {
+                write!(f, " ")?;
+            }
+            if p.is_medial() {
+                write!(f, "{p}")?;
+            } else {
+                write!(f, ":{p}")?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -318,6 +336,12 @@ impl ParameterListBuilder {
         self.0
     }
 
+    pub fn with_list(mut self, params: ParameterList) -> ParameterList {
+        self.0.medial.extend(params.medial);
+        self.0.finalp = params.finalp;
+        self.0
+    }
+
     pub fn finish(self) -> ParameterList {
         self.0
     }
@@ -335,6 +359,25 @@ impl ParameterListIntoIter {
             .collect::<Vec<_>>();
         paramvec.extend(params.finalp.map(Parameter::Final));
         ParameterListIntoIter(paramvec.into_iter())
+    }
+
+    #[expect(clippy::debug_assert_with_mut_call)]
+    pub fn into_parameter_list(mut self) -> ParameterList {
+        let mut builder = ParameterList::builder();
+        for p in self.by_ref() {
+            match p {
+                Parameter::Medial(p) => builder.push_medial(p),
+                Parameter::Final(p) => {
+                    let params = builder.with_final(p);
+                    debug_assert!(
+                        self.next().is_none(),
+                        "ParamterListIntoIter should be done after yielding a Final"
+                    );
+                    return params;
+                }
+            }
+        }
+        builder.finish()
     }
 }
 

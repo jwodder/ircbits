@@ -8,6 +8,8 @@ pub mod clientmsgs;
 mod command;
 mod key;
 mod message;
+mod modestring;
+mod modetarget;
 mod nickname;
 mod parameters;
 mod raw_message;
@@ -22,6 +24,8 @@ pub use crate::clientmsgs::{ClientMessage, ClientMessageError, ClientMessagePart
 pub use crate::command::*;
 pub use crate::key::*;
 pub use crate::message::*;
+pub use crate::modestring::*;
+pub use crate::modetarget::*;
 pub use crate::nickname::*;
 pub use crate::parameters::*;
 pub use crate::raw_message::*;

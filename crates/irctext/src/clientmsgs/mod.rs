@@ -80,9 +80,10 @@ pub use self::who::*;
 pub use self::whois::*;
 pub use self::whowas::*;
 use crate::{
-    Message, ParameterList, ParameterListSizeError, ParseChannelError, ParseKeyError,
-    ParseMedialParamError, ParseModeTargetError, ParseModestringError, ParseNicknameError,
-    ParseTargetError, ParseUsernameError, Payload, RawMessage, TryFromStringError, Verb,
+    Message, ParameterList, ParameterListSizeError, ParseChannelError, ParseEListCondError,
+    ParseKeyError, ParseMedialParamError, ParseModeTargetError, ParseModestringError,
+    ParseNicknameError, ParseTargetError, ParseUsernameError, Payload, RawMessage,
+    TryFromStringError, Verb,
 };
 use enum_dispatch::enum_dispatch;
 use thiserror::Error;
@@ -216,6 +217,9 @@ pub enum ClientMessageError {
 
     #[error("failed to parse channel string")]
     Channel(#[from] TryFromStringError<ParseChannelError>),
+
+    #[error("failed to parse elistcond string")]
+    EListCond(#[from] TryFromStringError<ParseEListCondError>),
 
     #[error("failed to parse key string")]
     Key(#[from] TryFromStringError<ParseKeyError>),

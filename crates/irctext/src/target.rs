@@ -36,16 +36,16 @@ impl TryFrom<String> for Target {
         } else if value.starts_with(['#', '&']) {
             match Channel::try_from(value) {
                 Ok(channel) => Ok(Target::Channel(channel)),
-                Err(TryFromStringError { source, string }) => Err(TryFromStringError {
-                    source: ParseTargetError::Channel(source),
+                Err(TryFromStringError { inner, string }) => Err(TryFromStringError {
+                    inner: ParseTargetError::Channel(inner),
                     string,
                 }),
             }
         } else {
             match Nickname::try_from(value) {
                 Ok(nickname) => Ok(Target::User(nickname)),
-                Err(TryFromStringError { source, string }) => Err(TryFromStringError {
-                    source: ParseTargetError::Nickname(source),
+                Err(TryFromStringError { inner, string }) => Err(TryFromStringError {
+                    inner: ParseTargetError::Nickname(inner),
                     string,
                 }),
             }

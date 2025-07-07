@@ -1,4 +1,4 @@
-use crate::codec::IrcLinesCodec;
+use crate::codec::IrcCodec;
 use itertools::Itertools; // join
 use rustls_pki_types::{InvalidDnsNameError, ServerName};
 use std::sync::Arc;
@@ -18,7 +18,7 @@ pub const TLS_PORT: u16 = 6697;
 // tags aren't involved) are limited to 512 characters, counting the CR LF.
 pub const MAX_LINE_LENGTH: usize = 512;
 
-pub type IrcConnection = Framed<Either<TcpStream, TlsStream>, IrcLinesCodec>;
+pub type IrcConnection = Framed<Either<TcpStream, TlsStream>, IrcCodec>;
 
 pub type TlsStream = tokio_rustls::client::TlsStream<TcpStream>;
 
@@ -77,6 +77,6 @@ pub async fn connect(server: &str, port: u16, tls: bool) -> Result<IrcConnection
     };
     Ok(Framed::new(
         conn,
-        IrcLinesCodec::new_with_max_length(MAX_LINE_LENGTH),
+        IrcCodec::new_with_max_length(MAX_LINE_LENGTH),
     ))
 }

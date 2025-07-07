@@ -1,6 +1,6 @@
 use crate::{
-    ClientMessage, ClientMessageError, Command, ParameterList, RawMessage, Reply, ReplyError,
-    Source,
+    ClientMessage, ClientMessageError, ClientMessageParts, Command, ParameterList, RawMessage,
+    Reply, ReplyError, Source,
 };
 use thiserror::Error;
 
@@ -21,9 +21,14 @@ impl TryFrom<RawMessage> for Message {
 }
 
 impl From<Message> for RawMessage {
-    #[expect(unused_variables)]
-    fn from(value: Message) -> RawMessage {
-        todo!()
+    fn from(msg: Message) -> RawMessage {
+        let source = msg.source;
+        let (command, parameters) = msg.payload.into_parts();
+        RawMessage {
+            source,
+            command,
+            parameters,
+        }
     }
 }
 
@@ -40,6 +45,19 @@ impl Payload {
                 v, params,
             )?)),
             Command::Reply(code) => Ok(Payload::Reply(Reply::from_parts(code, params)?)),
+        }
+    }
+
+    pub fn into_parts(self) -> (Command, ParameterList) {
+        match self {
+            Payload::ClientMessage(msg) => {
+                let (verb, params) = msg.into_parts();
+                (Command::Verb(verb), params)
+            }
+            Payload::Reply(r) => {
+                let (code, params) = r.into_parts();
+                (Command::Reply(code), params)
+            }
         }
     }
 }

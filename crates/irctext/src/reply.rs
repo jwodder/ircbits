@@ -16,6 +16,10 @@ impl Reply {
     pub fn from_parts(code: u16, params: ParameterList) -> Result<Reply, ReplyError> {
         todo!()
     }
+
+    pub fn into_parts(self) -> (u16, ParameterList) {
+        todo!()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]

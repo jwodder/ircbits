@@ -3,6 +3,7 @@
 #[macro_use]
 mod validstr;
 
+mod captarget;
 mod channel;
 pub mod clientmsgs;
 mod command;
@@ -20,6 +21,7 @@ mod target;
 mod username;
 mod util;
 mod verb;
+pub use crate::captarget::*;
 pub use crate::channel::*;
 pub use crate::clientmsgs::{ClientMessage, ClientMessageError, ClientMessageParts};
 pub use crate::command::*;

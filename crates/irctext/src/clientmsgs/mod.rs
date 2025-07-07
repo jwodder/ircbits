@@ -80,10 +80,10 @@ pub use self::who::*;
 pub use self::whois::*;
 pub use self::whowas::*;
 use crate::{
-    Message, ParameterList, ParameterListSizeError, ParseChannelError, ParseEListCondError,
-    ParseKeyError, ParseMedialParamError, ParseModeTargetError, ParseModestringError,
-    ParseNicknameError, ParseTargetError, ParseUsernameError, Payload, RawMessage,
-    TryFromStringError, Verb,
+    Message, ParameterList, ParameterListSizeError, ParseCapTargetError, ParseChannelError,
+    ParseEListCondError, ParseKeyError, ParseMedialParamError, ParseModeTargetError,
+    ParseModestringError, ParseNicknameError, ParseTargetError, ParseUsernameError, Payload,
+    RawMessage, TryFromStringError, Verb,
 };
 use enum_dispatch::enum_dispatch;
 use thiserror::Error;
@@ -215,6 +215,9 @@ pub enum ClientMessageError {
     #[error(transparent)]
     ParamQty(#[from] ParameterListSizeError),
 
+    #[error("failed to parse CAP target string")]
+    CapTarget(#[from] TryFromStringError<ParseCapTargetError>),
+
     #[error("failed to parse channel string")]
     Channel(#[from] TryFromStringError<ParseChannelError>),
 
@@ -247,4 +250,7 @@ pub enum ClientMessageError {
         string: String,
         inner: std::num::ParseIntError,
     },
+
+    #[error("parameter has invalid value: expected {expected:?}, got {got:?}")]
+    ParamValue { got: String, expected: &'static str },
 }

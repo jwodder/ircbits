@@ -15,6 +15,20 @@ impl Parameter {
     pub fn is_final(&self) -> bool {
         matches!(self, Parameter::Final(_))
     }
+
+    pub fn into_inner(self) -> String {
+        match self {
+            Parameter::Medial(p) => p.into_inner(),
+            Parameter::Final(p) => p.into_inner(),
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            Parameter::Medial(p) => p.as_str(),
+            Parameter::Final(p) => p.as_str(),
+        }
+    }
 }
 
 impl fmt::Display for Parameter {

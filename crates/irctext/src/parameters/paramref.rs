@@ -15,6 +15,13 @@ impl ParamRef<'_> {
     pub fn is_final(&self) -> bool {
         matches!(self, ParamRef::Final(_))
     }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            ParamRef::Medial(p) => p.as_str(),
+            ParamRef::Final(p) => p.as_str(),
+        }
+    }
 }
 
 impl fmt::Display for ParamRef<'_> {

@@ -1,4 +1,3 @@
-#![expect(unused_variables)]
 mod admin;
 mod authenticate;
 mod away;

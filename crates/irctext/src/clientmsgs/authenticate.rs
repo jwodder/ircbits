@@ -1,16 +1,35 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, ParameterList, RawMessage, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Authenticate;
+pub struct Authenticate {
+    parameter: FinalParam,
+}
+
+impl Authenticate {
+    pub fn new(parameter: FinalParam) -> Authenticate {
+        Authenticate { parameter }
+    }
+
+    pub fn parameter(&self) -> &FinalParam {
+        &self.parameter
+    }
+
+    pub fn into_parameter(self) -> FinalParam {
+        self.parameter
+    }
+}
 
 impl ClientMessageParts for Authenticate {
     fn into_parts(self) -> (Verb, ParameterList) {
-        todo!()
+        (
+            Verb::Authenticate,
+            ParameterList::builder().with_final(self.parameter),
+        )
     }
 
     fn to_irc_line(&self) -> String {
-        todo!()
+        format!("AUTHENTICATE :{}", self.parameter)
     }
 }
 
@@ -30,6 +49,7 @@ impl TryFrom<ParameterList> for Authenticate {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Authenticate, ClientMessageError> {
-        todo!()
+        let (parameter,) = params.try_into()?;
+        Ok(Authenticate { parameter })
     }
 }

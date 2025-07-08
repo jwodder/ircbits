@@ -42,7 +42,7 @@
 
 use crate::util::decode_utf8_latin1;
 use bytes::{Buf, BufMut, BytesMut};
-use irctext::{ClientMessageParts, Message, MessageError, ParseRawMessageError, RawMessage};
+use irctext::{ClientMessageParts, Message, ParseMessageError, TryFromStringError};
 use std::{cmp, io};
 use thiserror::Error;
 use tokio_util::codec::{Decoder, Encoder};
@@ -203,14 +203,7 @@ fn chomp(mut s: &[u8]) -> &[u8] {
 fn decode_message(bytes: BytesMut) -> Result<Option<Message>, IrcCodecError> {
     let bytes = chomp(&bytes);
     let line = decode_utf8_latin1(bytes.into());
-    let rawmsg = match line.parse::<RawMessage>() {
-        Ok(rawmsg) => rawmsg,
-        Err(source) => return Err(IrcCodecError::Parse { line, source }),
-    };
-    let msg = match Message::try_from(rawmsg) {
-        Ok(msg) => msg,
-        Err(source) => return Err(IrcCodecError::Convert { line, source }),
-    };
+    let msg = Message::try_from(line)?;
     Ok(Some(msg))
 }
 
@@ -223,12 +216,6 @@ pub enum IrcCodecError {
     #[error("I/O error communicating with server")]
     Io(#[from] io::Error),
 
-    #[error("failed to parse incoming message {line:?}")]
-    Parse {
-        line: String,
-        source: ParseRawMessageError,
-    },
-
-    #[error("failed to convert incoming message {line:?} to a known type")]
-    Convert { line: String, source: MessageError },
+    #[error("failed to parse incoming message")]
+    Parse(#[from] TryFromStringError<ParseMessageError>),
 }

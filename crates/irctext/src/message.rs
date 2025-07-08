@@ -1,6 +1,6 @@
 use crate::{
-    ClientMessage, ClientMessageError, ClientMessageParts, Command, ParameterList, RawMessage,
-    Reply, ReplyError, Source,
+    ClientMessage, ClientMessageError, ClientMessageParts, Command, ParameterList,
+    ParseRawMessageError, RawMessage, Reply, ReplyError, Source, TryFromStringError,
 };
 use thiserror::Error;
 
@@ -8,6 +8,25 @@ use thiserror::Error;
 pub struct Message {
     pub source: Option<Source>,
     pub payload: Payload,
+}
+
+impl std::str::FromStr for Message {
+    type Err = ParseMessageError;
+
+    fn from_str(s: &str) -> Result<Message, ParseMessageError> {
+        Message::try_from(s.parse::<RawMessage>()?).map_err(Into::into)
+    }
+}
+
+impl TryFrom<String> for Message {
+    type Error = TryFromStringError<ParseMessageError>;
+
+    fn try_from(string: String) -> Result<Message, TryFromStringError<ParseMessageError>> {
+        match string.parse() {
+            Ok(msg) => Ok(msg),
+            Err(inner) => Err(TryFromStringError { inner, string }),
+        }
+    }
 }
 
 impl TryFrom<RawMessage> for Message {
@@ -68,4 +87,12 @@ pub enum MessageError {
     ClientMessage(#[from] ClientMessageError),
     #[error(transparent)]
     Reply(#[from] ReplyError),
+}
+
+#[derive(Debug, Error)]
+pub enum ParseMessageError {
+    #[error(transparent)]
+    ParseRaw(#[from] ParseRawMessageError),
+    #[error(transparent)]
+    Convert(#[from] MessageError),
 }

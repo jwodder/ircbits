@@ -14,7 +14,7 @@ pub struct TryFromStringError<E> {
 
 impl<E: fmt::Display> fmt::Display for TryFromStringError<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}: {:?}", self.inner, self.string)
+        write!(f, "failed to parse {:?}: {}", self.string, self.inner)
     }
 }
 

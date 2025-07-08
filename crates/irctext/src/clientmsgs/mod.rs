@@ -80,8 +80,8 @@ pub use self::whois::*;
 pub use self::whowas::*;
 use crate::{
     Message, ParameterList, ParameterListSizeError, ParseCapTargetError, ParseChannelError,
-    ParseEListCondError, ParseKeyError, ParseMedialParamError, ParseModeTargetError,
-    ParseModestringError, ParseNicknameError, ParseTargetError, ParseUsernameError, Payload,
+    ParseEListCondError, ParseKeyError, ParseMedialParamError, ParseModeStringError,
+    ParseModeTargetError, ParseNicknameError, ParseTargetError, ParseUsernameError, Payload,
     RawMessage, TryFromStringError, Verb,
 };
 use enum_dispatch::enum_dispatch;
@@ -229,8 +229,8 @@ pub enum ClientMessageError {
     #[error("failed to parse parameter as medial")]
     MedialParam(#[from] TryFromStringError<ParseMedialParamError>),
 
-    #[error("failed to parse modestring")]
-    Modestring(#[from] TryFromStringError<ParseModestringError>),
+    #[error("failed to parse mode string")]
+    ModeString(#[from] TryFromStringError<ParseModeStringError>),
 
     #[error("failed to parse mode target string")]
     ModeTarget(#[from] TryFromStringError<ParseModeTargetError>),

@@ -1,13 +1,13 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{
-    Message, ModeTarget, Modestring, ParameterList, ParameterListSizeError, RawMessage, Verb,
+    Message, ModeString, ModeTarget, ParameterList, ParameterListSizeError, RawMessage, Verb,
 };
 use std::fmt::Write;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Mode {
     target: ModeTarget,
-    modestring: Option<Modestring>,
+    modestring: Option<ModeString>,
     arguments: ParameterList,
 }
 
@@ -20,7 +20,7 @@ impl Mode {
         }
     }
 
-    pub fn new_with_modestring(target: ModeTarget, modestring: Modestring) -> Mode {
+    pub fn new_with_modestring(target: ModeTarget, modestring: ModeString) -> Mode {
         Mode {
             target,
             modestring: Some(modestring),
@@ -30,7 +30,7 @@ impl Mode {
 
     pub fn new_with_arguments(
         target: ModeTarget,
-        modestring: Modestring,
+        modestring: ModeString,
         arguments: ParameterList,
     ) -> Mode {
         Mode {
@@ -44,7 +44,7 @@ impl Mode {
         &self.target
     }
 
-    pub fn modestring(&self) -> Option<&Modestring> {
+    pub fn modestring(&self) -> Option<&ModeString> {
         self.modestring.as_ref()
     }
 
@@ -99,7 +99,7 @@ impl TryFrom<ParameterList> for Mode {
         })?;
         let target = ModeTarget::try_from(p1.into_inner())?;
         let modestring = if let Some(p2) = iter.next() {
-            Some(Modestring::try_from(p2.into_inner())?)
+            Some(ModeString::try_from(p2.into_inner())?)
         } else {
             None
         };

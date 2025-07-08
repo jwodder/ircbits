@@ -2,36 +2,36 @@ use crate::parameters::{FinalParam, MedialParam};
 use thiserror::Error;
 
 #[derive(Clone, Eq, PartialEq)]
-pub struct Modestring(String);
+pub struct ModeString(String);
 
-validstr!(Modestring, ParseModestringError, validate);
+validstr!(ModeString, ParseModeStringError, validate);
 
-fn validate(s: &str) -> Result<(), ParseModestringError> {
+fn validate(s: &str) -> Result<(), ParseModeStringError> {
     if !s.starts_with(['+', '-']) {
-        Err(ParseModestringError::BadStart)
+        Err(ParseModeStringError::BadStart)
     } else if s.contains(|c: char| !(c.is_ascii_alphabetic() || c == '+' || c == '-')) {
-        Err(ParseModestringError::BadCharacter)
+        Err(ParseModeStringError::BadCharacter)
     } else {
         Ok(())
     }
 }
 
-impl From<Modestring> for MedialParam {
-    fn from(value: Modestring) -> MedialParam {
-        MedialParam::try_from(value.into_inner()).expect("Modestring should be valid MedialParam")
+impl From<ModeString> for MedialParam {
+    fn from(value: ModeString) -> MedialParam {
+        MedialParam::try_from(value.into_inner()).expect("Mode string should be valid MedialParam")
     }
 }
 
-impl From<Modestring> for FinalParam {
-    fn from(value: Modestring) -> FinalParam {
+impl From<ModeString> for FinalParam {
+    fn from(value: ModeString) -> FinalParam {
         FinalParam::from(MedialParam::from(value))
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum ParseModestringError {
-    #[error("modestrings must start with + or -")]
+pub enum ParseModeStringError {
+    #[error("mode strings must start with + or -")]
     BadStart,
-    #[error("modestrings can only contain +, -, and ASCII letters")]
+    #[error("mode strings can only contain +, -, and ASCII letters")]
     BadCharacter,
 }

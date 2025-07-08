@@ -34,10 +34,8 @@ impl TryFrom<String> for Command {
                 .parse::<u16>()
                 .expect("Three-digit number should be valid u16");
             Ok(Command::Reply(code))
-        } else if let Ok(name) = Verb::try_from(s) {
-            Ok(Command::Verb(name))
         } else {
-            Err(ParseCommandError)
+            Ok(Command::Verb(Verb::from(s)))
         }
     }
 }

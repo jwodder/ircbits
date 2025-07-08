@@ -45,11 +45,9 @@ pub enum Verb {
     Unknown(String),
 }
 
-impl TryFrom<String> for Verb {
-    type Error = strum::ParseError;
-
-    fn try_from(s: String) -> Result<Verb, strum::ParseError> {
-        s.parse()
+impl From<String> for Verb {
+    fn from(s: String) -> Verb {
+        s.parse().expect("Parsing to Verb should always succeed")
     }
 }
 

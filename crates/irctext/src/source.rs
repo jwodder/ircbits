@@ -1,4 +1,5 @@
 use crate::types::{Nickname, ParseNicknameError, ParseUsernameError, Username};
+use crate::TryFromStringError;
 use std::fmt;
 use thiserror::Error;
 use url::Host;
@@ -52,20 +53,11 @@ impl fmt::Display for Source {
 impl std::str::FromStr for Source {
     type Err = ParseSourceError;
 
-    fn from_str(s: &str) -> Result<Source, ParseSourceError> {
-        String::from(s).try_into()
-    }
-}
-
-impl TryFrom<String> for Source {
-    type Error = ParseSourceError;
-
-    fn try_from(s: String) -> Result<Source, ParseSourceError> {
+    fn from_str(mut s: &str) -> Result<Source, ParseSourceError> {
         // cf. <https://github.com/ircdocs/modern-irc/issues/227>
         if !s.contains(['!', '@']) && s.contains('.') {
-            Ok(Source::Server(Host::parse(&s)?))
+            Ok(Source::Server(Host::parse(s)?))
         } else {
-            let mut s = &*s;
             let host_str = s.rsplit_once('@').map(|(pre, h)| {
                 s = pre;
                 h
@@ -82,6 +74,17 @@ impl TryFrom<String> for Source {
                 user,
                 host,
             })
+        }
+    }
+}
+
+impl TryFrom<String> for Source {
+    type Error = TryFromStringError<ParseSourceError>;
+
+    fn try_from(s: String) -> Result<Source, TryFromStringError<ParseSourceError>> {
+        match s.parse() {
+            Ok(src) => Ok(src),
+            Err(inner) => Err(TryFromStringError { inner, string: s }),
         }
     }
 }

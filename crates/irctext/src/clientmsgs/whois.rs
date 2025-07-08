@@ -5,18 +5,21 @@ use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WhoIs {
     target: Option<MedialParam>,
-    nick: Nickname,
+    nickname: Nickname,
 }
 
 impl WhoIs {
-    pub fn new(nick: Nickname) -> WhoIs {
-        WhoIs { target: None, nick }
+    pub fn new(nickname: Nickname) -> WhoIs {
+        WhoIs {
+            target: None,
+            nickname,
+        }
     }
 
-    pub fn new_with_target(nick: Nickname, target: MedialParam) -> WhoIs {
+    pub fn new_with_target(nickname: Nickname, target: MedialParam) -> WhoIs {
         WhoIs {
             target: Some(target),
-            nick,
+            nickname,
         }
     }
 
@@ -24,8 +27,8 @@ impl WhoIs {
         self.target.as_ref()
     }
 
-    pub fn nick(&self) -> &Nickname {
-        &self.nick
+    pub fn nickname(&self) -> &Nickname {
+        &self.nickname
     }
 }
 
@@ -35,15 +38,15 @@ impl ClientMessageParts for WhoIs {
         if let Some(target) = self.target {
             builder.push_medial(target);
         }
-        let params = builder.with_medial(self.nick).finish();
+        let params = builder.with_medial(self.nickname).finish();
         (Verb::WhoIs, params)
     }
 
     fn to_irc_line(&self) -> String {
         if let Some(ref target) = self.target {
-            format!("WHOIS {target} {}", self.nick)
+            format!("WHOIS {target} {}", self.nickname)
         } else {
-            format!("WHOIS {}", self.nick)
+            format!("WHOIS {}", self.nickname)
         }
     }
 }
@@ -70,7 +73,7 @@ impl TryFrom<ParameterList> for WhoIs {
         } else {
             (None, p1.into_inner())
         };
-        let nick = Nickname::try_from(rawnick)?;
-        Ok(WhoIs { target, nick })
+        let nickname = Nickname::try_from(rawnick)?;
+        Ok(WhoIs { target, nickname })
     }
 }

@@ -6,24 +6,27 @@ use std::num::NonZeroUsize;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WhoWas {
-    nick: Nickname,
+    nickname: Nickname,
     count: Option<NonZeroUsize>,
 }
 
 impl WhoWas {
-    pub fn new(nick: Nickname) -> WhoWas {
-        WhoWas { nick, count: None }
+    pub fn new(nickname: Nickname) -> WhoWas {
+        WhoWas {
+            nickname,
+            count: None,
+        }
     }
 
-    pub fn new_with_count(nick: Nickname, count: NonZeroUsize) -> WhoWas {
+    pub fn new_with_count(nickname: Nickname, count: NonZeroUsize) -> WhoWas {
         WhoWas {
-            nick,
+            nickname,
             count: Some(count),
         }
     }
 
-    pub fn nick(&self) -> &Nickname {
-        &self.nick
+    pub fn nickname(&self) -> &Nickname {
+        &self.nickname
     }
 
     pub fn count(&self) -> Option<NonZeroUsize> {
@@ -34,7 +37,7 @@ impl WhoWas {
 impl ClientMessageParts for WhoWas {
     fn into_parts(self) -> (Verb, ParameterList) {
         let params = ParameterList::builder()
-            .with_medial(self.nick)
+            .with_medial(self.nickname)
             .maybe_with_final(self.count.map(|c| {
                 let Ok(param) = FinalParam::try_from(c.to_string()) else {
                     unreachable!("A stringified integer should be a valid FinalParam");
@@ -45,7 +48,7 @@ impl ClientMessageParts for WhoWas {
     }
 
     fn to_irc_line(&self) -> String {
-        format!("WHOWAS {}{}", self.nick, DisplayMaybeFinal(self.count))
+        format!("WHOWAS {}{}", self.nickname, DisplayMaybeFinal(self.count))
     }
 }
 
@@ -66,7 +69,7 @@ impl TryFrom<ParameterList> for WhoWas {
 
     fn try_from(params: ParameterList) -> Result<WhoWas, ClientMessageError> {
         let (p1, p2): (_, Option<FinalParam>) = params.try_into()?;
-        let nick = Nickname::try_from(p1.into_inner())?;
+        let nickname = Nickname::try_from(p1.into_inner())?;
         let count = if let Some(p) = p2 {
             match p.as_str().parse::<NonZeroUsize>() {
                 Ok(count) => Some(count),
@@ -80,6 +83,6 @@ impl TryFrom<ParameterList> for WhoWas {
         } else {
             None
         };
-        Ok(WhoWas { nick, count })
+        Ok(WhoWas { nickname, count })
     }
 }

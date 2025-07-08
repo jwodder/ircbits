@@ -1,4 +1,4 @@
-use crate::parameters::{FinalParam, MedialParam};
+use crate::{FinalParam, MedialParam};
 use thiserror::Error;
 
 #[derive(Clone, Eq, PartialEq)]

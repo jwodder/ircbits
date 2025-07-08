@@ -1,5 +1,7 @@
-use crate::channel::channel_prefixed;
-use crate::{Channel, Nickname, ParseChannelError, ParseNicknameError, TryFromStringError};
+use crate::types::{
+    channel::channel_prefixed, Channel, Nickname, ParseChannelError, ParseNicknameError,
+};
+use crate::TryFromStringError;
 use thiserror::Error;
 
 /// The target of a `PRIVMSG` or `NOTICE` message

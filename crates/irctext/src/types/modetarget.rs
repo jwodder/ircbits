@@ -1,8 +1,7 @@
-use crate::channel::channel_prefixed;
-use crate::{
-    Channel, FinalParam, MedialParam, Nickname, ParseChannelError, ParseNicknameError,
-    TryFromStringError,
+use crate::types::{
+    channel::channel_prefixed, Channel, Nickname, ParseChannelError, ParseNicknameError,
 };
+use crate::{FinalParam, MedialParam, TryFromStringError};
 use std::fmt;
 use thiserror::Error;
 

@@ -1,5 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, Nickname, ParameterList, ParameterListSizeError, RawMessage, Verb};
+use crate::types::Nickname;
+use crate::{Message, ParameterList, ParameterListSizeError, RawMessage, Verb};
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]

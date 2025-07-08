@@ -1,10 +1,7 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::channel::channel_prefixed;
+use crate::types::{channel::channel_prefixed, Channel, EListCond};
 use crate::util::{join_with_commas, split_param};
-use crate::{
-    Channel, EListCond, MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage,
-    Verb,
-};
+use crate::{MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage, Verb};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct List {

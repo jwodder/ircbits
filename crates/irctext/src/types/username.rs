@@ -1,6 +1,6 @@
 // See <https://github.com/ircdocs/modern-irc/issues/226> for notes on username
 // format.
-use crate::parameters::{FinalParam, MedialParam};
+use crate::{FinalParam, MedialParam};
 use thiserror::Error;
 
 #[derive(Clone, Eq, PartialEq)]

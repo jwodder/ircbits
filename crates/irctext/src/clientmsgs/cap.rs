@@ -1,7 +1,7 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
+use crate::types::CapTarget;
 use crate::{
-    CapTarget, FinalParam, MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage,
-    Verb,
+    FinalParam, MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage, Verb,
 };
 use std::fmt::Write;
 

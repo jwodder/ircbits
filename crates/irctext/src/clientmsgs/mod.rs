@@ -78,11 +78,14 @@ pub use self::wallops::*;
 pub use self::who::*;
 pub use self::whois::*;
 pub use self::whowas::*;
+use crate::types::{
+    ParseCapTargetError, ParseChannelError, ParseEListCondError, ParseKeyError,
+    ParseModeStringError, ParseModeTargetError, ParseNicknameError, ParseTargetError,
+    ParseUsernameError,
+};
 use crate::{
-    Message, ParameterList, ParameterListSizeError, ParseCapTargetError, ParseChannelError,
-    ParseEListCondError, ParseKeyError, ParseMedialParamError, ParseModeStringError,
-    ParseModeTargetError, ParseNicknameError, ParseTargetError, ParseUsernameError, Payload,
-    RawMessage, TryFromStringError, Verb,
+    Message, ParameterList, ParameterListSizeError, ParseMedialParamError, Payload, RawMessage,
+    TryFromStringError, Verb,
 };
 use enum_dispatch::enum_dispatch;
 use thiserror::Error;

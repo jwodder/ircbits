@@ -1,6 +1,7 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
+use crate::types::Nickname;
 use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, Nickname, ParameterList, RawMessage, Verb};
+use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 use std::num::NonZeroUsize;
 
 #[derive(Clone, Debug, Eq, PartialEq)]

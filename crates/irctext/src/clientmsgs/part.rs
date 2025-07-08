@@ -1,6 +1,7 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
+use crate::types::Channel;
 use crate::util::{join_with_commas, split_param, DisplayMaybeFinal};
-use crate::{Channel, FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
+use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Part {

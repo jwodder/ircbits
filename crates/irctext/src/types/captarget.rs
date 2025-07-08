@@ -1,4 +1,5 @@
-use crate::{Nickname, ParseNicknameError, TryFromStringError};
+use crate::types::{Nickname, ParseNicknameError};
+use crate::TryFromStringError;
 use std::fmt;
 use thiserror::Error;
 

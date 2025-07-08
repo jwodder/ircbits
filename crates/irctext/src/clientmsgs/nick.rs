@@ -1,5 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, Message, Nickname, ParameterList, RawMessage, Verb};
+use crate::types::Nickname;
+use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Nick {

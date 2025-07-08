@@ -1,4 +1,4 @@
-use crate::parameters::{FinalParam, MedialParam};
+use crate::{FinalParam, MedialParam};
 use thiserror::Error;
 
 // Like a `MedialParam`, but not allowing commas

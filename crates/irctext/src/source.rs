@@ -1,5 +1,4 @@
-use super::nickname::{Nickname, ParseNicknameError};
-use super::username::{ParseUsernameError, Username};
+use crate::types::{Nickname, ParseNicknameError, ParseUsernameError, Username};
 use std::fmt;
 use thiserror::Error;
 use url::Host;

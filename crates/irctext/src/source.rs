@@ -81,10 +81,10 @@ impl std::str::FromStr for Source {
 impl TryFrom<String> for Source {
     type Error = TryFromStringError<ParseSourceError>;
 
-    fn try_from(s: String) -> Result<Source, TryFromStringError<ParseSourceError>> {
-        match s.parse() {
+    fn try_from(string: String) -> Result<Source, TryFromStringError<ParseSourceError>> {
+        match string.parse() {
             Ok(src) => Ok(src),
-            Err(inner) => Err(TryFromStringError { inner, string: s }),
+            Err(inner) => Err(TryFromStringError { inner, string }),
         }
     }
 }

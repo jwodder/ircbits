@@ -1,6 +1,7 @@
 use crate::util::split_word;
 use crate::{
     Command, ParameterList, ParseCommandError, ParseParameterListError, ParseSourceError, Source,
+    TryFromStringError,
 };
 use std::fmt;
 use thiserror::Error;
@@ -32,17 +33,9 @@ impl fmt::Display for RawMessage {
 impl std::str::FromStr for RawMessage {
     type Err = ParseRawMessageError;
 
-    fn from_str(s: &str) -> Result<RawMessage, ParseRawMessageError> {
-        String::from(s).try_into()
-    }
-}
-
-impl TryFrom<String> for RawMessage {
-    type Error = ParseRawMessageError;
-
     // `s` may optionally end with LF, CR LF, or CR.
-    fn try_from(s: String) -> Result<RawMessage, ParseRawMessageError> {
-        let mut s = s.strip_suffix('\n').unwrap_or(&*s);
+    fn from_str(s: &str) -> Result<RawMessage, ParseRawMessageError> {
+        let mut s = s.strip_suffix('\n').unwrap_or(s);
         s = s.strip_suffix('\r').unwrap_or(s);
         let source = if let Some(s2) = s.strip_prefix(':') {
             let (source_str, rest) = split_word(s2);
@@ -59,6 +52,17 @@ impl TryFrom<String> for RawMessage {
             command,
             parameters,
         })
+    }
+}
+
+impl TryFrom<String> for RawMessage {
+    type Error = TryFromStringError<ParseRawMessageError>;
+
+    fn try_from(string: String) -> Result<RawMessage, TryFromStringError<ParseRawMessageError>> {
+        match string.parse() {
+            Ok(msg) => Ok(msg),
+            Err(inner) => Err(TryFromStringError { inner, string }),
+        }
     }
 }
 

@@ -35,6 +35,14 @@ impl ParameterList {
         }
     }
 
+    pub fn last(&self) -> Option<ParamRef<'_>> {
+        if let Some(ref p) = self.finalp {
+            Some(ParamRef::Final(p))
+        } else {
+            self.medial.last().map(ParamRef::Medial)
+        }
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = ParamRef<'_>> + '_ {
         self.medial
             .iter()

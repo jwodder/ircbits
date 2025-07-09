@@ -9,7 +9,7 @@
 // Note that the set of valid channel type prefixes varies from server to
 // server, but for now, to keep things simple, this library treats '#' and '&'
 // — and only those characters — as channel type prefixes.
-use crate::types::ModeTarget;
+use crate::types::{ModeTarget, MsgTarget};
 use crate::{FinalParam, MedialParam};
 use thiserror::Error;
 
@@ -43,6 +43,12 @@ impl From<Channel> for FinalParam {
 impl PartialEq<ModeTarget> for Channel {
     fn eq(&self, other: &ModeTarget) -> bool {
         matches!(other, ModeTarget::Channel(chan) if chan == self)
+    }
+}
+
+impl PartialEq<MsgTarget> for Channel {
+    fn eq(&self, other: &MsgTarget) -> bool {
+        matches!(other, MsgTarget::Channel(chan) if chan == self)
     }
 }
 

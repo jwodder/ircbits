@@ -1,7 +1,8 @@
 use crate::types::{
     channel::channel_prefixed, Channel, Nickname, ParseChannelError, ParseNicknameError,
 };
-use crate::TryFromStringError;
+use crate::{FinalParam, MedialParam, TryFromStringError};
+use std::fmt;
 use thiserror::Error;
 
 /// The target of a `PRIVMSG` or `NOTICE` message
@@ -10,6 +11,34 @@ pub enum MsgTarget {
     Channel(Channel),
     Nick(Nickname),
     Star,
+}
+
+impl MsgTarget {
+    pub fn is_channel(&self) -> bool {
+        matches!(self, MsgTarget::Channel(_))
+    }
+
+    pub fn is_nick(&self) -> bool {
+        matches!(self, MsgTarget::Nick(_))
+    }
+
+    pub fn is_star(&self) -> bool {
+        matches!(self, MsgTarget::Star)
+    }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            MsgTarget::Channel(chan) => chan.as_str(),
+            MsgTarget::Nick(nick) => nick.as_str(),
+            MsgTarget::Star => "*",
+        }
+    }
+}
+
+impl fmt::Display for MsgTarget {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
 }
 
 impl std::str::FromStr for MsgTarget {
@@ -56,11 +85,7 @@ impl TryFrom<String> for MsgTarget {
 
 impl AsRef<str> for MsgTarget {
     fn as_ref(&self) -> &str {
-        match self {
-            MsgTarget::Channel(chan) => chan.as_ref(),
-            MsgTarget::Nick(nick) => nick.as_ref(),
-            MsgTarget::Star => "*",
-        }
+        self.as_str()
     }
 }
 
@@ -73,6 +98,59 @@ impl From<Channel> for MsgTarget {
 impl From<Nickname> for MsgTarget {
     fn from(value: Nickname) -> MsgTarget {
         MsgTarget::Nick(value)
+    }
+}
+
+impl From<MsgTarget> for String {
+    fn from(value: MsgTarget) -> String {
+        match value {
+            MsgTarget::Channel(chan) => chan.into(),
+            MsgTarget::Nick(nick) => nick.into(),
+            MsgTarget::Star => String::from("*"),
+        }
+    }
+}
+
+impl From<MsgTarget> for MedialParam {
+    fn from(value: MsgTarget) -> MedialParam {
+        MedialParam::try_from(String::from(value))
+            .expect("Message target should be valid MedialParam")
+    }
+}
+
+impl From<MsgTarget> for FinalParam {
+    fn from(value: MsgTarget) -> FinalParam {
+        FinalParam::from(MedialParam::from(value))
+    }
+}
+
+impl PartialEq<String> for MsgTarget {
+    fn eq(&self, other: &String) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl PartialEq<str> for MsgTarget {
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl<'a> PartialEq<&'a str> for MsgTarget {
+    fn eq(&self, other: &&'a str) -> bool {
+        &self.as_str() == other
+    }
+}
+
+impl PartialEq<Channel> for MsgTarget {
+    fn eq(&self, other: &Channel) -> bool {
+        matches!(self, MsgTarget::Channel(chan) if chan == other)
+    }
+}
+
+impl PartialEq<Nickname> for MsgTarget {
+    fn eq(&self, other: &Nickname) -> bool {
+        matches!(self, MsgTarget::Nick(nick) if nick == other)
     }
 }
 

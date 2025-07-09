@@ -8,6 +8,16 @@ pub enum Command {
     Reply(u16),
 }
 
+impl Command {
+    pub fn is_verb(&self) -> bool {
+        matches!(self, Command::Verb(_))
+    }
+
+    pub fn is_reply(&self) -> bool {
+        matches!(self, Command::Reply(_))
+    }
+}
+
 impl fmt::Display for Command {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -37,6 +47,30 @@ impl TryFrom<String> for Command {
         } else {
             Ok(Command::Verb(Verb::from(s)))
         }
+    }
+}
+
+impl From<Verb> for Command {
+    fn from(value: Verb) -> Command {
+        Command::Verb(value)
+    }
+}
+
+impl From<u16> for Command {
+    fn from(value: u16) -> Command {
+        Command::Reply(value)
+    }
+}
+
+impl PartialEq<Verb> for Command {
+    fn eq(&self, other: &Verb) -> bool {
+        matches!(self, Command::Verb(v) if v == other)
+    }
+}
+
+impl PartialEq<u16> for Command {
+    fn eq(&self, other: &u16) -> bool {
+        *self == Command::Reply(*other)
     }
 }
 

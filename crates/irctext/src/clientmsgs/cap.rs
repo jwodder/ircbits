@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::types::CapTarget;
+use crate::types::ReplyTarget;
 use crate::{
     FinalParam, MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage, Verb,
 };
@@ -24,7 +24,7 @@ use std::fmt::Write;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Cap {
-    target: Option<CapTarget>,
+    target: Option<ReplyTarget>,
     subcommand: MedialParam,
     // Whether there's an asterisk parameter between the subcommand and the
     // actual parameter:
@@ -47,7 +47,7 @@ impl Cap {
         self
     }
 
-    pub fn with_target<P: Into<CapTarget>>(mut self, target: P) -> Cap {
+    pub fn with_target<P: Into<ReplyTarget>>(mut self, target: P) -> Cap {
         self.target = Some(target.into());
         self
     }
@@ -61,7 +61,7 @@ impl Cap {
         &self.subcommand
     }
 
-    pub fn target(&self) -> Option<&CapTarget> {
+    pub fn target(&self) -> Option<&ReplyTarget> {
         self.target.as_ref()
     }
 
@@ -152,7 +152,7 @@ impl TryFrom<ParameterList> for Cap {
                 > = params.try_into() else {
                     unreachable!("ParameterList should be convertible to 3-tuple when len is 3");
                 };
-                let target = CapTarget::try_from(target.into_inner())?;
+                let target = ReplyTarget::try_from(target.into_inner())?;
                 Ok(Cap::new(subcommand)
                     .with_parameter(parameter)
                     .with_target(target))
@@ -171,7 +171,7 @@ impl TryFrom<ParameterList> for Cap {
                         expected: "*",
                     });
                 }
-                let target = CapTarget::try_from(target.into_inner())?;
+                let target = ReplyTarget::try_from(target.into_inner())?;
                 Ok(Cap::new(subcommand)
                     .with_parameter(parameter)
                     .with_target(target)

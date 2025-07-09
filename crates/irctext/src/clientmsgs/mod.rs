@@ -79,8 +79,8 @@ pub use self::who::*;
 pub use self::whois::*;
 pub use self::whowas::*;
 use crate::types::{
-    ParseCapTargetError, ParseChannelError, ParseEListCondError, ParseKeyError,
-    ParseModeStringError, ParseModeTargetError, ParseNicknameError, ParseTargetError,
+    ParseChannelError, ParseEListCondError, ParseKeyError, ParseModeStringError,
+    ParseModeTargetError, ParseNicknameError, ParseReplyTargetError, ParseTargetError,
     ParseUsernameError,
 };
 use crate::{
@@ -217,9 +217,6 @@ pub enum ClientMessageError {
     #[error(transparent)]
     ParamQty(#[from] ParameterListSizeError),
 
-    #[error("failed to parse CAP target string")]
-    CapTarget(#[from] TryFromStringError<ParseCapTargetError>),
-
     #[error("failed to parse channel string")]
     Channel(#[from] TryFromStringError<ParseChannelError>),
 
@@ -240,6 +237,9 @@ pub enum ClientMessageError {
 
     #[error("failed to parse nickname string")]
     Nickname(#[from] TryFromStringError<ParseNicknameError>),
+
+    #[error("failed to parse reply target string")]
+    ReplyTarget(#[from] TryFromStringError<ParseReplyTargetError>),
 
     #[error("failed to parse target string")]
     Target(#[from] TryFromStringError<ParseTargetError>),

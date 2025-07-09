@@ -36,6 +36,15 @@ where
         .map_err(Into::into)
 }
 
+pub(crate) fn pop_channel_membership(s: &str) -> (Option<char>, &str) {
+    for ch in crate::CHANNEL_MEMBERSHIPS {
+        if let Some(rest) = s.strip_suffix(ch) {
+            return (Some(ch), rest);
+        }
+    }
+    (None, s)
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct DisplayMaybeFinal<T>(pub Option<T>);
 

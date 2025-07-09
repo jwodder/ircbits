@@ -50,5 +50,5 @@ pub enum ParseChannelError {
 /// Returns `true` if `s` starts with one of the channel type prefixes
 /// recognized by this library
 pub(crate) fn channel_prefixed(s: &str) -> bool {
-    s.starts_with(['#', '&'])
+    s.starts_with(crate::CHANNEL_PREFIXES)
 }

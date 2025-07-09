@@ -5,6 +5,7 @@ mod validstr;
 
 pub mod clientmsgs;
 mod command;
+mod consts;
 mod message;
 mod parameters;
 mod raw_message;
@@ -15,6 +16,7 @@ mod util;
 mod verb;
 pub use crate::clientmsgs::{ClientMessage, ClientMessageError, ClientMessageParts};
 pub use crate::command::*;
+pub use crate::consts::*;
 pub use crate::message::*;
 pub use crate::parameters::*;
 pub use crate::raw_message::*;

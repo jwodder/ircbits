@@ -96,9 +96,9 @@ impl TryFrom<ParameterList> for Mode {
             required: 1,
             received: 0,
         })?;
-        let target = ModeTarget::try_from(p1.into_inner())?;
+        let target = ModeTarget::try_from(String::from(p1))?;
         let modestring = if let Some(p2) = iter.next() {
-            Some(ModeString::try_from(p2.into_inner())?)
+            Some(ModeString::try_from(String::from(p2))?)
         } else {
             None
         };

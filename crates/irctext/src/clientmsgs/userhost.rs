@@ -65,7 +65,7 @@ impl TryFrom<ParameterList> for UserHost {
         if (1..=5).contains(&params.len()) {
             let nicknames = params
                 .into_iter()
-                .map(|p| Nickname::try_from(p.into_inner()))
+                .map(|p| Nickname::try_from(String::from(p)))
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(UserHost { nicknames })
         } else {

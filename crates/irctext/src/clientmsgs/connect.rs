@@ -100,13 +100,13 @@ impl TryFrom<ParameterList> for Connect {
             let p1 = iter
                 .next()
                 .expect("First element should exist when len >= 1");
-            let target_server = MedialParam::try_from(p1.into_inner())?;
+            let target_server = MedialParam::try_from(String::from(p1))?;
             let port = if let Some(p2) = iter.next() {
                 match p2.as_str().parse::<u16>() {
                     Ok(p) => Some(p),
                     Err(inner) => {
                         return Err(ClientMessageError::Int {
-                            string: p2.into_inner(),
+                            string: p2.into(),
                             inner,
                         })
                     }
@@ -115,7 +115,7 @@ impl TryFrom<ParameterList> for Connect {
                 None
             };
             let remote_server = if let Some(p3) = iter.next() {
-                Some(MedialParam::try_from(p3.into_inner())?)
+                Some(MedialParam::try_from(String::from(p3))?)
             } else {
                 None
             };

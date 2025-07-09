@@ -9,6 +9,35 @@ pub enum ISupportParam {
     Eq(ISupportKey, ISupportValue),
 }
 
+impl ISupportParam {
+    pub fn is_set(&self) -> bool {
+        matches!(self, ISupportParam::Set(_))
+    }
+
+    pub fn is_unset(&self) -> bool {
+        matches!(self, ISupportParam::Unset(_))
+    }
+
+    pub fn is_eq(&self) -> bool {
+        matches!(self, ISupportParam::Eq(_, _))
+    }
+
+    pub fn key(&self) -> &ISupportKey {
+        match self {
+            ISupportParam::Set(key) => key,
+            ISupportParam::Unset(key) => key,
+            ISupportParam::Eq(key, _) => key,
+        }
+    }
+
+    pub fn value(&self) -> Option<&ISupportValue> {
+        match self {
+            ISupportParam::Eq(_, value) => Some(value),
+            _ => None,
+        }
+    }
+}
+
 impl fmt::Display for ISupportParam {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -50,6 +79,18 @@ impl TryFrom<String> for ISupportParam {
     }
 }
 
+impl From<ISupportParam> for MedialParam {
+    fn from(value: ISupportParam) -> MedialParam {
+        MedialParam::try_from(value.to_string()).expect("ISupportParam should be valid MedialParam")
+    }
+}
+
+impl From<ISupportParam> for FinalParam {
+    fn from(value: ISupportParam) -> FinalParam {
+        FinalParam::from(MedialParam::from(value))
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum ParseISupportParamError {
     #[error("invalid ISUPPORT key")]
@@ -76,18 +117,6 @@ fn validate(s: &str) -> Result<(), ParseISupportKeyError> {
     }
 }
 
-impl From<ISupportKey> for MedialParam {
-    fn from(value: ISupportKey) -> MedialParam {
-        MedialParam::try_from(value.into_inner()).expect("ISupportKey should be valid MedialParam")
-    }
-}
-
-impl From<ISupportKey> for FinalParam {
-    fn from(value: ISupportKey) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
-    }
-}
-
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum ParseISupportKeyError {
     #[error("ISUPPORT keys cannot be empty")]
@@ -96,12 +125,38 @@ pub enum ParseISupportKeyError {
     BadCharacter,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct ISupportValue(String);
 
 impl ISupportValue {
     pub fn escaped(&self) -> EscapedISupportValue<'_> {
         EscapedISupportValue(self)
+    }
+
+    pub fn into_inner(self) -> String {
+        self.0
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl From<ISupportValue> for String {
+    fn from(value: ISupportValue) -> String {
+        value.0
+    }
+}
+
+impl From<&ISupportValue> for String {
+    fn from(value: &ISupportValue) -> String {
+        value.0.clone()
+    }
+}
+
+impl fmt::Debug for ISupportValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.0)
     }
 }
 
@@ -155,6 +210,20 @@ impl TryFrom<String> for ISupportValue {
     }
 }
 
+impl AsRef<str> for ISupportValue {
+    fn as_ref(&self) -> &str {
+        self.0.as_ref()
+    }
+}
+
+impl std::ops::Deref for ISupportValue {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.0
+    }
+}
+
 impl PartialEq<String> for ISupportValue {
     fn eq(&self, other: &String) -> bool {
         &self.0 == other
@@ -170,12 +239,6 @@ impl PartialEq<str> for ISupportValue {
 impl<'a> PartialEq<&'a str> for ISupportValue {
     fn eq(&self, other: &&'a str) -> bool {
         &self.0 == other
-    }
-}
-
-impl AsRef<str> for ISupportValue {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
     }
 }
 

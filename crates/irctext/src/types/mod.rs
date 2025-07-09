@@ -1,4 +1,5 @@
 pub(crate) mod channel;
+mod channel_status;
 mod elistcond;
 mod isupport;
 mod key;
@@ -11,6 +12,7 @@ mod userhostreply;
 mod username;
 mod whoflags;
 pub use self::channel::*;
+pub use self::channel_status::*;
 pub use self::elistcond::*;
 pub use self::isupport::*;
 pub use self::key::*;

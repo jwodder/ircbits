@@ -1,3 +1,5 @@
+pub type ParseVerbError = strum::ParseError;
+
 #[derive(strum::AsRefStr, Clone, Debug, strum::Display, strum::EnumString, Eq, PartialEq)]
 #[strum(serialize_all = "UPPERCASE")]
 pub enum Verb {

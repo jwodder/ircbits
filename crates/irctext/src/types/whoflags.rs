@@ -1,5 +1,5 @@
 use crate::util::pop_channel_membership;
-use crate::TryFromStringError;
+use crate::{FinalParam, MedialParam, TryFromStringError};
 use std::fmt;
 use thiserror::Error;
 
@@ -64,6 +64,18 @@ impl TryFrom<String> for WhoFlags {
             Ok(src) => Ok(src),
             Err(inner) => Err(TryFromStringError { inner, string }),
         }
+    }
+}
+
+impl From<WhoFlags> for MedialParam {
+    fn from(value: WhoFlags) -> MedialParam {
+        MedialParam::try_from(value.to_string()).expect("WhoFlags should be valid MedialParam")
+    }
+}
+
+impl From<WhoFlags> for FinalParam {
+    fn from(value: WhoFlags) -> FinalParam {
+        FinalParam::from(MedialParam::from(value))
     }
 }
 

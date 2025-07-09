@@ -60,6 +60,21 @@ impl TryFrom<String> for ReplyTarget {
     }
 }
 
+impl PartialEq<str> for ReplyTarget {
+    fn eq(&self, other: &str) -> bool {
+        match self {
+            ReplyTarget::User(nick) => nick == other,
+            ReplyTarget::Star => other == "*",
+        }
+    }
+}
+
+impl<'a> PartialEq<&'a str> for ReplyTarget {
+    fn eq(&self, other: &&'a str) -> bool {
+        self == *other
+    }
+}
+
 impl AsRef<str> for ReplyTarget {
     fn as_ref(&self) -> &str {
         match self {

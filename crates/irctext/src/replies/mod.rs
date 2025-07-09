@@ -10973,3 +10973,6 @@ impl TryFrom<ParameterList> for SaslMechs {
         Ok(SaslMechs { parameters, client })
     }
 }
+
+#[cfg(test)]
+mod tests;

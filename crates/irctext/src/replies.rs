@@ -1,4 +1,3 @@
-#![expect(unreachable_code, unused_variables)]
 use crate::types::{
     Channel, ChannelStatus, ISupportParam, ModeString, ModeTarget, MsgTarget, Nickname,
     ParseChannelError, ParseChannelStatusError, ParseISupportParamError, ParseModeStringError,
@@ -325,10 +324,22 @@ pub enum ReplyError {
         received: usize,
     },
 
+    #[error("failed to parse host string {string:?}: {inner}")]
+    Host {
+        string: String,
+        inner: url::ParseError,
+    },
+
     #[error("failed to parse integer string {string:?}: {inner}")]
     Int {
         string: String,
         inner: std::num::ParseIntError,
+    },
+
+    #[error("failed to parse IP address string {string:?}: {inner}")]
+    IpAddr {
+        string: String,
+        inner: std::net::AddrParseError,
     },
 
     #[error("failed to parse channel string")]
@@ -369,6 +380,9 @@ pub enum ReplyError {
 
     #[error("failed to parse RPL_WHOREPLY flags")]
     WhoFlags(#[from] TryFromStringError<ParseWhoFlagsError>),
+
+    #[error("invalid user@host string: {0:?}: expected '@'")]
+    NoAt(String),
 }
 
 pub mod codes {
@@ -4671,9 +4685,58 @@ impl TryFrom<ParameterList> for WhoIsActually {
             .get(1)
             .expect("Parameter 1 should exist when list length is at least 3");
         let nickname = Nickname::try_from(String::from(p))?;
-        let host = todo!();
-        let username = todo!();
-        let ip = todo!();
+        let (username, host, ip) = match parameters.len() {
+            3 => (None, None, None),
+            4 => {
+                let p = parameters
+                    .get(2)
+                    .expect("Parameter 2 should exist when list length is at least 3");
+                match Host::parse(p.as_str()) {
+                    Ok(host @ Host::Domain(_)) => (None, Some(host), None),
+                    Ok(Host::Ipv4(ip)) => (None, None, Some(IpAddr::from(ip))),
+                    Ok(Host::Ipv6(ip)) => (None, None, Some(IpAddr::from(ip))),
+                    Err(inner) => {
+                        return Err(ReplyError::Host {
+                            inner,
+                            string: String::from(p),
+                        })
+                    }
+                }
+            }
+            _ => {
+                let p = parameters
+                    .get(2)
+                    .expect("Parameter 2 should exist when list length is at least 5");
+                let (username, host) = if let Some((user, host)) = p.as_str().rsplit_once('@') {
+                    let user = Username::try_from(user.to_owned())?;
+                    let host = match Host::parse(host) {
+                        Ok(host) => host,
+                        Err(inner) => {
+                            return Err(ReplyError::Host {
+                                inner,
+                                string: host.to_owned(),
+                            })
+                        }
+                    };
+                    (user, host)
+                } else {
+                    return Err(ReplyError::NoAt(String::from(p)));
+                };
+                let p = parameters
+                    .get(3)
+                    .expect("Parameter 3 should exist when list length is at least 5");
+                let ip = match p.as_str().parse::<IpAddr>() {
+                    Ok(ip) => ip,
+                    Err(inner) => {
+                        return Err(ReplyError::IpAddr {
+                            inner,
+                            string: String::from(p),
+                        })
+                    }
+                };
+                (Some(username), Some(host), Some(ip))
+            }
+        };
         Ok(WhoIsActually {
             parameters,
             client,

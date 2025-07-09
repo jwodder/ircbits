@@ -1,5 +1,3 @@
-#![expect(clippy::todo)]
-
 #[macro_use]
 mod validstr;
 

@@ -336,10 +336,10 @@ pub enum ParseParameterListError {
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum ParameterListSizeError {
-    #[error("invalid number of parameters: require {required}, received {received}")]
+    #[error("invalid number of parameters: {required} required, {received} received")]
     Exact { required: usize, received: usize },
     #[error(
-        "invalid number of parameters: require {min_required}-{max_required}, received {received}"
+        "invalid number of parameters: {min_required}-{max_required} required, {received} received"
     )]
     Range {
         min_required: usize,

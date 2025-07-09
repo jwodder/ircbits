@@ -6,47 +6,47 @@ use thiserror::Error;
 
 /// The target of a `PRIVMSG` or `NOTICE` message
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Target {
+pub enum MsgTarget {
     Channel(Channel),
     User(Nickname),
     Star,
 }
 
-impl std::str::FromStr for Target {
-    type Err = ParseTargetError;
+impl std::str::FromStr for MsgTarget {
+    type Err = ParseMsgTargetError;
 
-    fn from_str(s: &str) -> Result<Target, ParseTargetError> {
+    fn from_str(s: &str) -> Result<MsgTarget, ParseMsgTargetError> {
         if s == "*" {
-            Ok(Target::Star)
+            Ok(MsgTarget::Star)
         } else if channel_prefixed(s) {
             let channel = s.parse::<Channel>()?;
-            Ok(Target::Channel(channel))
+            Ok(MsgTarget::Channel(channel))
         } else {
             let nickname = s.parse::<Nickname>()?;
-            Ok(Target::User(nickname))
+            Ok(MsgTarget::User(nickname))
         }
     }
 }
 
-impl TryFrom<String> for Target {
-    type Error = TryFromStringError<ParseTargetError>;
+impl TryFrom<String> for MsgTarget {
+    type Error = TryFromStringError<ParseMsgTargetError>;
 
-    fn try_from(value: String) -> Result<Target, TryFromStringError<ParseTargetError>> {
+    fn try_from(value: String) -> Result<MsgTarget, TryFromStringError<ParseMsgTargetError>> {
         if value == "*" {
-            Ok(Target::Star)
+            Ok(MsgTarget::Star)
         } else if channel_prefixed(&value) {
             match Channel::try_from(value) {
-                Ok(channel) => Ok(Target::Channel(channel)),
+                Ok(channel) => Ok(MsgTarget::Channel(channel)),
                 Err(TryFromStringError { inner, string }) => Err(TryFromStringError {
-                    inner: ParseTargetError::Channel(inner),
+                    inner: ParseMsgTargetError::Channel(inner),
                     string,
                 }),
             }
         } else {
             match Nickname::try_from(value) {
-                Ok(nickname) => Ok(Target::User(nickname)),
+                Ok(nickname) => Ok(MsgTarget::User(nickname)),
                 Err(TryFromStringError { inner, string }) => Err(TryFromStringError {
-                    inner: ParseTargetError::Nickname(inner),
+                    inner: ParseMsgTargetError::Nickname(inner),
                     string,
                 }),
             }
@@ -54,30 +54,30 @@ impl TryFrom<String> for Target {
     }
 }
 
-impl AsRef<str> for Target {
+impl AsRef<str> for MsgTarget {
     fn as_ref(&self) -> &str {
         match self {
-            Target::Channel(chan) => chan.as_ref(),
-            Target::User(nick) => nick.as_ref(),
-            Target::Star => "*",
+            MsgTarget::Channel(chan) => chan.as_ref(),
+            MsgTarget::User(nick) => nick.as_ref(),
+            MsgTarget::Star => "*",
         }
     }
 }
 
-impl From<Channel> for Target {
-    fn from(value: Channel) -> Target {
-        Target::Channel(value)
+impl From<Channel> for MsgTarget {
+    fn from(value: Channel) -> MsgTarget {
+        MsgTarget::Channel(value)
     }
 }
 
-impl From<Nickname> for Target {
-    fn from(value: Nickname) -> Target {
-        Target::User(value)
+impl From<Nickname> for MsgTarget {
+    fn from(value: Nickname) -> MsgTarget {
+        MsgTarget::User(value)
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum ParseTargetError {
+pub enum ParseMsgTargetError {
     #[error(transparent)]
     Channel(#[from] ParseChannelError),
     #[error(transparent)]

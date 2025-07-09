@@ -80,7 +80,7 @@ pub use self::whois::*;
 pub use self::whowas::*;
 use crate::types::{
     ParseChannelError, ParseEListCondError, ParseKeyError, ParseModeStringError,
-    ParseModeTargetError, ParseNicknameError, ParseReplyTargetError, ParseTargetError,
+    ParseModeTargetError, ParseMsgTargetError, ParseNicknameError, ParseReplyTargetError,
     ParseUsernameError,
 };
 use crate::{
@@ -235,14 +235,14 @@ pub enum ClientMessageError {
     #[error("failed to parse mode target string")]
     ModeTarget(#[from] TryFromStringError<ParseModeTargetError>),
 
+    #[error("failed to parse message target string")]
+    MsgTarget(#[from] TryFromStringError<ParseMsgTargetError>),
+
     #[error("failed to parse nickname string")]
     Nickname(#[from] TryFromStringError<ParseNicknameError>),
 
     #[error("failed to parse reply target string")]
     ReplyTarget(#[from] TryFromStringError<ParseReplyTargetError>),
-
-    #[error("failed to parse target string")]
-    Target(#[from] TryFromStringError<ParseTargetError>),
 
     #[error("failed to parse username string")]
     Username(#[from] TryFromStringError<ParseUsernameError>),

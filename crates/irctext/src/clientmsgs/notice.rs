@@ -1,16 +1,16 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::types::Target;
+use crate::types::MsgTarget;
 use crate::util::{join_with_commas, split_param};
 use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Notice {
-    targets: Vec<Target>,
+    targets: Vec<MsgTarget>,
     text: FinalParam,
 }
 
 impl Notice {
-    pub fn new<T: Into<Target>>(target: T, text: FinalParam) -> Notice {
+    pub fn new<T: Into<MsgTarget>>(target: T, text: FinalParam) -> Notice {
         Notice {
             targets: vec![target.into()],
             text,
@@ -20,7 +20,7 @@ impl Notice {
     pub fn new_to_many<I, T>(targets: I, text: FinalParam) -> Option<Notice>
     where
         I: IntoIterator<Item = T>,
-        T: Into<Target>,
+        T: Into<MsgTarget>,
     {
         let targets = targets.into_iter().map(Into::into).collect::<Vec<_>>();
         if targets.is_empty() {
@@ -30,7 +30,7 @@ impl Notice {
         }
     }
 
-    pub fn targets(&self) -> &[Target] {
+    pub fn targets(&self) -> &[MsgTarget] {
         &self.targets
     }
 
@@ -81,7 +81,7 @@ impl TryFrom<ParameterList> for Notice {
 
     fn try_from(params: ParameterList) -> Result<Notice, ClientMessageError> {
         let (p1, text): (_, FinalParam) = params.try_into()?;
-        let targets = split_param::<Target>(p1.as_str())?;
+        let targets = split_param::<MsgTarget>(p1.as_str())?;
         assert!(
             !targets.is_empty(),
             "targets parsed from NOTICE message should not be empty"

@@ -1,16 +1,16 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::types::Target;
+use crate::types::MsgTarget;
 use crate::util::{join_with_commas, split_param};
 use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PrivMsg {
-    targets: Vec<Target>,
+    targets: Vec<MsgTarget>,
     text: FinalParam,
 }
 
 impl PrivMsg {
-    pub fn new<T: Into<Target>>(target: T, text: FinalParam) -> PrivMsg {
+    pub fn new<T: Into<MsgTarget>>(target: T, text: FinalParam) -> PrivMsg {
         PrivMsg {
             targets: vec![target.into()],
             text,
@@ -20,7 +20,7 @@ impl PrivMsg {
     pub fn new_to_many<I, T>(targets: I, text: FinalParam) -> Option<PrivMsg>
     where
         I: IntoIterator<Item = T>,
-        T: Into<Target>,
+        T: Into<MsgTarget>,
     {
         let targets = targets.into_iter().map(Into::into).collect::<Vec<_>>();
         if targets.is_empty() {
@@ -30,7 +30,7 @@ impl PrivMsg {
         }
     }
 
-    pub fn targets(&self) -> &[Target] {
+    pub fn targets(&self) -> &[MsgTarget] {
         &self.targets
     }
 
@@ -81,7 +81,7 @@ impl TryFrom<ParameterList> for PrivMsg {
 
     fn try_from(params: ParameterList) -> Result<PrivMsg, ClientMessageError> {
         let (p1, text): (_, FinalParam) = params.try_into()?;
-        let targets = split_param::<Target>(p1.as_str())?;
+        let targets = split_param::<MsgTarget>(p1.as_str())?;
         assert!(
             !targets.is_empty(),
             "targets parsed from PRIVMSG message should not be empty"

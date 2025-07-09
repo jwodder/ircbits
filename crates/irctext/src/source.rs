@@ -1,3 +1,14 @@
+// <https://modern.ircdocs.horse> doesn't address the format of `<servername>`
+// and `<host>` in source prefixes.
+//
+// RFC 1459 and RFC 2812 don't explicitly define the `<servername>` and
+// `<host>` in `<prefix>`, but a few paragraphs after the definition of
+// `<prefix>`, they both give BNF for targets in which `<servername>` and
+// `<host>` are specified to be domain names.
+//
+// Based on <https://github.com/ircdocs/modern-irc/issues/168>, no validation
+// should be performed on host segments — for now.
+
 use crate::types::{Nickname, ParseNicknameError, ParseUsernameError, Username};
 use crate::TryFromStringError;
 use std::fmt;
@@ -6,46 +17,15 @@ use url::Host;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Source {
-    // <https://modern.ircdocs.horse> doesn't address the format of
-    // `<servername>` and `<host>` in source prefixes.
-    //
-    // RFC 1459 and RFC 2812 don't explicitly define the `<servername>` and
-    // `<host>` in `<prefix>`, but a few paragraphs after the definition of
-    // `<prefix>`, they both give BNF for targets in which `<servername>` and
-    // `<host>` are specified to be domain names.
-    //
-    // Based on <https://github.com/ircdocs/modern-irc/issues/168>, no
-    // validation should be performed on host segments — for now.
     Server(Host),
-    Client {
-        nickname: Nickname,
-        // Note that the user component may begin with a tilde if the IRC
-        // server failed to look up the username using ident and is instead
-        // reporting a username supplied with `USER`.  TODO: Extract the tilde
-        // as a field?
-        user: Option<Username>,
-        host: Option<String>,
-    },
+    Client(ClientSource),
 }
 
 impl fmt::Display for Source {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Source::Server(server) => write!(f, "{server}"),
-            Source::Client {
-                nickname,
-                user,
-                host,
-            } => {
-                write!(f, "{nickname}")?;
-                if let Some(user) = user {
-                    write!(f, "!{user}")?;
-                }
-                if let Some(host) = host {
-                    write!(f, "@{host}")?;
-                }
-                Ok(())
-            }
+            Source::Client(clisrc) => write!(f, "{clisrc}"),
         }
     }
 }
@@ -53,27 +33,12 @@ impl fmt::Display for Source {
 impl std::str::FromStr for Source {
     type Err = ParseSourceError;
 
-    fn from_str(mut s: &str) -> Result<Source, ParseSourceError> {
+    fn from_str(s: &str) -> Result<Source, ParseSourceError> {
         // cf. <https://github.com/ircdocs/modern-irc/issues/227>
         if !s.contains(['!', '@']) && s.contains('.') {
             Ok(Source::Server(Host::parse(s)?))
         } else {
-            let host_str = s.rsplit_once('@').map(|(pre, h)| {
-                s = pre;
-                h
-            });
-            let user_str = s.rsplit_once('!').map(|(pre, u)| {
-                s = pre;
-                u
-            });
-            let nickname = s.parse::<Nickname>()?;
-            let user = user_str.map(str::parse::<Username>).transpose()?;
-            let host = host_str.map(String::from);
-            Ok(Source::Client {
-                nickname,
-                user,
-                host,
-            })
+            Ok(Source::Client(s.parse::<ClientSource>()?))
         }
     }
 }
@@ -89,10 +54,75 @@ impl TryFrom<String> for Source {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ClientSource {
+    pub nickname: Nickname,
+    // Note that the user component may begin with a tilde if the IRC server
+    // failed to look up the username using ident and is instead reporting a
+    // username supplied with `USER`.
+    pub user: Option<Username>,
+    pub host: Option<String>,
+}
+
+impl fmt::Display for ClientSource {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.nickname)?;
+        if let Some(ref user) = self.user {
+            write!(f, "!{user}")?;
+        }
+        if let Some(ref host) = self.host {
+            write!(f, "@{host}")?;
+        }
+        Ok(())
+    }
+}
+
+impl std::str::FromStr for ClientSource {
+    type Err = ParseClientSourceError;
+
+    fn from_str(mut s: &str) -> Result<ClientSource, ParseClientSourceError> {
+        let host_str = s.rsplit_once('@').map(|(pre, h)| {
+            s = pre;
+            h
+        });
+        let user_str = s.rsplit_once('!').map(|(pre, u)| {
+            s = pre;
+            u
+        });
+        let nickname = s.parse::<Nickname>()?;
+        let user = user_str.map(str::parse::<Username>).transpose()?;
+        let host = host_str.map(String::from);
+        Ok(ClientSource {
+            nickname,
+            user,
+            host,
+        })
+    }
+}
+
+impl TryFrom<String> for ClientSource {
+    type Error = TryFromStringError<ParseClientSourceError>;
+
+    fn try_from(
+        string: String,
+    ) -> Result<ClientSource, TryFromStringError<ParseClientSourceError>> {
+        match string.parse() {
+            Ok(src) => Ok(src),
+            Err(inner) => Err(TryFromStringError { inner, string }),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum ParseSourceError {
     #[error("invalid host")]
     Host(#[from] url::ParseError),
+    #[error(transparent)]
+    Client(#[from] ParseClientSourceError),
+}
+
+#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+pub enum ParseClientSourceError {
     #[error("invalid nickname")]
     Nickname(#[from] ParseNicknameError),
     #[error("invalid username")]
@@ -108,11 +138,11 @@ mod parser_tests {
     #[test]
     fn simpler() {
         let source = "coolguy".parse::<Source>().unwrap();
-        assert_matches!(source, Source::Client {
+        assert_matches!(source, Source::Client(ClientSource {
             nickname,
             user: None,
             host: None
-        } => {
+        }) => {
             assert_eq!(nickname, "coolguy");
         });
     }
@@ -120,11 +150,11 @@ mod parser_tests {
     #[test]
     fn simple1() {
         let source = "coolguy!ag@127.0.0.1".parse::<Source>().unwrap();
-        assert_matches!(source, Source::Client {
+        assert_matches!(source, Source::Client(ClientSource {
             nickname,
             user: Some(user),
             host: Some(host)
-        } => {
+        }) => {
             assert_eq!(nickname, "coolguy");
             assert_eq!(user, "ag");
             assert_eq!(host, "127.0.0.1");
@@ -134,11 +164,11 @@ mod parser_tests {
     #[test]
     fn simple2() {
         let source = "coolguy!~ag@localhost".parse::<Source>().unwrap();
-        assert_matches!(source, Source::Client {
+        assert_matches!(source, Source::Client(ClientSource {
             nickname,
             user: Some(user),
             host: Some(host)
-        } => {
+        }) => {
             assert_eq!(nickname, "coolguy");
             assert_eq!(user, "~ag");
             assert_eq!(host, "localhost");
@@ -148,11 +178,11 @@ mod parser_tests {
     #[test]
     fn without_user() {
         let source = "coolguy@127.0.0.1".parse::<Source>().unwrap();
-        assert_matches!(source, Source::Client {
+        assert_matches!(source, Source::Client(ClientSource {
             nickname,
             user: None,
             host: Some(host)
-        } => {
+        }) => {
             assert_eq!(nickname, "coolguy");
             assert_eq!(host, "127.0.0.1");
         });
@@ -161,11 +191,11 @@ mod parser_tests {
     #[test]
     fn without_host() {
         let source = "coolguy!ag".parse::<Source>().unwrap();
-        assert_matches!(source, Source::Client {
+        assert_matches!(source, Source::Client(ClientSource {
             nickname,
             user: Some(user),
             host: None,
-        } => {
+        }) => {
             assert_eq!(nickname, "coolguy");
             assert_eq!(user, "ag");
         });
@@ -176,11 +206,11 @@ mod parser_tests {
         let source = "coolguy!ag@net\x035w\x03ork.admin"
             .parse::<Source>()
             .unwrap();
-        assert_matches!(source, Source::Client {
+        assert_matches!(source, Source::Client(ClientSource {
             nickname,
             user: Some(user),
             host: Some(host)
-        } => {
+        }) => {
             assert_eq!(nickname, "coolguy");
             assert_eq!(user, "ag");
             assert_eq!(host, "net\x035w\x03ork.admin");
@@ -192,11 +222,11 @@ mod parser_tests {
         let source = "coolguy!~ag@n\x02et\x0305w\x0fork.admin"
             .parse::<Source>()
             .unwrap();
-        assert_matches!(source, Source::Client {
+        assert_matches!(source, Source::Client(ClientSource {
             nickname,
             user: Some(user),
             host: Some(host)
-        } => {
+        }) => {
             assert_eq!(nickname, "coolguy");
             assert_eq!(user, "~ag");
             assert_eq!(host, "n\x02et\x0305w\x0fork.admin");

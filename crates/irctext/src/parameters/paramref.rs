@@ -7,7 +7,7 @@ pub enum ParamRef<'a> {
     Final(&'a FinalParam),
 }
 
-impl ParamRef<'_> {
+impl<'a> ParamRef<'a> {
     pub fn is_medial(&self) -> bool {
         matches!(self, ParamRef::Medial(_))
     }
@@ -16,7 +16,7 @@ impl ParamRef<'_> {
         matches!(self, ParamRef::Final(_))
     }
 
-    pub fn as_str(&self) -> &str {
+    pub fn as_str(&self) -> &'a str {
         match self {
             ParamRef::Medial(p) => p.as_str(),
             ParamRef::Final(p) => p.as_str(),
@@ -51,5 +51,11 @@ impl PartialEq<str> for ParamRef<'_> {
 impl<'a> PartialEq<&'a str> for ParamRef<'_> {
     fn eq(&self, other: &&'a str) -> bool {
         self.as_ref() == *other
+    }
+}
+
+impl From<ParamRef<'_>> for String {
+    fn from(value: ParamRef<'_>) -> String {
+        value.as_str().to_owned()
     }
 }

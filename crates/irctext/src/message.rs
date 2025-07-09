@@ -29,6 +29,15 @@ impl TryFrom<String> for Message {
     }
 }
 
+impl From<Payload> for Message {
+    fn from(payload: Payload) -> Message {
+        Message {
+            source: None,
+            payload,
+        }
+    }
+}
+
 impl TryFrom<RawMessage> for Message {
     type Error = MessageError;
 
@@ -58,6 +67,16 @@ pub enum Payload {
 }
 
 impl Payload {
+    pub fn is_client_message(&self) -> bool {
+        matches!(self, Payload::ClientMessage(_))
+    }
+
+    pub fn is_reply(&self) -> bool {
+        matches!(self, Payload::Reply(_))
+    }
+}
+
+impl Payload {
     pub fn from_parts(cmd: Command, params: ParameterList) -> Result<Payload, MessageError> {
         match cmd {
             Command::Verb(v) => Ok(Payload::ClientMessage(ClientMessage::from_parts(
@@ -78,6 +97,30 @@ impl Payload {
                 (Command::Reply(code), params)
             }
         }
+    }
+}
+
+impl From<ClientMessage> for Payload {
+    fn from(value: ClientMessage) -> Payload {
+        Payload::ClientMessage(value)
+    }
+}
+
+impl From<Reply> for Payload {
+    fn from(value: Reply) -> Payload {
+        Payload::Reply(value)
+    }
+}
+
+impl PartialEq<ClientMessage> for Payload {
+    fn eq(&self, other: &ClientMessage) -> bool {
+        matches!(self, Payload::ClientMessage(msg) if msg == other)
+    }
+}
+
+impl PartialEq<Reply> for Payload {
+    fn eq(&self, other: &Reply) -> bool {
+        matches!(self, Payload::Reply(r) if r == other)
     }
 }
 

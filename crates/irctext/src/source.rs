@@ -21,11 +21,21 @@ pub enum Source {
     Client(ClientSource),
 }
 
+impl Source {
+    pub fn is_server(&self) -> bool {
+        matches!(self, Source::Server(_))
+    }
+
+    pub fn is_client(&self) -> bool {
+        matches!(self, Source::Client(_))
+    }
+}
+
 impl fmt::Display for Source {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Source::Server(server) => write!(f, "{server}"),
-            Source::Client(clisrc) => write!(f, "{clisrc}"),
+            Source::Client(client) => write!(f, "{client}"),
         }
     }
 }
@@ -51,6 +61,30 @@ impl TryFrom<String> for Source {
             Ok(src) => Ok(src),
             Err(inner) => Err(TryFromStringError { inner, string }),
         }
+    }
+}
+
+impl From<Host> for Source {
+    fn from(value: Host) -> Source {
+        Source::Server(value)
+    }
+}
+
+impl From<ClientSource> for Source {
+    fn from(value: ClientSource) -> Source {
+        Source::Client(value)
+    }
+}
+
+impl PartialEq<Host> for Source {
+    fn eq(&self, other: &Host) -> bool {
+        matches!(self, Source::Server(host) if host == other)
+    }
+}
+
+impl PartialEq<ClientSource> for Source {
+    fn eq(&self, other: &ClientSource) -> bool {
+        matches!(self, Source::Client(client) if client == other)
     }
 }
 

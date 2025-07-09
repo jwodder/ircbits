@@ -13,11 +13,25 @@ pub enum ModeTarget {
 }
 
 impl ModeTarget {
-    pub fn into_inner(self) -> String {
+    pub fn is_channel(&self) -> bool {
+        matches!(self, ModeTarget::Channel(_))
+    }
+
+    pub fn is_nick(&self) -> bool {
+        matches!(self, ModeTarget::Nick(_))
+    }
+
+    pub fn as_str(&self) -> &str {
         match self {
-            ModeTarget::Channel(channel) => channel.into_inner(),
-            ModeTarget::Nick(nick) => nick.into_inner(),
+            ModeTarget::Channel(chan) => chan.as_str(),
+            ModeTarget::Nick(nick) => nick.as_str(),
         }
+    }
+}
+
+impl fmt::Display for ModeTarget {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -31,15 +45,6 @@ impl std::str::FromStr for ModeTarget {
         } else {
             let nickname = s.parse::<Nickname>()?;
             Ok(ModeTarget::Nick(nickname))
-        }
-    }
-}
-
-impl fmt::Display for ModeTarget {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ModeTarget::Channel(channel) => write!(f, "{channel}"),
-            ModeTarget::Nick(nick) => write!(f, "{nick}"),
         }
     }
 }
@@ -89,15 +94,54 @@ impl From<Nickname> for ModeTarget {
     }
 }
 
+impl From<ModeTarget> for String {
+    fn from(value: ModeTarget) -> String {
+        match value {
+            ModeTarget::Channel(chan) => chan.into_inner(),
+            ModeTarget::Nick(nick) => nick.into_inner(),
+        }
+    }
+}
+
 impl From<ModeTarget> for MedialParam {
     fn from(value: ModeTarget) -> MedialParam {
-        MedialParam::try_from(value.into_inner()).expect("Mode target should be valid MedialParam")
+        MedialParam::try_from(String::from(value)).expect("Mode target should be valid MedialParam")
     }
 }
 
 impl From<ModeTarget> for FinalParam {
     fn from(value: ModeTarget) -> FinalParam {
         FinalParam::from(MedialParam::from(value))
+    }
+}
+
+impl PartialEq<String> for ModeTarget {
+    fn eq(&self, other: &String) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl PartialEq<str> for ModeTarget {
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl<'a> PartialEq<&'a str> for ModeTarget {
+    fn eq(&self, other: &&'a str) -> bool {
+        &self.as_str() == other
+    }
+}
+
+impl PartialEq<Channel> for ModeTarget {
+    fn eq(&self, other: &Channel) -> bool {
+        matches!(self, ModeTarget::Channel(chan) if chan == other)
+    }
+}
+
+impl PartialEq<Nickname> for ModeTarget {
+    fn eq(&self, other: &Nickname) -> bool {
+        matches!(self, ModeTarget::Nick(nick) if nick == other)
     }
 }
 

@@ -131,10 +131,10 @@ macro_rules! validstr {
         impl TryFrom<String> for $t {
             type Error = crate::validstr::TryFromStringError<$err>;
 
-            fn try_from(s: String) -> Result<$t, Self::Error> {
-                match $validator(&s) {
-                    Ok(()) => Ok($t(s)),
-                    Err(inner) => Err(crate::validstr::TryFromStringError { inner, string: s }),
+            fn try_from(string: String) -> Result<$t, Self::Error> {
+                match $validator(&string) {
+                    Ok(()) => Ok($t(string)),
+                    Err(inner) => Err(crate::validstr::TryFromStringError { inner, string }),
                 }
             }
         }

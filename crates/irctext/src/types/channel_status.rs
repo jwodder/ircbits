@@ -1,4 +1,4 @@
-use crate::TryFromStringError;
+use crate::{FinalParam, MedialParam, TryFromStringError};
 use std::fmt;
 use thiserror::Error;
 
@@ -47,6 +47,12 @@ impl std::str::FromStr for ChannelStatus {
     }
 }
 
+impl AsRef<str> for ChannelStatus {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl TryFrom<String> for ChannelStatus {
     type Error = TryFromStringError<ParseChannelStatusError>;
 
@@ -57,6 +63,21 @@ impl TryFrom<String> for ChannelStatus {
             Ok(src) => Ok(src),
             Err(inner) => Err(TryFromStringError { inner, string }),
         }
+    }
+}
+
+impl From<ChannelStatus> for MedialParam {
+    fn from(value: ChannelStatus) -> MedialParam {
+        value
+            .as_str()
+            .parse::<MedialParam>()
+            .expect("ChannelStatus should be a valid MedialParam")
+    }
+}
+
+impl From<ChannelStatus> for FinalParam {
+    fn from(value: ChannelStatus) -> FinalParam {
+        FinalParam::from(MedialParam::from(value))
     }
 }
 

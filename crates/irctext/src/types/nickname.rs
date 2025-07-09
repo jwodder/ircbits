@@ -28,6 +28,7 @@
 // In addition to the above, in order to be sent in messages, nicknames cannot
 // contain NUL, CR, or LF.
 
+use crate::types::{ModeTarget, MsgTarget, ReplyTarget};
 use crate::{FinalParam, MedialParam};
 use thiserror::Error;
 
@@ -57,6 +58,24 @@ impl From<Nickname> for MedialParam {
 impl From<Nickname> for FinalParam {
     fn from(value: Nickname) -> FinalParam {
         FinalParam::from(MedialParam::from(value))
+    }
+}
+
+impl PartialEq<ModeTarget> for Nickname {
+    fn eq(&self, other: &ModeTarget) -> bool {
+        matches!(other, ModeTarget::Nick(nick) if nick == self)
+    }
+}
+
+impl PartialEq<MsgTarget> for Nickname {
+    fn eq(&self, other: &MsgTarget) -> bool {
+        matches!(other, MsgTarget::Nick(nick) if nick == self)
+    }
+}
+
+impl PartialEq<ReplyTarget> for Nickname {
+    fn eq(&self, other: &ReplyTarget) -> bool {
+        matches!(other, ReplyTarget::Nick(nick) if nick == self)
     }
 }
 

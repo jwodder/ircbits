@@ -42,6 +42,12 @@ impl AsRef<str> for ParamRef<'_> {
     }
 }
 
+impl PartialEq<String> for ParamRef<'_> {
+    fn eq(&self, other: &String) -> bool {
+        self.as_ref() == other.as_str()
+    }
+}
+
 impl PartialEq<str> for ParamRef<'_> {
     fn eq(&self, other: &str) -> bool {
         self.as_ref() == other

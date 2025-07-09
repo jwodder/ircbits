@@ -1,5 +1,5 @@
 use crate::types::{Nickname, ParseNicknameError};
-use crate::TryFromStringError;
+use crate::{FinalParam, MedialParam, TryFromStringError};
 use std::fmt;
 use thiserror::Error;
 
@@ -12,11 +12,25 @@ pub enum ReplyTarget {
 }
 
 impl ReplyTarget {
-    pub fn into_inner(self) -> String {
+    pub fn is_nick(&self) -> bool {
+        matches!(self, ReplyTarget::Nick(_))
+    }
+
+    pub fn is_star(&self) -> bool {
+        matches!(self, ReplyTarget::Star)
+    }
+
+    pub fn as_str(&self) -> &str {
         match self {
-            ReplyTarget::Nick(nick) => nick.into_inner(),
-            ReplyTarget::Star => String::from("*"),
+            ReplyTarget::Nick(nick) => nick.as_str(),
+            ReplyTarget::Star => "*",
         }
+    }
+}
+
+impl fmt::Display for ReplyTarget {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -29,15 +43,6 @@ impl std::str::FromStr for ReplyTarget {
         } else {
             let nickname = s.parse::<Nickname>()?;
             Ok(ReplyTarget::Nick(nickname))
-        }
-    }
-}
-
-impl fmt::Display for ReplyTarget {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ReplyTarget::Nick(nick) => write!(f, "{nick}"),
-            ReplyTarget::Star => write!(f, "*"),
         }
     }
 }
@@ -60,12 +65,21 @@ impl TryFrom<String> for ReplyTarget {
     }
 }
 
+impl AsRef<str> for ReplyTarget {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl PartialEq<String> for ReplyTarget {
+    fn eq(&self, other: &String) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
+
 impl PartialEq<str> for ReplyTarget {
     fn eq(&self, other: &str) -> bool {
-        match self {
-            ReplyTarget::Nick(nick) => nick == other,
-            ReplyTarget::Star => other == "*",
-        }
+        self.as_str() == other
     }
 }
 
@@ -75,18 +89,37 @@ impl<'a> PartialEq<&'a str> for ReplyTarget {
     }
 }
 
-impl AsRef<str> for ReplyTarget {
-    fn as_ref(&self) -> &str {
-        match self {
-            ReplyTarget::Nick(nick) => nick.as_ref(),
-            ReplyTarget::Star => "*",
-        }
+impl PartialEq<Nickname> for ReplyTarget {
+    fn eq(&self, other: &Nickname) -> bool {
+        matches!(self, ReplyTarget::Nick(nick) if nick == other)
     }
 }
 
 impl From<Nickname> for ReplyTarget {
     fn from(value: Nickname) -> ReplyTarget {
         ReplyTarget::Nick(value)
+    }
+}
+
+impl From<ReplyTarget> for String {
+    fn from(value: ReplyTarget) -> String {
+        match value {
+            ReplyTarget::Nick(nick) => nick.into(),
+            ReplyTarget::Star => String::from("*"),
+        }
+    }
+}
+
+impl From<ReplyTarget> for MedialParam {
+    fn from(value: ReplyTarget) -> MedialParam {
+        MedialParam::try_from(String::from(value))
+            .expect("Reply target should be valid MedialParam")
+    }
+}
+
+impl From<ReplyTarget> for FinalParam {
+    fn from(value: ReplyTarget) -> FinalParam {
+        FinalParam::from(MedialParam::from(value))
     }
 }
 

@@ -16,13 +16,6 @@ impl Parameter {
         matches!(self, Parameter::Final(_))
     }
 
-    pub fn into_inner(self) -> String {
-        match self {
-            Parameter::Medial(p) => p.into_inner(),
-            Parameter::Final(p) => p.into_inner(),
-        }
-    }
-
     pub fn as_str(&self) -> &str {
         match self {
             Parameter::Medial(p) => p.as_str(),
@@ -58,6 +51,12 @@ impl From<Parameter> for String {
     }
 }
 
+impl PartialEq<String> for Parameter {
+    fn eq(&self, other: &String) -> bool {
+        self.as_ref() == other.as_str()
+    }
+}
+
 impl PartialEq<str> for Parameter {
     fn eq(&self, other: &str) -> bool {
         self.as_ref() == other
@@ -67,5 +66,17 @@ impl PartialEq<str> for Parameter {
 impl<'a> PartialEq<&'a str> for Parameter {
     fn eq(&self, other: &&'a str) -> bool {
         self.as_ref() == *other
+    }
+}
+
+impl From<MedialParam> for Parameter {
+    fn from(value: MedialParam) -> Parameter {
+        Parameter::Medial(value)
+    }
+}
+
+impl From<FinalParam> for Parameter {
+    fn from(value: FinalParam) -> Parameter {
+        Parameter::Final(value)
     }
 }

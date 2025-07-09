@@ -31,10 +31,7 @@ impl ModeTarget {
 
 impl fmt::Display for ModeTarget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ModeTarget::Channel(channel) => write!(f, "{channel}"),
-            ModeTarget::Nick(nick) => write!(f, "{nick}"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 

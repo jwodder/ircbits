@@ -28,7 +28,7 @@
 // In addition to the above, in order to be sent in messages, nicknames cannot
 // contain NUL, CR, or LF.
 
-use crate::types::{ModeTarget, MsgTarget};
+use crate::types::{ModeTarget, MsgTarget, ReplyTarget};
 use crate::{FinalParam, MedialParam};
 use thiserror::Error;
 
@@ -70,6 +70,12 @@ impl PartialEq<ModeTarget> for Nickname {
 impl PartialEq<MsgTarget> for Nickname {
     fn eq(&self, other: &MsgTarget) -> bool {
         matches!(other, MsgTarget::Nick(nick) if nick == self)
+    }
+}
+
+impl PartialEq<ReplyTarget> for Nickname {
+    fn eq(&self, other: &ReplyTarget) -> bool {
+        matches!(other, ReplyTarget::Nick(nick) if nick == self)
     }
 }
 

@@ -78,10 +78,7 @@ impl ClientMessageParts for Cap {
     fn into_parts(self) -> (Verb, ParameterList) {
         let mut builder = ParameterList::builder();
         if let Some(target) = self.target {
-            builder.push_medial(
-                MedialParam::try_from(target.into_inner())
-                    .expect("CapTarget should be valid MedialParam"),
-            );
+            builder.push_medial(MedialParam::from(target));
         }
         builder.push_medial(self.subcommand);
         if self.continued {

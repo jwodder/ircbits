@@ -2,6 +2,7 @@ use crate::ClientMessageError;
 use std::fmt;
 
 pub(crate) fn split_word(s: &str) -> (&str, &str) {
+    let s = s.trim_start_matches(' ');
     match s.split_once(' ') {
         Some((s1, s2)) => (s1, s2.trim_start_matches(' ')),
         None => (s, ""),

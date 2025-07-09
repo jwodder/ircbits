@@ -52,7 +52,7 @@ pub async fn connect(server: &str, port: u16, tls: bool) -> Result<IrcConnection
         log::trace!("Initializing TLS ...");
         let certs = rustls_native_certs::load_native_certs();
         if !certs.errors.is_empty() {
-            let msg = certs.errors.into_iter().map(|e| e.to_string()).join("; ");
+            let msg = certs.errors.into_iter().join("; ");
             return Err(ConnectionError::LoadStore(msg));
         }
 

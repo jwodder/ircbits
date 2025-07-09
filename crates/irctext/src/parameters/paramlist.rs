@@ -2,6 +2,7 @@ use super::{
     FinalParam, MedialParam, ParamRef, Parameter, ParseFinalParamError, ParseMedialParamError,
 };
 use crate::util::split_word;
+use crate::TryFromStringError;
 use std::cmp::Ordering;
 use std::fmt;
 use thiserror::Error;
@@ -72,6 +73,23 @@ impl IntoIterator for ParameterList {
     }
 }
 
+impl fmt::Display for ParameterList {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut first = true;
+        for p in self.iter() {
+            if !std::mem::replace(&mut first, false) {
+                write!(f, " ")?;
+            }
+            if p.is_medial() {
+                write!(f, "{p}")?;
+            } else {
+                write!(f, ":{p}")?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl std::str::FromStr for ParameterList {
     type Err = ParseParameterListError;
 
@@ -92,28 +110,16 @@ impl std::str::FromStr for ParameterList {
     }
 }
 
-impl fmt::Display for ParameterList {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut first = true;
-        for p in self.iter() {
-            if !std::mem::replace(&mut first, false) {
-                write!(f, " ")?;
-            }
-            if p.is_medial() {
-                write!(f, "{p}")?;
-            } else {
-                write!(f, ":{p}")?;
-            }
-        }
-        Ok(())
-    }
-}
-
 impl TryFrom<String> for ParameterList {
-    type Error = ParseParameterListError;
+    type Error = TryFromStringError<ParseParameterListError>;
 
-    fn try_from(s: String) -> Result<ParameterList, ParseParameterListError> {
-        s.parse::<ParameterList>()
+    fn try_from(
+        string: String,
+    ) -> Result<ParameterList, TryFromStringError<ParseParameterListError>> {
+        match string.parse() {
+            Ok(src) => Ok(src),
+            Err(inner) => Err(TryFromStringError { inner, string }),
+        }
     }
 }
 

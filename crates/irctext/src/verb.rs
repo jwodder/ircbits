@@ -47,9 +47,21 @@ pub enum Verb {
     Unknown(String),
 }
 
+impl Verb {
+    pub fn as_str(&self) -> &str {
+        self.as_ref()
+    }
+}
+
 impl From<String> for Verb {
     fn from(s: String) -> Verb {
         s.parse().expect("Parsing to Verb should always succeed")
+    }
+}
+
+impl PartialEq<String> for Verb {
+    fn eq(&self, other: &String) -> bool {
+        self.as_ref() == other.as_str()
     }
 }
 

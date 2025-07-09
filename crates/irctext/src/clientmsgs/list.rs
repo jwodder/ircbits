@@ -136,7 +136,7 @@ impl TryFrom<ParameterList> for List {
                     if iter.next().is_some() {
                         return Err(ClientMessageError::ParamQty(
                             ParameterListSizeError::Exact {
-                                requested: 1,
+                                required: 1,
                                 received: len,
                             },
                         ));
@@ -153,8 +153,8 @@ impl TryFrom<ParameterList> for List {
         } else {
             Err(ClientMessageError::ParamQty(
                 ParameterListSizeError::Range {
-                    min_requested: 0,
-                    max_requested: 2,
+                    min_required: 0,
+                    max_required: 2,
                     received: len,
                 },
             ))

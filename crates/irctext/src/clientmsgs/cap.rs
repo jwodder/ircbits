@@ -179,8 +179,8 @@ impl TryFrom<ParameterList> for Cap {
             }
             len => Err(ClientMessageError::ParamQty(
                 ParameterListSizeError::Range {
-                    min_requested: 1,
-                    max_requested: 4,
+                    min_required: 1,
+                    max_required: 4,
                     received: len,
                 },
             )),

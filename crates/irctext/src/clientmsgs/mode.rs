@@ -93,7 +93,7 @@ impl TryFrom<ParameterList> for Mode {
     fn try_from(params: ParameterList) -> Result<Mode, ClientMessageError> {
         let mut iter = params.into_iter();
         let p1 = iter.next().ok_or(ParameterListSizeError::Exact {
-            requested: 1,
+            required: 1,
             received: 0,
         })?;
         let target = ModeTarget::try_from(p1.into_inner())?;

@@ -71,8 +71,8 @@ impl TryFrom<ParameterList> for UserHost {
         } else {
             Err(ClientMessageError::ParamQty(
                 ParameterListSizeError::Range {
-                    min_requested: 1,
-                    max_requested: 5,
+                    min_required: 1,
+                    max_required: 5,
                     received: params.len(),
                 },
             ))

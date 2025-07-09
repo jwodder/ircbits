@@ -147,7 +147,7 @@ impl TryFrom<ParameterList> for Join {
             if p2.is_some() {
                 return Err(ClientMessageError::ParamQty(
                     ParameterListSizeError::Exact {
-                        requested: 1,
+                        required: 1,
                         received: 2,
                     },
                 ));

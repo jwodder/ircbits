@@ -125,7 +125,7 @@ impl TryFrom<ParameterList> for () {
             Ok(())
         } else {
             Err(ParameterListSizeError::Exact {
-                requested: 0,
+                required: 0,
                 received: params.len(),
             })
         }
@@ -146,7 +146,7 @@ impl TryFrom<ParameterList> for (FinalParam,) {
             Ok((p,))
         } else {
             Err(ParameterListSizeError::Exact {
-                requested: 1,
+                required: 1,
                 received: params.len(),
             })
         }
@@ -161,8 +161,8 @@ impl TryFrom<ParameterList> for (Option<FinalParam>,) {
             (1, false) => Ok((params.medial.into_iter().next().map(FinalParam::from),)),
             (0, _) => Ok((params.finalp,)),
             _ => Err(ParameterListSizeError::Range {
-                min_requested: 0,
-                max_requested: 1,
+                min_required: 0,
+                max_required: 1,
                 received: params.len(),
             }),
         }
@@ -188,7 +188,7 @@ impl TryFrom<ParameterList> for (MedialParam, FinalParam) {
             Ok((p1, p2))
         } else {
             Err(ParameterListSizeError::Exact {
-                requested: 2,
+                required: 2,
                 received: params.len(),
             })
         }
@@ -219,8 +219,8 @@ impl TryFrom<ParameterList> for (MedialParam, Option<FinalParam>) {
                 Ok((p1, p2))
             }
             _ => Err(ParameterListSizeError::Range {
-                min_requested: 1,
-                max_requested: 2,
+                min_required: 1,
+                max_required: 2,
                 received: params.len(),
             }),
         }
@@ -257,8 +257,8 @@ impl TryFrom<ParameterList> for (MedialParam, MedialParam, Option<FinalParam>) {
                 Ok((p1, p2, p3))
             }
             _ => Err(ParameterListSizeError::Range {
-                min_requested: 2,
-                max_requested: 3,
+                min_required: 2,
+                max_required: 3,
                 received: params.len(),
             }),
         }
@@ -287,7 +287,7 @@ impl TryFrom<ParameterList> for (MedialParam, MedialParam, FinalParam) {
             Ok((p1, p2, p3))
         } else {
             Err(ParameterListSizeError::Exact {
-                requested: 3,
+                required: 3,
                 received: params.len(),
             })
         }
@@ -319,7 +319,7 @@ impl TryFrom<ParameterList> for (MedialParam, MedialParam, MedialParam, FinalPar
             Ok((p1, p2, p3, p4))
         } else {
             Err(ParameterListSizeError::Exact {
-                requested: 4,
+                required: 4,
                 received: params.len(),
             })
         }
@@ -336,12 +336,14 @@ pub enum ParseParameterListError {
 
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum ParameterListSizeError {
-    #[error("invalid number of parameters: expected {requested}, received {received}")]
-    Exact { requested: usize, received: usize },
-    #[error("invalid number of parameters: expected {min_requested}-{max_requested}, received {received}")]
+    #[error("invalid number of parameters: require {required}, received {received}")]
+    Exact { required: usize, received: usize },
+    #[error(
+        "invalid number of parameters: require {min_required}-{max_required}, received {received}"
+    )]
     Range {
-        min_requested: usize,
-        max_requested: usize,
+        min_required: usize,
+        max_required: usize,
         received: usize,
     },
 }

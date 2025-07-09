@@ -127,8 +127,8 @@ impl TryFrom<ParameterList> for Connect {
         } else {
             Err(ClientMessageError::ParamQty(
                 ParameterListSizeError::Range {
-                    min_requested: 1,
-                    max_requested: 3,
+                    min_required: 1,
+                    max_required: 3,
                     received: params.len(),
                 },
             ))

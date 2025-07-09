@@ -1894,7 +1894,7 @@ def main() -> None:
         print()
         print(f"impl ReplyParts for {r.name} {{")
         print("    fn code(&self) -> u16 {")
-        print(f"        {r.code}")
+        print(f"        codes::{r.const}")
         print("    }")
         print()
         print("    fn parameters(&self) -> &ParameterList {")

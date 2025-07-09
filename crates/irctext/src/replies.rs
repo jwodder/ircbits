@@ -526,7 +526,7 @@ impl Welcome {
 
 impl ReplyParts for Welcome {
     fn code(&self) -> u16 {
-        1
+        codes::RPL_WELCOME
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -594,7 +594,7 @@ impl YourHost {
 
 impl ReplyParts for YourHost {
     fn code(&self) -> u16 {
-        2
+        codes::RPL_YOURHOST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -662,7 +662,7 @@ impl Created {
 
 impl ReplyParts for Created {
     fn code(&self) -> u16 {
-        3
+        codes::RPL_CREATED
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -755,7 +755,7 @@ impl MyInfo {
 
 impl ReplyParts for MyInfo {
     fn code(&self) -> u16 {
-        4
+        codes::RPL_MYINFO
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -828,7 +828,7 @@ impl ISupport {
 
 impl ReplyParts for ISupport {
     fn code(&self) -> u16 {
-        5
+        codes::RPL_ISUPPORT
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -911,7 +911,7 @@ impl RemoteISupport {
 
 impl ReplyParts for RemoteISupport {
     fn code(&self) -> u16 {
-        105
+        codes::RPL_REMOTEISUPPORT
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1001,7 +1001,7 @@ impl Bounce {
 
 impl ReplyParts for Bounce {
     fn code(&self) -> u16 {
-        10
+        codes::RPL_BOUNCE
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1100,7 +1100,7 @@ impl StatsCommands {
 
 impl ReplyParts for StatsCommands {
     fn code(&self) -> u16 {
-        212
+        codes::RPL_STATSCOMMANDS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1213,7 +1213,7 @@ impl EndOfStats {
 
 impl ReplyParts for EndOfStats {
     fn code(&self) -> u16 {
-        219
+        codes::RPL_ENDOFSTATS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1281,7 +1281,7 @@ impl UModeIs {
 
 impl ReplyParts for UModeIs {
     fn code(&self) -> u16 {
-        221
+        codes::RPL_UMODEIS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1349,7 +1349,7 @@ impl StatsUptime {
 
 impl ReplyParts for StatsUptime {
     fn code(&self) -> u16 {
-        242
+        codes::RPL_STATSUPTIME
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1417,7 +1417,7 @@ impl LuserClient {
 
 impl ReplyParts for LuserClient {
     fn code(&self) -> u16 {
-        251
+        codes::RPL_LUSERCLIENT
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1490,7 +1490,7 @@ impl LuserOp {
 
 impl ReplyParts for LuserOp {
     fn code(&self) -> u16 {
-        252
+        codes::RPL_LUSEROP
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1579,7 +1579,7 @@ impl LuserUnknown {
 
 impl ReplyParts for LuserUnknown {
     fn code(&self) -> u16 {
-        253
+        codes::RPL_LUSERUNKNOWN
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1668,7 +1668,7 @@ impl LuserChannels {
 
 impl ReplyParts for LuserChannels {
     fn code(&self) -> u16 {
-        254
+        codes::RPL_LUSERCHANNELS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1752,7 +1752,7 @@ impl LuserMe {
 
 impl ReplyParts for LuserMe {
     fn code(&self) -> u16 {
-        255
+        codes::RPL_LUSERME
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1824,7 +1824,7 @@ impl AdminMe {
 
 impl ReplyParts for AdminMe {
     fn code(&self) -> u16 {
-        256
+        codes::RPL_ADMINME
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1892,7 +1892,7 @@ impl AdminLoc1 {
 
 impl ReplyParts for AdminLoc1 {
     fn code(&self) -> u16 {
-        257
+        codes::RPL_ADMINLOC1
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1960,7 +1960,7 @@ impl AdminLoc2 {
 
 impl ReplyParts for AdminLoc2 {
     fn code(&self) -> u16 {
-        258
+        codes::RPL_ADMINLOC2
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2028,7 +2028,7 @@ impl AdminEmail {
 
 impl ReplyParts for AdminEmail {
     fn code(&self) -> u16 {
-        259
+        codes::RPL_ADMINEMAIL
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2101,7 +2101,7 @@ impl TryAgain {
 
 impl ReplyParts for TryAgain {
     fn code(&self) -> u16 {
-        263
+        codes::RPL_TRYAGAIN
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2187,7 +2187,7 @@ impl LocalUsers {
 
 impl ReplyParts for LocalUsers {
     fn code(&self) -> u16 {
-        265
+        codes::RPL_LOCALUSERS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2298,7 +2298,7 @@ impl GlobalUsers {
 
 impl ReplyParts for GlobalUsers {
     fn code(&self) -> u16 {
-        266
+        codes::RPL_GLOBALUSERS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2404,7 +2404,7 @@ impl WhoIsCertFP {
 
 impl ReplyParts for WhoIsCertFP {
     fn code(&self) -> u16 {
-        276
+        codes::RPL_WHOISCERTFP
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2466,7 +2466,7 @@ pub struct None {
 
 impl ReplyParts for None {
     fn code(&self) -> u16 {
-        300
+        codes::RPL_NONE
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2529,7 +2529,7 @@ impl Away {
 
 impl ReplyParts for Away {
     fn code(&self) -> u16 {
-        301
+        codes::RPL_AWAY
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2603,7 +2603,7 @@ impl UserHostRpl {
 
 impl ReplyParts for UserHostRpl {
     fn code(&self) -> u16 {
-        302
+        codes::RPL_USERHOST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2681,7 +2681,7 @@ impl UnAway {
 
 impl ReplyParts for UnAway {
     fn code(&self) -> u16 {
-        305
+        codes::RPL_UNAWAY
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2749,7 +2749,7 @@ impl NowAway {
 
 impl ReplyParts for NowAway {
     fn code(&self) -> u16 {
-        306
+        codes::RPL_NOWAWAY
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2822,7 +2822,7 @@ impl WhoIsRegNick {
 
 impl ReplyParts for WhoIsRegNick {
     fn code(&self) -> u16 {
-        307
+        codes::RPL_WHOISREGNICK
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2915,7 +2915,7 @@ impl WhoIsUser {
 
 impl ReplyParts for WhoIsUser {
     fn code(&self) -> u16 {
-        311
+        codes::RPL_WHOISUSER
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3008,7 +3008,7 @@ impl WhoIsServer {
 
 impl ReplyParts for WhoIsServer {
     fn code(&self) -> u16 {
-        312
+        codes::RPL_WHOISSERVER
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3089,7 +3089,7 @@ impl WhoIsOperator {
 
 impl ReplyParts for WhoIsOperator {
     fn code(&self) -> u16 {
-        313
+        codes::RPL_WHOISOPERATOR
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3182,7 +3182,7 @@ impl WhoWasUser {
 
 impl ReplyParts for WhoWasUser {
     fn code(&self) -> u16 {
-        314
+        codes::RPL_WHOWASUSER
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3270,7 +3270,7 @@ impl EndOfWho {
 
 impl ReplyParts for EndOfWho {
     fn code(&self) -> u16 {
-        315
+        codes::RPL_ENDOFWHO
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3353,7 +3353,7 @@ impl WhoIsIdle {
 
 impl ReplyParts for WhoIsIdle {
     fn code(&self) -> u16 {
-        317
+        codes::RPL_WHOISIDLE
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3460,7 +3460,7 @@ impl EndOfWhoIs {
 
 impl ReplyParts for EndOfWhoIs {
     fn code(&self) -> u16 {
-        318
+        codes::RPL_ENDOFWHOIS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3539,7 +3539,7 @@ impl WhoIsChannels {
 
 impl ReplyParts for WhoIsChannels {
     fn code(&self) -> u16 {
-        319
+        codes::RPL_WHOISCHANNELS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3630,7 +3630,7 @@ impl WhoIsSpecial {
 
 impl ReplyParts for WhoIsSpecial {
     fn code(&self) -> u16 {
-        320
+        codes::RPL_WHOISSPECIAL
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3701,7 +3701,7 @@ impl ListStart {
 
 impl ReplyParts for ListStart {
     fn code(&self) -> u16 {
-        321
+        codes::RPL_LISTSTART
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3775,7 +3775,7 @@ impl List {
 
 impl ReplyParts for List {
     fn code(&self) -> u16 {
-        322
+        codes::RPL_LIST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3859,7 +3859,7 @@ impl ListEnd {
 
 impl ReplyParts for ListEnd {
     fn code(&self) -> u16 {
-        323
+        codes::RPL_LISTEND
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3931,7 +3931,7 @@ impl ChannelModeIs {
 
 impl ReplyParts for ChannelModeIs {
     fn code(&self) -> u16 {
-        324
+        codes::RPL_CHANNELMODEIS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4021,7 +4021,7 @@ impl CreationTime {
 
 impl ReplyParts for CreationTime {
     fn code(&self) -> u16 {
-        329
+        codes::RPL_CREATIONTIME
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4122,7 +4122,7 @@ impl WhoIsAccount {
 
 impl ReplyParts for WhoIsAccount {
     fn code(&self) -> u16 {
-        330
+        codes::RPL_WHOISACCOUNT
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4203,7 +4203,7 @@ impl NoTopic {
 
 impl ReplyParts for NoTopic {
     fn code(&self) -> u16 {
-        331
+        codes::RPL_NOTOPIC
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4284,7 +4284,7 @@ impl Topic {
 
 impl ReplyParts for Topic {
     fn code(&self) -> u16 {
-        332
+        codes::RPL_TOPIC
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4368,7 +4368,7 @@ impl TopicWhoTime {
 
 impl ReplyParts for TopicWhoTime {
     fn code(&self) -> u16 {
-        333
+        codes::RPL_TOPICWHOTIME
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4460,7 +4460,7 @@ impl InviteList {
 
 impl ReplyParts for InviteList {
     fn code(&self) -> u16 {
-        336
+        codes::RPL_INVITELIST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4536,7 +4536,7 @@ impl EndOfInviteList {
 
 impl ReplyParts for EndOfInviteList {
     fn code(&self) -> u16 {
-        337
+        codes::RPL_ENDOFINVITELIST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4624,7 +4624,7 @@ impl WhoIsActually {
 
 impl ReplyParts for WhoIsActually {
     fn code(&self) -> u16 {
-        338
+        codes::RPL_WHOISACTUALLY
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4709,7 +4709,7 @@ impl Inviting {
 
 impl ReplyParts for Inviting {
     fn code(&self) -> u16 {
-        341
+        codes::RPL_INVITING
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4795,7 +4795,7 @@ impl InvExList {
 
 impl ReplyParts for InvExList {
     fn code(&self) -> u16 {
-        346
+        codes::RPL_INVEXLIST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4876,7 +4876,7 @@ impl EndOfInvExList {
 
 impl ReplyParts for EndOfInvExList {
     fn code(&self) -> u16 {
-        347
+        codes::RPL_ENDOFINVEXLIST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4957,7 +4957,7 @@ impl ExceptList {
 
 impl ReplyParts for ExceptList {
     fn code(&self) -> u16 {
-        348
+        codes::RPL_EXCEPTLIST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5038,7 +5038,7 @@ impl EndOfExceptList {
 
 impl ReplyParts for EndOfExceptList {
     fn code(&self) -> u16 {
-        349
+        codes::RPL_ENDOFEXCEPTLIST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5128,7 +5128,7 @@ impl Version {
 
 impl ReplyParts for Version {
     fn code(&self) -> u16 {
-        351
+        codes::RPL_VERSION
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5235,7 +5235,7 @@ impl WhoReply {
 
 impl ReplyParts for WhoReply {
     fn code(&self) -> u16 {
-        352
+        codes::RPL_WHOREPLY
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5348,7 +5348,7 @@ impl NamReply {
 
 impl ReplyParts for NamReply {
     fn code(&self) -> u16 {
-        353
+        codes::RPL_NAMREPLY
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5458,7 +5458,7 @@ impl Links {
 
 impl ReplyParts for Links {
     fn code(&self) -> u16 {
-        364
+        codes::RPL_LINKS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5543,7 +5543,7 @@ impl EndOfLinks {
 
 impl ReplyParts for EndOfLinks {
     fn code(&self) -> u16 {
-        365
+        codes::RPL_ENDOFLINKS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5616,7 +5616,7 @@ impl EndOfNames {
 
 impl ReplyParts for EndOfNames {
     fn code(&self) -> u16 {
-        366
+        codes::RPL_ENDOFNAMES
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5706,7 +5706,7 @@ impl BanList {
 
 impl ReplyParts for BanList {
     fn code(&self) -> u16 {
-        367
+        codes::RPL_BANLIST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5798,7 +5798,7 @@ impl EndOfBanList {
 
 impl ReplyParts for EndOfBanList {
     fn code(&self) -> u16 {
-        368
+        codes::RPL_ENDOFBANLIST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5879,7 +5879,7 @@ impl EndOfWhoWas {
 
 impl ReplyParts for EndOfWhoWas {
     fn code(&self) -> u16 {
-        369
+        codes::RPL_ENDOFWHOWAS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5955,7 +5955,7 @@ impl Info {
 
 impl ReplyParts for Info {
     fn code(&self) -> u16 {
-        371
+        codes::RPL_INFO
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6023,7 +6023,7 @@ impl Motd {
 
 impl ReplyParts for Motd {
     fn code(&self) -> u16 {
-        372
+        codes::RPL_MOTD
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6091,7 +6091,7 @@ impl EndOfInfo {
 
 impl ReplyParts for EndOfInfo {
     fn code(&self) -> u16 {
-        374
+        codes::RPL_ENDOFINFO
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6159,7 +6159,7 @@ impl MotdStart {
 
 impl ReplyParts for MotdStart {
     fn code(&self) -> u16 {
-        375
+        codes::RPL_MOTDSTART
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6227,7 +6227,7 @@ impl EndOfMotd {
 
 impl ReplyParts for EndOfMotd {
     fn code(&self) -> u16 {
-        376
+        codes::RPL_ENDOFMOTD
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6300,7 +6300,7 @@ impl WhoIsHost {
 
 impl ReplyParts for WhoIsHost {
     fn code(&self) -> u16 {
-        378
+        codes::RPL_WHOISHOST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6381,7 +6381,7 @@ impl WhoIsModes {
 
 impl ReplyParts for WhoIsModes {
     fn code(&self) -> u16 {
-        379
+        codes::RPL_WHOISMODES
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6457,7 +6457,7 @@ impl YoureOper {
 
 impl ReplyParts for YoureOper {
     fn code(&self) -> u16 {
-        381
+        codes::RPL_YOUREOPER
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6532,7 +6532,7 @@ impl Rehashing {
 
 impl ReplyParts for Rehashing {
     fn code(&self) -> u16 {
-        382
+        codes::RPL_REHASHING
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6616,7 +6616,7 @@ impl Time {
 
 impl ReplyParts for Time {
     fn code(&self) -> u16 {
-        391
+        codes::RPL_TIME
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6712,7 +6712,7 @@ impl UnknownError {
 
 impl ReplyParts for UnknownError {
     fn code(&self) -> u16 {
-        400
+        codes::ERR_UNKNOWNERROR
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6800,7 +6800,7 @@ impl NoSuchNick {
 
 impl ReplyParts for NoSuchNick {
     fn code(&self) -> u16 {
-        401
+        codes::ERR_NOSUCHNICK
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6883,7 +6883,7 @@ impl NoSuchServer {
 
 impl ReplyParts for NoSuchServer {
     fn code(&self) -> u16 {
-        402
+        codes::ERR_NOSUCHSERVER
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6956,7 +6956,7 @@ impl NoSuchChannel {
 
 impl ReplyParts for NoSuchChannel {
     fn code(&self) -> u16 {
-        403
+        codes::ERR_NOSUCHCHANNEL
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7037,7 +7037,7 @@ impl CannotSendToChan {
 
 impl ReplyParts for CannotSendToChan {
     fn code(&self) -> u16 {
-        404
+        codes::ERR_CANNOTSENDTOCHAN
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7118,7 +7118,7 @@ impl TooManyChannels {
 
 impl ReplyParts for TooManyChannels {
     fn code(&self) -> u16 {
-        405
+        codes::ERR_TOOMANYCHANNELS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7199,7 +7199,7 @@ impl WasNoSuchNick {
 
 impl ReplyParts for WasNoSuchNick {
     fn code(&self) -> u16 {
-        406
+        codes::ERR_WASNOSUCHNICK
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7275,7 +7275,7 @@ impl NoOrigin {
 
 impl ReplyParts for NoOrigin {
     fn code(&self) -> u16 {
-        409
+        codes::ERR_NOORIGIN
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7343,7 +7343,7 @@ impl NoRecipient {
 
 impl ReplyParts for NoRecipient {
     fn code(&self) -> u16 {
-        411
+        codes::ERR_NORECIPIENT
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7411,7 +7411,7 @@ impl NoTextToSend {
 
 impl ReplyParts for NoTextToSend {
     fn code(&self) -> u16 {
-        412
+        codes::ERR_NOTEXTTOSEND
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7479,7 +7479,7 @@ impl InputTooLong {
 
 impl ReplyParts for InputTooLong {
     fn code(&self) -> u16 {
-        417
+        codes::ERR_INPUTTOOLONG
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7552,7 +7552,7 @@ impl UnknownCommand {
 
 impl ReplyParts for UnknownCommand {
     fn code(&self) -> u16 {
-        421
+        codes::ERR_UNKNOWNCOMMAND
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7628,7 +7628,7 @@ impl NoMotd {
 
 impl ReplyParts for NoMotd {
     fn code(&self) -> u16 {
-        422
+        codes::ERR_NOMOTD
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7696,7 +7696,7 @@ impl NoNicknameGiven {
 
 impl ReplyParts for NoNicknameGiven {
     fn code(&self) -> u16 {
-        431
+        codes::ERR_NONICKNAMEGIVEN
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7771,7 +7771,7 @@ impl ErroneousNickname {
 
 impl ReplyParts for ErroneousNickname {
     fn code(&self) -> u16 {
-        432
+        codes::ERR_ERRONEUSNICKNAME
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7844,7 +7844,7 @@ impl NicknameInUse {
 
 impl ReplyParts for NicknameInUse {
     fn code(&self) -> u16 {
-        433
+        codes::ERR_NICKNAMEINUSE
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7925,7 +7925,7 @@ impl NickCollision {
 
 impl ReplyParts for NickCollision {
     fn code(&self) -> u16 {
-        436
+        codes::ERR_NICKCOLLISION
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8011,7 +8011,7 @@ impl UserNotInChannel {
 
 impl ReplyParts for UserNotInChannel {
     fn code(&self) -> u16 {
-        441
+        codes::ERR_USERNOTINCHANNEL
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8097,7 +8097,7 @@ impl NotOnChannel {
 
 impl ReplyParts for NotOnChannel {
     fn code(&self) -> u16 {
-        442
+        codes::ERR_NOTONCHANNEL
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8183,7 +8183,7 @@ impl UserOnChannel {
 
 impl ReplyParts for UserOnChannel {
     fn code(&self) -> u16 {
-        443
+        codes::ERR_USERONCHANNEL
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8264,7 +8264,7 @@ impl NotRegistered {
 
 impl ReplyParts for NotRegistered {
     fn code(&self) -> u16 {
-        451
+        codes::ERR_NOTREGISTERED
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8337,7 +8337,7 @@ impl NeedMoreParams {
 
 impl ReplyParts for NeedMoreParams {
     fn code(&self) -> u16 {
-        461
+        codes::ERR_NEEDMOREPARAMS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8413,7 +8413,7 @@ impl AlreadyRegistered {
 
 impl ReplyParts for AlreadyRegistered {
     fn code(&self) -> u16 {
-        462
+        codes::ERR_ALREADYREGISTERED
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8481,7 +8481,7 @@ impl PasswdMismatch {
 
 impl ReplyParts for PasswdMismatch {
     fn code(&self) -> u16 {
-        464
+        codes::ERR_PASSWDMISMATCH
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8549,7 +8549,7 @@ impl YoureBannedCreep {
 
 impl ReplyParts for YoureBannedCreep {
     fn code(&self) -> u16 {
-        465
+        codes::ERR_YOUREBANNEDCREEP
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8622,7 +8622,7 @@ impl ChannelIsFull {
 
 impl ReplyParts for ChannelIsFull {
     fn code(&self) -> u16 {
-        471
+        codes::ERR_CHANNELISFULL
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8705,7 +8705,7 @@ impl UnknownMode {
 
 impl ReplyParts for UnknownMode {
     fn code(&self) -> u16 {
-        472
+        codes::ERR_UNKNOWNMODE
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8778,7 +8778,7 @@ impl InviteOnlyChan {
 
 impl ReplyParts for InviteOnlyChan {
     fn code(&self) -> u16 {
-        473
+        codes::ERR_INVITEONLYCHAN
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8859,7 +8859,7 @@ impl BannedFromChan {
 
 impl ReplyParts for BannedFromChan {
     fn code(&self) -> u16 {
-        474
+        codes::ERR_BANNEDFROMCHAN
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8940,7 +8940,7 @@ impl BadChannelKey {
 
 impl ReplyParts for BadChannelKey {
     fn code(&self) -> u16 {
-        475
+        codes::ERR_BADCHANNELKEY
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9023,7 +9023,7 @@ impl BadChanMask {
 
 impl ReplyParts for BadChanMask {
     fn code(&self) -> u16 {
-        476
+        codes::ERR_BADCHANMASK
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9091,7 +9091,7 @@ impl NoPrivileges {
 
 impl ReplyParts for NoPrivileges {
     fn code(&self) -> u16 {
-        481
+        codes::ERR_NOPRIVILEGES
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9164,7 +9164,7 @@ impl ChanOPrivsNeeded {
 
 impl ReplyParts for ChanOPrivsNeeded {
     fn code(&self) -> u16 {
-        482
+        codes::ERR_CHANOPRIVSNEEDED
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9240,7 +9240,7 @@ impl CantKillServer {
 
 impl ReplyParts for CantKillServer {
     fn code(&self) -> u16 {
-        483
+        codes::ERR_CANTKILLSERVER
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9308,7 +9308,7 @@ impl NoOperHost {
 
 impl ReplyParts for NoOperHost {
     fn code(&self) -> u16 {
-        491
+        codes::ERR_NOOPERHOST
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9376,7 +9376,7 @@ impl UmodeUnknownFlag {
 
 impl ReplyParts for UmodeUnknownFlag {
     fn code(&self) -> u16 {
-        501
+        codes::ERR_UMODEUNKNOWNFLAG
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9444,7 +9444,7 @@ impl UsersDontMatch {
 
 impl ReplyParts for UsersDontMatch {
     fn code(&self) -> u16 {
-        502
+        codes::ERR_USERSDONTMATCH
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9519,7 +9519,7 @@ impl HelpNotFound {
 
 impl ReplyParts for HelpNotFound {
     fn code(&self) -> u16 {
-        524
+        codes::ERR_HELPNOTFOUND
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9592,7 +9592,7 @@ impl InvalidKey {
 
 impl ReplyParts for InvalidKey {
     fn code(&self) -> u16 {
-        525
+        codes::ERR_INVALIDKEY
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9668,7 +9668,7 @@ impl StartTLS {
 
 impl ReplyParts for StartTLS {
     fn code(&self) -> u16 {
-        670
+        codes::RPL_STARTTLS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9741,7 +9741,7 @@ impl WhoIsSecure {
 
 impl ReplyParts for WhoIsSecure {
     fn code(&self) -> u16 {
-        671
+        codes::RPL_WHOISSECURE
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9817,7 +9817,7 @@ impl StartTLSError {
 
 impl ReplyParts for StartTLSError {
     fn code(&self) -> u16 {
-        691
+        codes::ERR_STARTTLSERROR
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9904,7 +9904,7 @@ impl InvalidModeParam {
 
 impl ReplyParts for InvalidModeParam {
     fn code(&self) -> u16 {
-        696
+        codes::ERR_INVALIDMODEPARAM
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9987,7 +9987,7 @@ impl HelpStart {
 
 impl ReplyParts for HelpStart {
     fn code(&self) -> u16 {
-        704
+        codes::RPL_HELPSTART
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10062,7 +10062,7 @@ impl HelpTxt {
 
 impl ReplyParts for HelpTxt {
     fn code(&self) -> u16 {
-        705
+        codes::RPL_HELPTXT
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10137,7 +10137,7 @@ impl EndOfHelp {
 
 impl ReplyParts for EndOfHelp {
     fn code(&self) -> u16 {
-        706
+        codes::RPL_ENDOFHELP
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10212,7 +10212,7 @@ impl NoPrivs {
 
 impl ReplyParts for NoPrivs {
     fn code(&self) -> u16 {
-        723
+        codes::ERR_NOPRIVS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10292,7 +10292,7 @@ impl LoggedIn {
 
 impl ReplyParts for LoggedIn {
     fn code(&self) -> u16 {
-        900
+        codes::RPL_LOGGEDIN
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10373,7 +10373,7 @@ impl LoggedOut {
 
 impl ReplyParts for LoggedOut {
     fn code(&self) -> u16 {
-        901
+        codes::RPL_LOGGEDOUT
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10449,7 +10449,7 @@ impl NickLocked {
 
 impl ReplyParts for NickLocked {
     fn code(&self) -> u16 {
-        902
+        codes::ERR_NICKLOCKED
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10517,7 +10517,7 @@ impl SaslSuccess {
 
 impl ReplyParts for SaslSuccess {
     fn code(&self) -> u16 {
-        903
+        codes::RPL_SASLSUCCESS
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10585,7 +10585,7 @@ impl SaslFail {
 
 impl ReplyParts for SaslFail {
     fn code(&self) -> u16 {
-        904
+        codes::ERR_SASLFAIL
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10653,7 +10653,7 @@ impl SaslTooLong {
 
 impl ReplyParts for SaslTooLong {
     fn code(&self) -> u16 {
-        905
+        codes::ERR_SASLTOOLONG
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10721,7 +10721,7 @@ impl SaslAborted {
 
 impl ReplyParts for SaslAborted {
     fn code(&self) -> u16 {
-        906
+        codes::ERR_SASLABORTED
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10789,7 +10789,7 @@ impl SaslAlready {
 
 impl ReplyParts for SaslAlready {
     fn code(&self) -> u16 {
-        907
+        codes::ERR_SASLALREADY
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10864,7 +10864,7 @@ impl SaslMechs {
 
 impl ReplyParts for SaslMechs {
     fn code(&self) -> u16 {
-        908
+        codes::RPL_SASLMECHS
     }
 
     fn parameters(&self) -> &ParameterList {

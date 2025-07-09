@@ -2,7 +2,7 @@
 name = "ircnet"
 edition.workspace = true
 rust-version.workspace = true
-#description = ...
+description = "Basic facilities for IRC connections"
 authors.workspace = true
 repository.workspace = true
 license.workspace = true

@@ -2,7 +2,7 @@
 name = "irctext"
 edition.workspace = true
 rust-version.workspace = true
-#description = ...
+description = "Parsing & displaying IRC messages"
 authors.workspace = true
 repository.workspace = true
 license.workspace = true

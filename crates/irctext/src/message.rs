@@ -1,6 +1,6 @@
 use crate::{
     ClientMessage, ClientMessageError, ClientMessageParts, Command, ParameterList,
-    ParseRawMessageError, RawMessage, Reply, ReplyError, Source, TryFromStringError,
+    ParseRawMessageError, RawMessage, Reply, ReplyError, ReplyParts, Source, TryFromStringError,
 };
 use thiserror::Error;
 

@@ -57,3 +57,81 @@ impl<T: fmt::Display> fmt::Display for DisplayMaybeFinal<T> {
         }
     }
 }
+
+pub(crate) fn split_spaces(s: &str) -> SplitSpaces<'_> {
+    SplitSpaces::new(s)
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct SplitSpaces<'a>(&'a str);
+
+impl<'a> SplitSpaces<'a> {
+    fn new(s: &'a str) -> Self {
+        SplitSpaces(s.trim_start_matches(' '))
+    }
+}
+
+impl<'a> Iterator for SplitSpaces<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<&'a str> {
+        if self.0.is_empty() {
+            None
+        } else {
+            let (s1, s2) = split_word(self.0);
+            self.0 = s2;
+            Some(s1)
+        }
+    }
+}
+
+impl std::iter::FusedIterator for SplitSpaces<'_> {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod split_spaces {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            let mut iter = split_spaces("");
+            assert_eq!(iter.next(), None);
+            assert_eq!(iter.next(), None);
+        }
+
+        #[test]
+        fn spaces() {
+            let mut iter = split_spaces("   ");
+            assert_eq!(iter.next(), None);
+            assert_eq!(iter.next(), None);
+        }
+
+        #[test]
+        fn one_word() {
+            let mut iter = split_spaces("foo");
+            assert_eq!(iter.next(), Some("foo"));
+            assert_eq!(iter.next(), None);
+            assert_eq!(iter.next(), None);
+        }
+
+        #[test]
+        fn two_words() {
+            let mut iter = split_spaces("foo  bar");
+            assert_eq!(iter.next(), Some("foo"));
+            assert_eq!(iter.next(), Some("bar"));
+            assert_eq!(iter.next(), None);
+            assert_eq!(iter.next(), None);
+        }
+
+        #[test]
+        fn leading_trailing_spaces() {
+            let mut iter = split_spaces(" foo  bar ");
+            assert_eq!(iter.next(), Some("foo"));
+            assert_eq!(iter.next(), Some("bar"));
+            assert_eq!(iter.next(), None);
+            assert_eq!(iter.next(), None);
+        }
+    }
+}

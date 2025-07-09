@@ -8,7 +8,7 @@ use thiserror::Error;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MsgTarget {
     Channel(Channel),
-    User(Nickname),
+    Nick(Nickname),
     Star,
 }
 
@@ -23,7 +23,7 @@ impl std::str::FromStr for MsgTarget {
             Ok(MsgTarget::Channel(channel))
         } else {
             let nickname = s.parse::<Nickname>()?;
-            Ok(MsgTarget::User(nickname))
+            Ok(MsgTarget::Nick(nickname))
         }
     }
 }
@@ -44,7 +44,7 @@ impl TryFrom<String> for MsgTarget {
             }
         } else {
             match Nickname::try_from(value) {
-                Ok(nickname) => Ok(MsgTarget::User(nickname)),
+                Ok(nickname) => Ok(MsgTarget::Nick(nickname)),
                 Err(TryFromStringError { inner, string }) => Err(TryFromStringError {
                     inner: ParseMsgTargetError::Nickname(inner),
                     string,
@@ -58,7 +58,7 @@ impl AsRef<str> for MsgTarget {
     fn as_ref(&self) -> &str {
         match self {
             MsgTarget::Channel(chan) => chan.as_ref(),
-            MsgTarget::User(nick) => nick.as_ref(),
+            MsgTarget::Nick(nick) => nick.as_ref(),
             MsgTarget::Star => "*",
         }
     }
@@ -72,7 +72,7 @@ impl From<Channel> for MsgTarget {
 
 impl From<Nickname> for MsgTarget {
     fn from(value: Nickname) -> MsgTarget {
-        MsgTarget::User(value)
+        MsgTarget::Nick(value)
     }
 }
 

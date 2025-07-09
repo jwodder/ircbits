@@ -7,14 +7,14 @@ use thiserror::Error;
 /// numeric replies and server-to-client `CAP` messages
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ReplyTarget {
-    User(Nickname),
+    Nick(Nickname),
     Star,
 }
 
 impl ReplyTarget {
     pub fn into_inner(self) -> String {
         match self {
-            ReplyTarget::User(nick) => nick.into_inner(),
+            ReplyTarget::Nick(nick) => nick.into_inner(),
             ReplyTarget::Star => String::from("*"),
         }
     }
@@ -28,7 +28,7 @@ impl std::str::FromStr for ReplyTarget {
             Ok(ReplyTarget::Star)
         } else {
             let nickname = s.parse::<Nickname>()?;
-            Ok(ReplyTarget::User(nickname))
+            Ok(ReplyTarget::Nick(nickname))
         }
     }
 }
@@ -36,7 +36,7 @@ impl std::str::FromStr for ReplyTarget {
 impl fmt::Display for ReplyTarget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ReplyTarget::User(nick) => write!(f, "{nick}"),
+            ReplyTarget::Nick(nick) => write!(f, "{nick}"),
             ReplyTarget::Star => write!(f, "*"),
         }
     }
@@ -50,7 +50,7 @@ impl TryFrom<String> for ReplyTarget {
             Ok(ReplyTarget::Star)
         } else {
             match Nickname::try_from(value) {
-                Ok(nickname) => Ok(ReplyTarget::User(nickname)),
+                Ok(nickname) => Ok(ReplyTarget::Nick(nickname)),
                 Err(TryFromStringError { inner, string }) => Err(TryFromStringError {
                     inner: ParseReplyTargetError(inner),
                     string,
@@ -63,7 +63,7 @@ impl TryFrom<String> for ReplyTarget {
 impl PartialEq<str> for ReplyTarget {
     fn eq(&self, other: &str) -> bool {
         match self {
-            ReplyTarget::User(nick) => nick == other,
+            ReplyTarget::Nick(nick) => nick == other,
             ReplyTarget::Star => other == "*",
         }
     }
@@ -78,7 +78,7 @@ impl<'a> PartialEq<&'a str> for ReplyTarget {
 impl AsRef<str> for ReplyTarget {
     fn as_ref(&self) -> &str {
         match self {
-            ReplyTarget::User(nick) => nick.as_ref(),
+            ReplyTarget::Nick(nick) => nick.as_ref(),
             ReplyTarget::Star => "*",
         }
     }
@@ -86,7 +86,7 @@ impl AsRef<str> for ReplyTarget {
 
 impl From<Nickname> for ReplyTarget {
     fn from(value: Nickname) -> ReplyTarget {
-        ReplyTarget::User(value)
+        ReplyTarget::Nick(value)
     }
 }
 

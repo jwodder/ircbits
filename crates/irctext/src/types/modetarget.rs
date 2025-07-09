@@ -9,14 +9,14 @@ use thiserror::Error;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ModeTarget {
     Channel(Channel),
-    User(Nickname),
+    Nick(Nickname),
 }
 
 impl ModeTarget {
     pub fn into_inner(self) -> String {
         match self {
             ModeTarget::Channel(channel) => channel.into_inner(),
-            ModeTarget::User(nick) => nick.into_inner(),
+            ModeTarget::Nick(nick) => nick.into_inner(),
         }
     }
 }
@@ -30,7 +30,7 @@ impl std::str::FromStr for ModeTarget {
             Ok(ModeTarget::Channel(channel))
         } else {
             let nickname = s.parse::<Nickname>()?;
-            Ok(ModeTarget::User(nickname))
+            Ok(ModeTarget::Nick(nickname))
         }
     }
 }
@@ -39,7 +39,7 @@ impl fmt::Display for ModeTarget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ModeTarget::Channel(channel) => write!(f, "{channel}"),
-            ModeTarget::User(nick) => write!(f, "{nick}"),
+            ModeTarget::Nick(nick) => write!(f, "{nick}"),
         }
     }
 }
@@ -58,7 +58,7 @@ impl TryFrom<String> for ModeTarget {
             }
         } else {
             match Nickname::try_from(value) {
-                Ok(nickname) => Ok(ModeTarget::User(nickname)),
+                Ok(nickname) => Ok(ModeTarget::Nick(nickname)),
                 Err(TryFromStringError { inner, string }) => Err(TryFromStringError {
                     inner: ParseModeTargetError::Nickname(inner),
                     string,
@@ -72,7 +72,7 @@ impl AsRef<str> for ModeTarget {
     fn as_ref(&self) -> &str {
         match self {
             ModeTarget::Channel(chan) => chan.as_ref(),
-            ModeTarget::User(nick) => nick.as_ref(),
+            ModeTarget::Nick(nick) => nick.as_ref(),
         }
     }
 }
@@ -85,7 +85,7 @@ impl From<Channel> for ModeTarget {
 
 impl From<Nickname> for ModeTarget {
     fn from(value: Nickname) -> ModeTarget {
-        ModeTarget::User(value)
+        ModeTarget::Nick(value)
     }
 }
 

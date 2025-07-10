@@ -1,3 +1,5 @@
+mod login;
+pub use self::login::*;
 use irctext::{ClientMessage, Message};
 use std::time::Duration;
 

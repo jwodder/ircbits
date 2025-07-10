@@ -21,7 +21,7 @@ use irctext::{ClientMessage, Message};
 /// - If the call to `handle_message()` returned `false`, use the message
 ///   separately from the autoresponder as you desire.
 pub trait AutoResponder {
-    /// Returns outgoing messages to sent back to the server.
+    /// Returns outgoing messages to send back to the server.
     ///
     /// Users SHOULD call this method after each call to `handle_message()`.
     ///

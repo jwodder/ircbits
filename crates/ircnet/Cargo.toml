@@ -11,6 +11,7 @@ license.workspace = true
 bytes = "1.5.0"
 irctext = { path = "../irctext" }
 itertools = "0.14.0"
+jiff = "0.2.15"
 rustls-native-certs = "0.8.1"
 rustls-pki-types = "1.10.0"
 thiserror = "2.0.12"

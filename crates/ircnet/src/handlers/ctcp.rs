@@ -3,7 +3,7 @@ use irctext::{
     clientmsgs::Notice, ClientMessage, ClientSource, CtcpMessage, CtcpParams, Message, Payload,
     Source,
 };
-use time::{format_description::well_known::Rfc2822, OffsetDateTime, UtcOffset};
+use jiff::Zoned;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CtcpQueryHandler {
@@ -12,7 +12,6 @@ pub struct CtcpQueryHandler {
     source: Option<CtcpParams>,
     version: Option<CtcpParams>,
     userinfo: Option<CtcpParams>,
-    timezone: Option<UtcOffset>,
 }
 
 impl CtcpQueryHandler {
@@ -32,11 +31,6 @@ impl CtcpQueryHandler {
 
     pub fn with_userinfo(mut self, userinfo: CtcpParams) -> Self {
         self.userinfo = Some(userinfo);
-        self
-    }
-
-    pub fn with_timezone(mut self, timezone: UtcOffset) -> Self {
-        self.timezone = Some(timezone);
         self
     }
 }
@@ -68,9 +62,7 @@ impl Handler for CtcpQueryHandler {
                 if self.source.is_some() {
                     s.push_str(" SOURCE");
                 }
-                if self.timezone.is_some() {
-                    s.push_str(" TIME");
-                }
+                s.push_str(" TIME");
                 if self.userinfo.is_some() {
                     s.push_str(" USERINFO");
                 }
@@ -91,14 +83,11 @@ impl Handler for CtcpQueryHandler {
                 .clone()
                 .map(|info| CtcpMessage::Source(Some(info))),
             CtcpMessage::Time(None) => {
-                if let Some(tz) = self.timezone {
-                    if let Ok(stamp) = OffsetDateTime::now_utc().to_offset(tz).format(&Rfc2822) {
-                        let ps = CtcpParams::try_from(stamp)
-                            .expect("RFC 2822 timestamp should be valid CtcpParams");
-                        Some(CtcpMessage::Time(Some(ps)))
-                    } else {
-                        None
-                    }
+                let now = Zoned::now();
+                if let Ok(stamp) = jiff::fmt::rfc2822::to_string(&now) {
+                    let ps = CtcpParams::try_from(stamp)
+                        .expect("RFC 2822 timestamp should be valid CtcpParams");
+                    Some(CtcpMessage::Time(Some(ps)))
                 } else {
                     None
                 }

@@ -10,8 +10,8 @@ pub struct CtcpQueryHandler {
     outgoing: Vec<ClientMessage>,
     finger: Option<CtcpParams>,
     source: Option<CtcpParams>,
-    version: Option<CtcpParams>,
     userinfo: Option<CtcpParams>,
+    version: Option<CtcpParams>,
     utc_time: bool,
 }
 
@@ -32,6 +32,11 @@ impl CtcpQueryHandler {
 
     pub fn with_userinfo(mut self, userinfo: CtcpParams) -> Self {
         self.userinfo = Some(userinfo);
+        self
+    }
+
+    pub fn with_version(mut self, version: CtcpParams) -> Self {
+        self.version = Some(version);
         self
     }
 

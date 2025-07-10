@@ -1,9 +1,9 @@
 use super::AutoResponder;
 use irctext::{
-    clientmsgs::Notice, ClientMessage, ClientSource, CtcpMessage, CtcpParams, Message, Payload,
-    Source,
+    ClientMessage, ClientSource, CtcpMessage, CtcpParams, Message, Payload, Source,
+    clientmsgs::Notice,
 };
-use jiff::{tz::TimeZone, Timestamp, Zoned};
+use jiff::{Timestamp, Zoned, tz::TimeZone};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CtcpQueryResponder {

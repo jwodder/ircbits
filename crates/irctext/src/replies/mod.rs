@@ -1067,7 +1067,7 @@ impl TryFrom<ParameterList> for Bounce {
                 return Err(ReplyError::Int {
                     string: String::from(p),
                     inner,
-                })
+                });
             }
         };
         Ok(Bounce {
@@ -1166,7 +1166,7 @@ impl TryFrom<ParameterList> for StatsCommands {
                 return Err(ReplyError::Int {
                     string: String::from(p),
                     inner,
-                })
+                });
             }
         };
         let byte_count = parameters
@@ -1556,7 +1556,7 @@ impl TryFrom<ParameterList> for LuserOp {
                 return Err(ReplyError::Int {
                     string: String::from(p),
                     inner,
-                })
+                });
             }
         };
         Ok(LuserOp {
@@ -1645,7 +1645,7 @@ impl TryFrom<ParameterList> for LuserUnknown {
                 return Err(ReplyError::Int {
                     string: String::from(p),
                     inner,
-                })
+                });
             }
         };
         Ok(LuserUnknown {
@@ -1734,7 +1734,7 @@ impl TryFrom<ParameterList> for LuserChannels {
                 return Err(ReplyError::Int {
                     string: String::from(p),
                     inner,
-                })
+                });
             }
         };
         Ok(LuserChannels {
@@ -3423,7 +3423,7 @@ impl TryFrom<ParameterList> for WhoIsIdle {
                 return Err(ReplyError::Int {
                     string: String::from(p),
                     inner,
-                })
+                });
             }
         };
         let p = parameters
@@ -3435,7 +3435,7 @@ impl TryFrom<ParameterList> for WhoIsIdle {
                 return Err(ReplyError::Int {
                     string: String::from(p),
                     inner,
-                })
+                });
             }
         };
         Ok(WhoIsIdle {
@@ -3845,7 +3845,7 @@ impl TryFrom<ParameterList> for List {
                 return Err(ReplyError::Int {
                     string: String::from(p),
                     inner,
-                })
+                });
             }
         };
         Ok(List {
@@ -4091,7 +4091,7 @@ impl TryFrom<ParameterList> for CreationTime {
                 return Err(ReplyError::Int {
                     string: String::from(p),
                     inner,
-                })
+                });
             }
         };
         Ok(CreationTime {
@@ -4442,7 +4442,7 @@ impl TryFrom<ParameterList> for TopicWhoTime {
                 return Err(ReplyError::Int {
                     string: String::from(p),
                     inner,
-                })
+                });
             }
         };
         Ok(TopicWhoTime {
@@ -4699,7 +4699,7 @@ impl TryFrom<ParameterList> for WhoIsActually {
                         return Err(ReplyError::Host {
                             inner,
                             string: String::from(p),
-                        })
+                        });
                     }
                 }
             }
@@ -4715,7 +4715,7 @@ impl TryFrom<ParameterList> for WhoIsActually {
                             return Err(ReplyError::Host {
                                 inner,
                                 string: host.to_owned(),
-                            })
+                            });
                         }
                     };
                     (user, host)
@@ -4731,7 +4731,7 @@ impl TryFrom<ParameterList> for WhoIsActually {
                         return Err(ReplyError::IpAddr {
                             inner,
                             string: String::from(p),
-                        })
+                        });
                     }
                 };
                 (Some(username), Some(host), Some(ip))
@@ -5367,7 +5367,7 @@ impl TryFrom<ParameterList> for WhoReply {
                 return Err(ReplyError::Int {
                     string: String::from(word),
                     inner,
-                })
+                });
             }
         };
         Ok(WhoReply {
@@ -5574,7 +5574,7 @@ impl TryFrom<ParameterList> for Links {
                 return Err(ReplyError::Int {
                     string: String::from(word),
                     inner,
-                })
+                });
             }
         };
         Ok(Links {

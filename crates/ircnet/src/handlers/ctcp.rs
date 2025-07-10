@@ -52,19 +52,25 @@ impl Handler for CtcpQueryHandler {
     }
 
     fn handle_message(&mut self, msg: &Message) -> bool {
-        let Some(Source::Client(ClientSource {
+        let Some(source) = &msg.source else {
+            return false;
+        };
+        let Source::Client(ClientSource {
             nickname: sender, ..
-        })) = &msg.source
+        }) = source
         else {
             return false;
         };
-        let sender = sender.clone();
         let Payload::ClientMessage(ClientMessage::PrivMsg(privmsg)) = &msg.payload else {
             return false;
         };
         let ctcp = CtcpMessage::from(privmsg.text().clone());
         let resp = match ctcp {
             CtcpMessage::ClientInfo(None) => {
+                tracing::trace!(
+                    source = source.to_string(),
+                    "Received CLIENTINFO CTCP query; responding ..."
+                );
                 let mut s = String::from("CLIENTINFO");
                 if self.finger.is_some() {
                     s.push_str(" FINGER");
@@ -80,49 +86,120 @@ impl Handler for CtcpQueryHandler {
                 if self.version.is_some() {
                     s.push_str(" VERSION");
                 }
-                let ps =
-                    CtcpParams::try_from(s).expect("CLIENTINFO params should be valid CtcpParams");
-                Some(CtcpMessage::ClientInfo(Some(ps)))
+                match CtcpParams::try_from(s) {
+                    Ok(ps) => CtcpMessage::ClientInfo(Some(ps)),
+                    Err(e) => {
+                        tracing::warn!(
+                            err = e.to_string(),
+                            "Failed to convert CLIENTINFO response to CtcpParams"
+                        );
+                        return true;
+                    }
+                }
             }
-            CtcpMessage::Finger(None) => self
-                .finger
-                .clone()
-                .map(|info| CtcpMessage::Finger(Some(info))),
-            m @ CtcpMessage::Ping(_) => Some(m),
-            CtcpMessage::Source(None) => self
-                .source
-                .clone()
-                .map(|info| CtcpMessage::Source(Some(info))),
+            CtcpMessage::Finger(None) => {
+                if let Some(info) = self.finger.clone() {
+                    tracing::trace!(
+                        source = source.to_string(),
+                        "Received FINGER CTCP query; responding ..."
+                    );
+                    CtcpMessage::Finger(Some(info))
+                } else {
+                    tracing::trace!(
+                        source = source.to_string(),
+                        "Received FINGER CTCP query, but no response defined"
+                    );
+                    return true;
+                }
+            }
+            m @ CtcpMessage::Ping(_) => {
+                tracing::trace!(
+                    source = source.to_string(),
+                    "Received PING CTCP query; responding ..."
+                );
+                m
+            }
+            CtcpMessage::Source(None) => {
+                if let Some(info) = self.source.clone() {
+                    tracing::trace!(
+                        source = source.to_string(),
+                        "Received SOURCE CTCP query; responding ..."
+                    );
+                    CtcpMessage::Source(Some(info))
+                } else {
+                    tracing::trace!(
+                        source = source.to_string(),
+                        "Received SOURCE CTCP query, but no response defined"
+                    );
+                    return true;
+                }
+            }
             CtcpMessage::Time(None) => {
+                tracing::trace!(
+                    source = source.to_string(),
+                    "Received TIME CTCP query; responding ..."
+                );
                 let now = if self.utc_time {
                     Timestamp::now().to_zoned(TimeZone::UTC)
                 } else {
                     Zoned::now()
                 };
-                if let Ok(stamp) = jiff::fmt::rfc2822::to_string(&now) {
-                    let ps = CtcpParams::try_from(stamp)
-                        .expect("RFC 2822 timestamp should be valid CtcpParams");
-                    Some(CtcpMessage::Time(Some(ps)))
-                } else {
-                    None
+                match jiff::fmt::rfc2822::to_string(&now) {
+                    Ok(stamp) => match CtcpParams::try_from(stamp) {
+                        Ok(ps) => CtcpMessage::Time(Some(ps)),
+                        Err(e) => {
+                            tracing::warn!(
+                                err = e.to_string(),
+                                "Failed to convert TIME response to CtcpParams"
+                            );
+                            return true;
+                        }
+                    },
+                    Err(e) => {
+                        tracing::warn!(
+                            err = e.to_string(),
+                            timestamp = now.to_string(),
+                            "Failed to format timestamp in RFC 2822 format"
+                        );
+                        return true;
+                    }
                 }
             }
-            CtcpMessage::UserInfo(None) => self
-                .userinfo
-                .clone()
-                .map(|info| CtcpMessage::UserInfo(Some(info))),
-            CtcpMessage::Version(None) => self
-                .version
-                .clone()
-                .map(|info| CtcpMessage::Version(Some(info))),
-            _ => None,
+            CtcpMessage::UserInfo(None) => {
+                if let Some(info) = self.userinfo.clone() {
+                    tracing::trace!(
+                        source = source.to_string(),
+                        "Received USERINFO CTCP query; responding ..."
+                    );
+                    CtcpMessage::UserInfo(Some(info))
+                } else {
+                    tracing::trace!(
+                        source = source.to_string(),
+                        "Received USERINFO CTCP query, but no response defined"
+                    );
+                    return true;
+                }
+            }
+            CtcpMessage::Version(None) => {
+                if let Some(info) = self.version.clone() {
+                    tracing::trace!(
+                        source = source.to_string(),
+                        "Received VERSION CTCP query; responding ..."
+                    );
+                    CtcpMessage::Version(Some(info))
+                } else {
+                    tracing::trace!(
+                        source = source.to_string(),
+                        "Received VERSION CTCP query, but no response defined"
+                    );
+                    return true;
+                }
+            }
+            _ => return false,
         };
-        if let Some(resp) = resp {
-            self.outgoing.push(Notice::new(sender, resp.into()).into());
-            true
-        } else {
-            false
-        }
+        self.outgoing
+            .push(Notice::new(sender.clone(), resp.into()).into());
+        true
     }
 
     fn is_done(&self) -> bool {

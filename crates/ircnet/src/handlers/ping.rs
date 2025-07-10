@@ -19,6 +19,7 @@ impl Handler for PingHandler {
 
     fn handle_message(&mut self, msg: &Message) -> bool {
         if let Payload::ClientMessage(ClientMessage::Ping(ref ping)) = msg.payload {
+            tracing::trace!("PING received; queuing PONG");
             self.pong = Some(ping.to_pong());
             true
         } else {

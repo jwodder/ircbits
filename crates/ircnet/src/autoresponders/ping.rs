@@ -1,5 +1,5 @@
 use super::AutoResponder;
-use irctext::{clientmsgs::Pong, ClientMessage, Message, Payload};
+use irctext::{ClientMessage, Message, Payload, clientmsgs::Pong};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct PingResponder {

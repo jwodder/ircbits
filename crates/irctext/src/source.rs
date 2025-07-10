@@ -9,8 +9,8 @@
 // Based on <https://github.com/ircdocs/modern-irc/issues/168>, no validation
 // should be performed on host segments — for now.
 
-use crate::types::{Nickname, ParseNicknameError, ParseUsernameError, Username};
 use crate::TryFromStringError;
+use crate::types::{Nickname, ParseNicknameError, ParseUsernameError, Username};
 use std::fmt;
 use thiserror::Error;
 use url::Host;

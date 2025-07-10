@@ -77,7 +77,7 @@ impl TryFrom<ParameterList> for WhoWas {
                     return Err(ClientMessageError::Int {
                         string: p.into_inner(),
                         inner,
-                    })
+                    });
                 }
             }
         } else {

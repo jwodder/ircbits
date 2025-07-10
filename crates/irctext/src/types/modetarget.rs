@@ -1,5 +1,5 @@
 use crate::types::{
-    channel::channel_prefixed, Channel, Nickname, ParseChannelError, ParseNicknameError,
+    Channel, Nickname, ParseChannelError, ParseNicknameError, channel::channel_prefixed,
 };
 use crate::{FinalParam, MedialParam, TryFromStringError};
 use std::fmt;

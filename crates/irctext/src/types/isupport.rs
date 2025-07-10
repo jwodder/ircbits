@@ -255,7 +255,7 @@ pub struct EscapedISupportValue<'a>(&'a ISupportValue);
 
 impl fmt::Display for EscapedISupportValue<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = self.0 .0.as_str();
+        let s = self.0.0.as_str();
         let mut prev_start = 0;
         for (i, m) in s.match_indices([' ', '=', '\\']) {
             write!(f, "{}", &s[prev_start..i])?;

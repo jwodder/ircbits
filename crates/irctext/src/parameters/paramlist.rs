@@ -1,8 +1,8 @@
 use super::{
     FinalParam, MedialParam, ParamRef, Parameter, ParseFinalParamError, ParseMedialParamError,
 };
-use crate::util::split_word;
 use crate::TryFromStringError;
+use crate::util::split_word;
 use std::cmp::Ordering;
 use std::fmt;
 use thiserror::Error;

@@ -108,7 +108,7 @@ impl TryFrom<ParameterList> for Connect {
                         return Err(ClientMessageError::Int {
                             string: p2.into(),
                             inner,
-                        })
+                        });
                     }
                 }
             } else {

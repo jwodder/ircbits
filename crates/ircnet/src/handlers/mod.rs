@@ -1,5 +1,7 @@
+mod ctcp;
 mod handler_set;
 mod ping;
+pub use self::ctcp::*;
 pub use self::handler_set::*;
 pub use self::ping::*;
 use irctext::{ClientMessage, Message};

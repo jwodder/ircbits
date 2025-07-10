@@ -3,7 +3,7 @@ use irctext::{
     clientmsgs::Notice, ClientMessage, ClientSource, CtcpMessage, CtcpParams, Message, Payload,
     Source,
 };
-use jiff::Zoned;
+use jiff::{tz::TimeZone, Timestamp, Zoned};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CtcpQueryHandler {
@@ -12,6 +12,7 @@ pub struct CtcpQueryHandler {
     source: Option<CtcpParams>,
     version: Option<CtcpParams>,
     userinfo: Option<CtcpParams>,
+    utc_time: bool,
 }
 
 impl CtcpQueryHandler {
@@ -31,6 +32,11 @@ impl CtcpQueryHandler {
 
     pub fn with_userinfo(mut self, userinfo: CtcpParams) -> Self {
         self.userinfo = Some(userinfo);
+        self
+    }
+
+    pub fn with_utc_time(mut self, utc_time: bool) -> Self {
+        self.utc_time = utc_time;
         self
     }
 }
@@ -83,7 +89,11 @@ impl Handler for CtcpQueryHandler {
                 .clone()
                 .map(|info| CtcpMessage::Source(Some(info))),
             CtcpMessage::Time(None) => {
-                let now = Zoned::now();
+                let now = if self.utc_time {
+                    Timestamp::now().to_zoned(TimeZone::UTC)
+                } else {
+                    Zoned::now()
+                };
                 if let Ok(stamp) = jiff::fmt::rfc2822::to_string(&now) {
                     let ps = CtcpParams::try_from(stamp)
                         .expect("RFC 2822 timestamp should be valid CtcpParams");

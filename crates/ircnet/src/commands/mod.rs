@@ -76,9 +76,10 @@ pub trait Command {
     /// messages or timeouts.
     fn is_done(&self) -> bool;
 
-    /// Returns the result of the command.  MUST only be called once
-    /// `is_done()` returns true.
+    /// Returns the result of the command.
     ///
-    /// If `is_done()` is not true, this method MAY panic.
+    /// This method MUST only be called after `is_done()` returns true and MUST
+    /// be called at most once.  If these preconditions are violated, the
+    /// implementation MAY panic.
     fn get_output(&mut self) -> Self::Output;
 }

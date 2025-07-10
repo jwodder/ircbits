@@ -8,10 +8,6 @@
 //!
 //! - Decoder: `max_length` now includes the terminating line ending.
 //!
-//! - The decoder now returns `irctext::Message`.
-//!
-//! - The encoder now takes `T: irctext::ClientMessageParts`.
-//!
 //! [1]: https://github.com/tokio-rs/tokio/blob/a03e0420249d1740668f608a5a16f1fa614be2c7/tokio-util/src/codec/lines_codec.rs
 
 // Copyright (c) 2022 Tokio Contributors
@@ -40,16 +36,14 @@
 // IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-use crate::util::decode_utf8_latin1;
 use bytes::{Buf, BufMut, BytesMut};
-use irctext::{ClientMessageParts, Message, ParseMessageError, TryFromStringError};
 use std::{cmp, io};
 use thiserror::Error;
 use tokio_util::codec::{Decoder, Encoder};
 
 /// A simple [`Decoder`] and [`Encoder`] implementation that splits up data into lines.
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct IrcCodec {
+pub struct LinesCodec {
     // Stored index of the next index to examine for a `\n` character.
     // This is used to optimize searching.
     // For example, if `decode` was called with `abc`, it would hold `3`,
@@ -67,45 +61,45 @@ pub struct IrcCodec {
     is_discarding: bool,
 }
 
-impl IrcCodec {
-    /// Returns an `IrcLinesCodec` for splitting up data into lines.
+impl LinesCodec {
+    /// Returns a `LinesCodec` for splitting up data into lines.
     ///
     /// # Note
     ///
-    /// The returned `IrcLinesCodec` will not have an upper bound on the length
-    /// of a buffered line. See the documentation for `new_with_max_length`
-    /// for information on why this could be a potential security risk.
-    pub fn new() -> IrcCodec {
-        IrcCodec {
+    /// The returned `LinesCodec` will not have an upper bound on the length of
+    /// a buffered line. See the documentation for `new_with_max_length` for
+    /// information on why this could be a potential security risk.
+    pub fn new() -> LinesCodec {
+        LinesCodec {
             next_index: 0,
             max_length: usize::MAX,
             is_discarding: false,
         }
     }
 
-    /// Returns an `IrcLinesCodec` with a maximum line length limit.
+    /// Returns an `LinesCodec` with a maximum line length limit.
     ///
     /// # Note
     ///
-    /// Setting a length limit is highly recommended for any `IrcLinesCodec`
-    /// which will be exposed to untrusted input. Otherwise, the size of the
-    /// buffer that holds the line currently being read is unbounded. An
-    /// attacker could exploit this unbounded buffer by sending an unbounded
-    /// amount of input without any `\n` characters, causing unbounded memory
+    /// Setting a length limit is highly recommended for any `LinesCodec` which
+    /// will be exposed to untrusted input. Otherwise, the size of the buffer
+    /// that holds the line currently being read is unbounded. An attacker
+    /// could exploit this unbounded buffer by sending an unbounded amount of
+    /// input without any `\n` characters, causing unbounded memory
     /// consumption.
     pub fn new_with_max_length(max_length: usize) -> Self {
-        IrcCodec {
+        LinesCodec {
             max_length,
-            ..IrcCodec::new()
+            ..LinesCodec::new()
         }
     }
 }
 
-impl Decoder for IrcCodec {
-    type Item = Message;
-    type Error = IrcCodecError;
+impl Decoder for LinesCodec {
+    type Item = String;
+    type Error = LinesCodecError;
 
-    fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Message>, IrcCodecError> {
+    fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<String>, LinesCodecError> {
         loop {
             // Determine how far into the buffer we'll search for a newline. If
             // there's no max_length set, we'll read to the end of the buffer.
@@ -136,14 +130,17 @@ impl Decoder for IrcCodec {
                     // Found a line!
                     let newline_index = offset + self.next_index;
                     self.next_index = 0;
-                    return decode_message(buf.split_to(newline_index + 1));
+                    let line = buf.split_to(newline_index + 1);
+                    let line = chomp(&line);
+                    let line = decode_utf8_latin1(line.into());
+                    return Ok(Some(line));
                 }
                 (false, None) if buf.len() >= self.max_length => {
                     // Reached the maximum length without finding a
                     // newline, return an error and start discarding on the
                     // next call.
                     self.is_discarding = true;
-                    return Err(IrcCodecError::MaxLineLengthExceeded);
+                    return Err(LinesCodecError::MaxLineLengthExceeded);
                 }
                 (false, None) => {
                     // We didn't find a line or reach the length limit, so the
@@ -155,7 +152,7 @@ impl Decoder for IrcCodec {
         }
     }
 
-    fn decode_eof(&mut self, buf: &mut BytesMut) -> Result<Option<Message>, IrcCodecError> {
+    fn decode_eof(&mut self, buf: &mut BytesMut) -> Result<Option<String>, LinesCodecError> {
         match self.decode(buf)? {
             Some(frame) => Ok(Some(frame)),
             None => {
@@ -163,19 +160,25 @@ impl Decoder for IrcCodec {
                 if buf.is_empty() || buf == &b"\r"[..] {
                     Ok(None)
                 } else {
+                    let line = buf.split_to(buf.len());
+                    let line = chomp(&line);
+                    let line = decode_utf8_latin1(line.into());
                     self.next_index = 0;
-                    decode_message(buf.split_to(buf.len()))
+                    Ok(Some(line))
                 }
             }
         }
     }
 }
 
-impl<T: ClientMessageParts> Encoder<T> for IrcCodec {
-    type Error = IrcCodecError;
+impl<T> Encoder<T> for LinesCodec
+where
+    T: AsRef<str>,
+{
+    type Error = LinesCodecError;
 
-    fn encode(&mut self, msg: T, buf: &mut BytesMut) -> Result<(), IrcCodecError> {
-        let line = msg.to_irc_line();
+    fn encode(&mut self, line: T, buf: &mut BytesMut) -> Result<(), LinesCodecError> {
+        let line = line.as_ref();
         buf.reserve(line.len() + 2);
         buf.put(line.as_bytes());
         buf.put_u8(b'\r');
@@ -184,7 +187,7 @@ impl<T: ClientMessageParts> Encoder<T> for IrcCodec {
     }
 }
 
-impl Default for IrcCodec {
+impl Default for LinesCodec {
     fn default() -> Self {
         Self::new()
     }
@@ -200,22 +203,36 @@ fn chomp(mut s: &[u8]) -> &[u8] {
     s
 }
 
-fn decode_message(bytes: BytesMut) -> Result<Option<Message>, IrcCodecError> {
-    let bytes = chomp(&bytes);
-    let line = decode_utf8_latin1(bytes.into());
-    let msg = Message::try_from(line)?;
-    Ok(Some(msg))
+fn decode_utf8_latin1(bs: Vec<u8>) -> String {
+    match String::from_utf8(bs) {
+        Ok(s) => s,
+        Err(e) => e.into_bytes().into_iter().map(char::from).collect(),
+    }
 }
 
 /// An error occurred while encoding or decoding a line.
 #[derive(Debug, Error)]
-pub enum IrcCodecError {
+pub enum LinesCodecError {
     #[error("maximum incoming line length exceeded")]
     MaxLineLengthExceeded,
 
     #[error("I/O error communicating with server")]
     Io(#[from] io::Error),
+}
 
-    #[error("failed to parse incoming message")]
-    Parse(#[from] TryFromStringError<ParseMessageError>),
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_decode_utf8latin1_good() {
+        let bs = b"Snow\xC3\xA9mon: \xE2\x98\x83!".to_vec();
+        assert_eq!(decode_utf8_latin1(bs), "Snowémon: ☃!");
+    }
+
+    #[test]
+    fn test_decode_utf8latin1_fallback() {
+        let bs = b"Snow\xC3\xA9mon: \xE2\x98!".to_vec();
+        assert_eq!(decode_utf8_latin1(bs), "Snow\u{c3}\u{a9}mon: \u{e2}\u{98}!");
+    }
 }

@@ -18,17 +18,16 @@ pub type RawMessageChannel = Framed<Connection, RawMessageCodec>;
 
 pub type MessageChannel = Framed<Connection, MessageCodec>;
 
+#[tracing::instrument]
 pub async fn connect(server: &str, port: u16, tls: bool) -> Result<Connection, ConnectionError> {
-    log::trace!("Connecting to {server:?} on port {port} ...");
+    tracing::trace!("Connecting to remote server ...");
     let conn = TcpStream::connect((server, port))
         .await
         .map_err(ConnectionError::Connect)?;
-    match conn.peer_addr() {
-        Ok(addr) => log::trace!("Connected to {addr}"),
-        Err(e) => log::trace!("Failed to determine remote peer address: {e}"),
-    }
+    let addr = conn.peer_addr().ok().map(|addr| addr.to_string());
+    tracing::trace!(remote_addr = addr, "Connected to remote server");
     if tls {
-        log::trace!("Initializing TLS ...");
+        tracing::trace!("Initializing TLS ...");
         let certs = rustls_native_certs::load_native_certs();
         if !certs.errors.is_empty() {
             let msg = certs.errors.into_iter().join("; ");
@@ -48,7 +47,7 @@ pub async fn connect(server: &str, port: u16, tls: bool) -> Result<Connection, C
             .connect(dnsname, conn)
             .await
             .map_err(ConnectionError::Tls)?;
-        log::trace!("TLS established");
+        tracing::trace!("TLS established");
         Ok(Either::Right(tls_conn))
     } else {
         Ok(Either::Left(conn))

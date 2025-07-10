@@ -25,7 +25,8 @@ pub trait AutoResponder {
     ///
     /// Users SHOULD call this method after each call to `handle_message()`.
     ///
-    /// If `is_done()` is true, this method SHOULD return an empty `Vec`.
+    /// If `is_done()` is true or `handle_message()` has not yet been called,
+    /// this method SHOULD return an empty `Vec`.
     fn get_client_messages(&mut self) -> Vec<ClientMessage>;
 
     /// Handle an incoming message received from the server.  Returns `true` if

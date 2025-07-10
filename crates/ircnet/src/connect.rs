@@ -1,4 +1,4 @@
-use crate::codecs::MessageCodec;
+use crate::codecs::{MessageCodec, RawMessageCodec};
 use itertools::Itertools; // join
 use rustls_pki_types::{InvalidDnsNameError, ServerName};
 use std::sync::Arc;
@@ -14,7 +14,9 @@ pub type TlsStream = tokio_rustls::client::TlsStream<TcpStream>;
 
 pub type Connection = Either<TcpStream, TlsStream>;
 
-pub type MessageChannel = Framed<Either<TcpStream, TlsStream>, MessageCodec>;
+pub type RawMessageChannel = Framed<Connection, RawMessageCodec>;
+
+pub type MessageChannel = Framed<Connection, MessageCodec>;
 
 pub async fn connect(server: &str, port: u16, tls: bool) -> Result<Connection, ConnectionError> {
     log::trace!("Connecting to {server:?} on port {port} ...");

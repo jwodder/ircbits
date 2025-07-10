@@ -23,13 +23,10 @@ pub async fn connect(server: &str, port: u16, tls: bool) -> Result<Connection, C
     let conn = TcpStream::connect((server, port))
         .await
         .map_err(ConnectionError::Connect)?;
-    log::trace!(
-        "Connected to {}",
-        conn.peer_addr().map_or_else(
-            |_| String::from("<unknown peer address>"),
-            |addr| addr.to_string()
-        )
-    );
+    match conn.peer_addr() {
+        Ok(addr) => log::trace!("Connected to {addr}"),
+        Err(e) => log::trace!("Failed to determine remote peer address: {e}"),
+    }
     if tls {
         log::trace!("Initializing TLS ...");
         let certs = rustls_native_certs::load_native_certs();
@@ -37,7 +34,6 @@ pub async fn connect(server: &str, port: u16, tls: bool) -> Result<Connection, C
             let msg = certs.errors.into_iter().join("; ");
             return Err(ConnectionError::LoadStore(msg));
         }
-
         let mut root_cert_store = RootCertStore::empty();
         let (good, bad) = root_cert_store.add_parsable_certificates(certs.certs);
         if good == 0 {

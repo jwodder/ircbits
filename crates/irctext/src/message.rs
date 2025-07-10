@@ -2,12 +2,32 @@ use crate::{
     ClientMessage, ClientMessageError, ClientMessageParts, Command, ParameterList,
     ParseRawMessageError, RawMessage, Reply, ReplyError, ReplyParts, Source, TryFromStringError,
 };
+use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Message {
     pub source: Option<Source>,
     pub payload: Payload,
+}
+
+impl fmt::Display for Message {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(source) = self.source.as_ref() {
+            write!(f, ":{source} ")?;
+        }
+        match &self.payload {
+            Payload::ClientMessage(msg) => write!(f, "{}", msg.to_irc_line())?,
+            Payload::Reply(r) => {
+                write!(f, "{:03}", r.code())?;
+                let params = r.parameters();
+                if !params.is_empty() {
+                    write!(f, "{params}")?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 impl std::str::FromStr for Message {

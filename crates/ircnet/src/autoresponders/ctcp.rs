@@ -1,4 +1,4 @@
-use super::Handler;
+use super::AutoResponder;
 use irctext::{
     clientmsgs::Notice, ClientMessage, ClientSource, CtcpMessage, CtcpParams, Message, Payload,
     Source,
@@ -6,7 +6,7 @@ use irctext::{
 use jiff::{tz::TimeZone, Timestamp, Zoned};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct CtcpQueryHandler {
+pub struct CtcpQueryResponder {
     outgoing: Vec<ClientMessage>,
     finger: Option<CtcpParams>,
     source: Option<CtcpParams>,
@@ -15,9 +15,9 @@ pub struct CtcpQueryHandler {
     utc_time: bool,
 }
 
-impl CtcpQueryHandler {
+impl CtcpQueryResponder {
     pub fn new() -> Self {
-        CtcpQueryHandler::default()
+        CtcpQueryResponder::default()
     }
 
     pub fn with_finger(mut self, finger: CtcpParams) -> Self {
@@ -46,7 +46,7 @@ impl CtcpQueryHandler {
     }
 }
 
-impl Handler for CtcpQueryHandler {
+impl AutoResponder for CtcpQueryResponder {
     fn get_client_messages(&mut self) -> Vec<ClientMessage> {
         std::mem::take(&mut self.outgoing)
     }

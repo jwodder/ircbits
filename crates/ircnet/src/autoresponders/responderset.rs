@@ -1,19 +1,17 @@
-use super::Handler;
+use super::AutoResponder;
 use irctext::{ClientMessage, Message};
 
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
-pub struct HandlerSet(Vec<Box<dyn Handler>>);
+pub struct AutoResponderSet(Vec<Box<dyn AutoResponder>>);
 
-impl HandlerSet {
-    pub fn new() -> HandlerSet {
-        HandlerSet::default()
+impl AutoResponderSet {
+    pub fn new() -> AutoResponderSet {
+        AutoResponderSet::default()
     }
 
-    pub fn push<H: Handler + 'static>(&mut self, mut handler: H) -> Vec<ClientMessage> {
-        let msgs = handler.get_client_messages();
+    pub fn push<H: AutoResponder + 'static>(&mut self, handler: H) {
         self.0.push(Box::new(handler));
-        msgs
     }
 
     fn cleanup(&mut self) {
@@ -21,12 +19,12 @@ impl HandlerSet {
     }
 }
 
-impl Handler for HandlerSet {
+impl AutoResponder for AutoResponderSet {
     fn get_client_messages(&mut self) -> Vec<ClientMessage> {
         let msgs = self
             .0
             .iter_mut()
-            .flat_map(Handler::get_client_messages)
+            .flat_map(AutoResponder::get_client_messages)
             .collect();
         self.cleanup();
         msgs

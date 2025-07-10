@@ -1,18 +1,18 @@
-use super::Handler;
+use super::AutoResponder;
 use irctext::{clientmsgs::Pong, ClientMessage, Message, Payload};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct PingHandler {
+pub struct PingResponder {
     pong: Option<Pong>,
 }
 
-impl PingHandler {
-    pub fn new() -> PingHandler {
-        PingHandler::default()
+impl PingResponder {
+    pub fn new() -> PingResponder {
+        PingResponder::default()
     }
 }
 
-impl Handler for PingHandler {
+impl AutoResponder for PingResponder {
     fn get_client_messages(&mut self) -> Vec<ClientMessage> {
         Vec::from_iter(self.pong.take().map(ClientMessage::from))
     }

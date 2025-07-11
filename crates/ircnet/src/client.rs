@@ -1,7 +1,9 @@
 use crate::autoresponders::AutoResponderSet;
-use crate::codecs::MessageCodec;
+use crate::codecs::{MessageCodec, MessageCodecError};
 use crate::consts::MAX_LINE_LENGTH;
 use crate::{ConnectionError, MessageChannel, connect};
+use futures_util::{SinkExt, TryStreamExt};
+use irctext::{ClientMessage, Message};
 use tokio_util::codec::Framed;
 
 #[allow(missing_debug_implementations)]
@@ -20,5 +22,13 @@ impl Client {
             channel,
             autoresponders,
         })
+    }
+
+    pub async fn send(&mut self, msg: ClientMessage) -> Result<(), MessageCodecError> {
+        self.channel.send(msg).await
+    }
+
+    pub async fn recv(&mut self) -> Result<Option<Message>, MessageCodecError> {
+        self.channel.try_next().await
     }
 }

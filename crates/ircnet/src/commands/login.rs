@@ -35,10 +35,6 @@ impl Login {
             state: State::Start,
         }
     }
-
-    fn error(&mut self, e: LoginError) {
-        self.state = State::Done(Some(Err(e)));
-    }
 }
 
 // Order of replies on successful login:
@@ -89,74 +85,49 @@ impl Command for Login {
         match &msg.payload {
             Payload::Reply(rpl) => {
                 if rpl.is_error() && !matches!(rpl, Reply::NoMotd(_)) {
-                    match rpl {
-                        Reply::InputTooLong(r) => {
-                            self.error(LoginError::InputTooLong {
-                                message: r.message().to_string(),
-                            });
-                        }
-                        Reply::UnknownCommand(r) => self.error(LoginError::UnknownCommand {
+                    let e = match rpl {
+                        Reply::InputTooLong(r) => LoginError::InputTooLong {
+                            message: r.message().to_string(),
+                        },
+                        Reply::UnknownCommand(r) => LoginError::UnknownCommand {
                             command: r.command().to_string(),
                             message: r.message().to_string(),
-                        }),
-                        Reply::ErroneousNickname(r) => self.error(LoginError::ErroneousNickname {
+                        },
+                        Reply::ErroneousNickname(r) => LoginError::ErroneousNickname {
                             nickname: r.nickname().to_string(),
                             message: r.message().to_string(),
-                        }),
-                        Reply::NicknameInUse(r) => self.error(LoginError::NicknameInUse {
+                        },
+                        Reply::NicknameInUse(r) => LoginError::NicknameInUse {
                             nickname: r.nickname().to_string(),
                             message: r.message().to_string(),
-                        }),
-                        Reply::NickCollision(r) => self.error(LoginError::NicknameCollision {
+                        },
+                        Reply::NickCollision(r) => LoginError::NicknameCollision {
                             nickname: r.nickname().to_string(),
                             message: r.message().to_string(),
-                        }),
-                        Reply::PasswdMismatch(r) => {
-                            self.error(LoginError::Password {
-                                message: r.message().to_string(),
-                            });
-                        }
-                        Reply::YoureBannedCreep(r) => {
-                            self.error(LoginError::Banned {
-                                message: r.message().to_string(),
-                            });
-                        }
-                        unexpected => self.error(LoginError::UnexpectedError {
+                        },
+                        Reply::PasswdMismatch(r) => LoginError::Password {
+                            message: r.message().to_string(),
+                        },
+                        Reply::YoureBannedCreep(r) => LoginError::Banned {
+                            message: r.message().to_string(),
+                        },
+                        unexpected => LoginError::UnexpectedError {
                             code: unexpected.code(),
                             reply: msg.to_string(),
-                        }),
-                    }
+                        },
+                    };
+                    self.state = State::Done(Some(Err(e)));
                     true
                 } else {
-                    match self.state.in_place(|state| state.handle_reply(rpl)) {
-                        Ok(b) => b,
-                        Err(e) => {
-                            self.error(e);
-                            true
-                        }
-                    }
+                    self.state.in_place(|state| state.handle_reply(rpl))
                 }
             }
             Payload::ClientMessage(climsg) => match climsg {
-                ClientMessage::Mode(mode) => {
-                    match self.state.in_place(|state| state.handle_mode(mode)) {
-                        Ok(b) => b,
-                        Err(e) => {
-                            self.error(e);
-                            true
-                        }
-                    }
-                }
+                ClientMessage::Mode(mode) => self.state.in_place(|state| state.handle_mode(mode)),
                 ClientMessage::Ping(_) | ClientMessage::PrivMsg(_) | ClientMessage::Notice(_) => {
                     false
                 }
-                other => match self.state.handle_other(other) {
-                    Ok(b) => b,
-                    Err(e) => {
-                        self.error(e);
-                        true
-                    }
-                },
+                other => self.state.handle_other(other),
             },
         }
     }
@@ -222,30 +193,37 @@ enum State {
 }
 
 impl State {
-    fn in_place<F, T>(&mut self, f: F) -> T
+    fn in_place<F>(&mut self, f: F) -> bool
     where
-        F: FnOnce(Self) -> (State, T),
+        F: FnOnce(Self) -> Result<(State, bool), LoginError>,
     {
         let state = std::mem::replace(self, State::Void);
-        let (state, r) = f(state);
-        *self = state;
-        r
+        match f(state) {
+            Ok((st, b)) => {
+                *self = st;
+                b
+            }
+            Err(e) => {
+                *self = State::Done(Some(Err(e)));
+                true
+            }
+        }
     }
 
-    fn handle_reply(self, rpl: &Reply) -> (State, Result<bool, LoginError>) {
+    fn handle_reply(self, rpl: &Reply) -> Result<(State, bool), LoginError> {
         match (self, rpl) {
-            (st @ State::Start, Reply::Welcome(r)) => {
+            (State::Start, Reply::Welcome(r)) => {
                 if let ReplyTarget::Nick(nick) = r.client() {
                     let my_nick = nick.clone();
-                    (State::Got001 { my_nick }, Ok(true))
+                    Ok((State::Got001 { my_nick }, true))
                 } else {
-                    (st, Err(LoginError::StarWelcome))
+                    Err(LoginError::StarWelcome)
                 }
             }
             (State::Got001 { my_nick }, Reply::YourHost(_)) => {
-                (State::Got002 { my_nick }, Ok(true))
+                Ok((State::Got002 { my_nick }, true))
             }
-            (State::Got002 { my_nick }, Reply::Created(_)) => (State::Got003 { my_nick }, Ok(true)),
+            (State::Got002 { my_nick }, Reply::Created(_)) => Ok((State::Got003 { my_nick }, true)),
             (State::Got003 { my_nick }, Reply::MyInfo(r)) => {
                 let server_info = ServerInfo {
                     server_name: r.servername().to_owned(),
@@ -262,74 +240,74 @@ impl State {
                     motd: None,
                     mode: None,
                 };
-                (State::Got004(output), Ok(true))
+                Ok((State::Got004(output), true))
             }
             (State::Got004(mut output) | State::Got005(mut output), Reply::ISupport(r)) => {
                 output.isupport.extend(r.tokens().iter().cloned());
-                (State::Got005(output), Ok(true))
+                Ok((State::Got005(output), true))
             }
             (State::Got005(output) | State::Lusers(output), Reply::LuserClient(_)) => {
-                (State::Lusers(output), Ok(true))
+                Ok((State::Lusers(output), true))
             }
             (State::Got005(mut output) | State::Lusers(mut output), Reply::LuserOp(r)) => {
                 output.luser_stats.operators = Some(r.ops());
-                (State::Lusers(output), Ok(true))
+                Ok((State::Lusers(output), true))
             }
             (State::Got005(mut output) | State::Lusers(mut output), Reply::LuserUnknown(r)) => {
                 output.luser_stats.unknown_connections = Some(r.connections());
-                (State::Lusers(output), Ok(true))
+                Ok((State::Lusers(output), true))
             }
             (State::Got005(mut output) | State::Lusers(mut output), Reply::LuserChannels(r)) => {
                 output.luser_stats.channels = Some(r.channels());
-                (State::Lusers(output), Ok(true))
+                Ok((State::Lusers(output), true))
             }
             (State::Got005(output) | State::Lusers(output), Reply::LuserMe(_)) => {
-                (State::Lusers(output), Ok(true))
+                Ok((State::Lusers(output), true))
             }
             (State::Got005(mut output) | State::Lusers(mut output), Reply::LocalUsers(r)) => {
                 output.luser_stats.local_clients = r.current_users();
                 output.luser_stats.max_local_clients = r.max_users();
-                (State::Lusers(output), Ok(true))
+                Ok((State::Lusers(output), true))
             }
             (State::Got005(mut output) | State::Lusers(mut output), Reply::GlobalUsers(r)) => {
                 output.luser_stats.global_clients = r.current_users();
                 output.luser_stats.max_global_clients = r.max_users();
-                (State::Lusers(output), Ok(true))
+                Ok((State::Lusers(output), true))
             }
             (State::Got005(mut output) | State::Lusers(mut output), Reply::MotdStart(r)) => {
                 output.motd = Some(r.message().to_owned());
-                (State::Motd(output), Ok(true))
+                Ok((State::Motd(output), true))
             }
             (State::Got005(mut output) | State::Lusers(mut output), Reply::NoMotd(r)) => {
                 output.motd = Some(r.message().to_owned());
-                (
+                Ok((
                     State::AwaitingMode {
                         output,
                         timeout: Some(MODE_TIMEOUT),
                     },
-                    Ok(true),
-                )
+                    true,
+                ))
             }
-            (st @ State::Got005(_), _) => (st, Ok(false)), // Accept "other numerics and messages" after RPL_ISUPPORT
+            (st @ State::Got005(_), _) => Ok((st, false)), // Accept "other numerics and messages" after RPL_ISUPPORT
             (State::Motd(mut output), Reply::Motd(r)) => {
                 if let Some(s) = output.motd.as_mut() {
                     s.push('\n');
                     s.push_str(r.message());
                 }
-                (State::Motd(output), Ok(true))
+                Ok((State::Motd(output), true))
             }
             (State::Motd(mut output), Reply::EndOfMotd(r)) => {
                 if let Some(s) = output.motd.as_mut() {
                     s.push('\n');
                     s.push_str(r.message());
                 }
-                (
+                Ok((
                     State::AwaitingMode {
                         output,
                         timeout: Some(MODE_TIMEOUT),
                     },
-                    Ok(true),
-                )
+                    true,
+                ))
             }
             (State::AwaitingMode { mut output, .. }, Reply::UModeIs(r)) => {
                 let ms = r.user_modes();
@@ -339,47 +317,45 @@ impl State {
                     format!("+{ms}")
                 };
                 let Ok(modestring) = ms.parse::<ModeString>() else {
-                    return (
-                        State::Void,
-                        Err(LoginError::InvalidMode {
-                            msg: r.to_irc_line(),
-                        }),
-                    );
+                    return Err(LoginError::InvalidMode {
+                        msg: r.to_irc_line(),
+                    });
                 };
                 output.mode = Some(modestring);
-                (State::Done(Some(Ok(output))), Ok(true))
+                Ok((State::Done(Some(Ok(output))), true))
             }
-            (st @ (State::Done(_) | State::Void), _) => (st, Ok(false)),
+            (st @ (State::Done(_) | State::Void), _) => Ok((st, false)),
             (st, other) => {
                 let expecting = st.expecting();
                 let msg = other.to_irc_line();
-                (st, Err(LoginError::Unexpected { expecting, msg }))
+                Err(LoginError::Unexpected { expecting, msg })
             }
         }
     }
 
-    fn handle_mode(self, mode: &Mode) -> (State, Result<bool, LoginError>) {
+    fn handle_mode(self, mode: &Mode) -> Result<(State, bool), LoginError> {
         match self {
             State::AwaitingMode { mut output, .. } => {
                 output.mode = mode.modestring().cloned();
-                (State::Done(Some(Ok(output))), Ok(true))
+                Ok((State::Done(Some(Ok(output))), true))
             }
             st => {
                 let expecting = st.expecting();
                 let msg = mode.to_irc_line();
-                (st, Err(LoginError::Unexpected { expecting, msg }))
+                Err(LoginError::Unexpected { expecting, msg })
             }
         }
     }
 
-    fn handle_other(&self, climsg: &ClientMessage) -> Result<bool, LoginError> {
+    fn handle_other(&mut self, climsg: &ClientMessage) -> bool {
         if matches!(self, State::Got005(_)) {
             // Accept "other numerics and messages" after RPL_ISUPPORT
-            Ok(false)
+            false
         } else {
             let expecting = self.expecting();
             let msg = climsg.to_irc_line();
-            Err(LoginError::Unexpected { expecting, msg })
+            *self = State::Done(Some(Err(LoginError::Unexpected { expecting, msg })));
+            true
         }
     }
 

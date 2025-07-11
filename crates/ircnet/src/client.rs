@@ -1,11 +1,13 @@
 use crate::autoresponders::{AutoResponder, AutoResponderSet};
 use crate::codecs::{MessageCodec, MessageCodecError};
+use crate::commands::Command;
 use crate::consts::MAX_LINE_LENGTH;
 use crate::{ConnectionError, MessageChannel, connect};
 use futures_util::{SinkExt, TryStreamExt};
 use irctext::{ClientMessage, Message};
 use std::collections::VecDeque;
 use thiserror::Error;
+use tokio::time::{Instant, timeout_at};
 use tokio_util::codec::Framed;
 
 #[allow(missing_debug_implementations)]
@@ -69,6 +71,45 @@ impl Client {
             }
         }
     }
+
+    pub async fn run<C: Command>(
+        &mut self,
+        mut cmd: C,
+    ) -> Result<(C::Output, Vec<Message>), ClientError> {
+        let mut unhandled = Vec::new();
+        for climsg in cmd.get_client_messages() {
+            self.send(climsg).await?;
+        }
+        let mut deadline = cmd.get_timeout().map(|d| Instant::now() + d);
+        while !cmd.is_done() {
+            let fut = self.recv();
+            let r = if let Some(dl) = deadline {
+                timeout_at(dl, fut).await.ok()
+            } else {
+                Some(fut.await)
+            };
+            match r {
+                Some(Ok(None)) => return Err(ClientError::Disconnect),
+                Some(Ok(Some(msg))) => {
+                    if !cmd.handle_message(&msg) {
+                        unhandled.push(msg);
+                    }
+                }
+                Some(Err(e)) => return Err(e),
+                None => {
+                    deadline = None;
+                    cmd.handle_timeout();
+                }
+            }
+            for climsg in cmd.get_client_messages() {
+                self.send(climsg).await?;
+            }
+            if let Some(d) = cmd.get_timeout() {
+                deadline = Some(Instant::now() + d);
+            }
+        }
+        Ok((cmd.get_output(), unhandled))
+    }
 }
 
 #[derive(Debug, Error)]
@@ -79,4 +120,6 @@ pub enum ClientError {
     Send(#[source] MessageCodecError),
     #[error("failed receive message from server")]
     Recv(#[source] MessageCodecError),
+    #[error("connection terminated while running command")]
+    Disconnect,
 }

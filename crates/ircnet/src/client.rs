@@ -65,19 +65,6 @@ impl Client {
         self.channel.send(msg).await.map_err(ClientError::Send)
     }
 
-    /// [Private] Send any queued outgoing client messages emitted by
-    /// `autoresponders`.
-    ///
-    /// This method should be cancel-safe.
-    async fn flush_queue(&mut self) -> Result<(), ClientError> {
-        while let Some(msg) = self.queued.front().cloned() {
-            let r = self.send(msg).await;
-            let _ = self.queued.pop_front();
-            r?;
-        }
-        Ok(())
-    }
-
     /// Receive the next message from the server that is not handled by an
     /// autoresponder.  Any messages emitted by an autoresponder in response to
     /// a received message will be sent before returning.
@@ -141,6 +128,21 @@ impl Client {
         }
     }
 
+    /// [Private] Send any queued outgoing client messages emitted by
+    /// `autoresponders`.
+    ///
+    /// # Cancellation safety
+    ///
+    /// This method is cancellation-safe.
+    async fn flush_queue(&mut self) -> Result<(), ClientError> {
+        while let Some(msg) = self.queued.front().cloned() {
+            let r = self.send(msg).await;
+            let _ = self.queued.pop_front();
+            r?;
+        }
+        Ok(())
+    }
+
     /// Retrieve all messages left unhandled by previous `run()` calls that
     /// have not yet been returned by `recv()`, preventing them from being
     /// returned by a later call to `recv()`
@@ -159,6 +161,10 @@ impl Client {
     /// "handled," meaning that they will not be returned by future calls to
     /// `recv()` or `recv_new()`.  Any messages not marked handled will be
     /// returned by future calls to `recv()` but not `recv_new()`.
+    ///
+    /// # Cancellation safety
+    ///
+    /// This method is not cancellation-safe.
     pub async fn run<C: Command>(&mut self, mut cmd: C) -> Result<C::Output, ClientError> {
         for climsg in cmd.get_client_messages() {
             self.send(climsg).await?;

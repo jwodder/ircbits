@@ -1,4 +1,7 @@
-use crate::codecs::{MessageCodec, RawMessageCodec};
+//! Low-level IRC connection & communication facilities
+pub mod codecs;
+pub mod consts;
+use self::codecs::{MessageCodec, RawMessageCodec};
 use itertools::Itertools; // join
 use rustls_pki_types::{InvalidDnsNameError, ServerName};
 use std::sync::Arc;

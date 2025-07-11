@@ -1,8 +1,15 @@
-use crate::autoresponders::{AutoResponder, AutoResponderSet};
-use crate::codecs::{MessageCodec, MessageCodecError};
-use crate::commands::Command;
-use crate::consts::MAX_LINE_LENGTH;
-use crate::{ConnectionError, MessageChannel, connect};
+//! High-level IRC client
+pub mod autoresponders;
+pub mod commands;
+pub use self::autoresponders::AutoResponder;
+use self::autoresponders::AutoResponderSet;
+pub use self::commands::Command;
+use crate::connect::{
+    ConnectionError, MessageChannel,
+    codecs::{MessageCodec, MessageCodecError},
+    connect,
+    consts::MAX_LINE_LENGTH,
+};
 use futures_util::{SinkExt, TryStreamExt};
 use irctext::{ClientMessage, Message};
 use std::collections::VecDeque;

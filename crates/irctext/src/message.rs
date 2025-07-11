@@ -18,13 +18,7 @@ impl fmt::Display for Message {
         }
         match &self.payload {
             Payload::ClientMessage(msg) => write!(f, "{}", msg.to_irc_line())?,
-            Payload::Reply(r) => {
-                write!(f, "{:03}", r.code())?;
-                let params = r.parameters();
-                if !params.is_empty() {
-                    write!(f, "{params}")?;
-                }
-            }
+            Payload::Reply(r) => write!(f, "{}", r.to_irc_line())?,
         }
         Ok(())
     }

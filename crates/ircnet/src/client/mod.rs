@@ -58,7 +58,7 @@ impl Client {
     }
 
     /// Install the given `AutoResponder` in the client
-    pub fn push_autoresponder<T: AutoResponder + Send + 'static>(&mut self, ar: T) {
+    pub fn add_autoresponder<T: AutoResponder + Send + 'static>(&mut self, ar: T) {
         self.autoresponders.push(ar);
     }
 

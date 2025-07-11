@@ -5,6 +5,7 @@ use crate::{ConnectionError, MessageChannel, connect};
 use futures_util::{SinkExt, TryStreamExt};
 use irctext::{ClientMessage, Message};
 use std::collections::VecDeque;
+use thiserror::Error;
 use tokio_util::codec::Framed;
 
 #[allow(missing_debug_implementations)]
@@ -16,7 +17,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn connect(server: &str, port: u16, tls: bool) -> Result<Client, ConnectionError> {
+    pub async fn connect(server: &str, port: u16, tls: bool) -> Result<Client, ClientError> {
         let conn = connect(server, port, tls).await?;
         let codec = MessageCodec::new_with_max_length(MAX_LINE_LENGTH);
         let channel = Framed::new(conn, codec);
@@ -29,11 +30,11 @@ impl Client {
         })
     }
 
-    pub async fn send(&mut self, msg: ClientMessage) -> Result<(), MessageCodecError> {
-        self.channel.send(msg).await
+    pub async fn send(&mut self, msg: ClientMessage) -> Result<(), ClientError> {
+        self.channel.send(msg).await.map_err(ClientError::Send)
     }
 
-    async fn flush_queue(&mut self) -> Result<(), MessageCodecError> {
+    async fn flush_queue(&mut self) -> Result<(), ClientError> {
         while let Some(msg) = self.queued.front().cloned() {
             let r = self.send(msg).await;
             let _ = self.queued.pop_front();
@@ -42,13 +43,13 @@ impl Client {
         Ok(())
     }
 
-    pub async fn recv(&mut self) -> Result<Option<Message>, MessageCodecError> {
+    pub async fn recv(&mut self) -> Result<Option<Message>, ClientError> {
         loop {
             if let Some(msg) = self.recved.take() {
                 return Ok(Some(msg));
             }
             self.flush_queue().await?;
-            let r = self.channel.try_next().await?;
+            let r = self.channel.try_next().await.map_err(ClientError::Recv)?;
             if let Some(msg) = r {
                 // Store outgoing client messages and the received message on
                 // self in order to not lose data on cancellation
@@ -64,4 +65,14 @@ impl Client {
             }
         }
     }
+}
+
+#[derive(Debug, Error)]
+pub enum ClientError {
+    #[error("failed to connect to IRC server")]
+    Connect(#[from] ConnectionError),
+    #[error("failed send message to server")]
+    Send(#[source] MessageCodecError),
+    #[error("failed receive message from server")]
+    Recv(#[source] MessageCodecError),
 }

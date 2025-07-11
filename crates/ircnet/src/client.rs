@@ -30,6 +30,10 @@ impl Client {
         })
     }
 
+    pub fn push_autoresponder<T: AutoResponder + Send + 'static>(&mut self, ar: T) {
+        self.autoresponders.push(ar);
+    }
+
     pub async fn send(&mut self, msg: ClientMessage) -> Result<(), ClientError> {
         self.channel.send(msg).await.map_err(ClientError::Send)
     }

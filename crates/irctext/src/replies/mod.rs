@@ -47,6 +47,7 @@ pub enum Reply {
     EndOfStats,
     UModeIs,
     StatsUptime,
+    StatsConn,
     LuserClient,
     LuserOp,
     LuserUnknown,
@@ -183,6 +184,7 @@ impl Reply {
             219 => EndOfStats::try_from(params).map(Into::into),
             221 => UModeIs::try_from(params).map(Into::into),
             242 => StatsUptime::try_from(params).map(Into::into),
+            250 => StatsConn::try_from(params).map(Into::into),
             251 => LuserClient::try_from(params).map(Into::into),
             252 => LuserOp::try_from(params).map(Into::into),
             253 => LuserUnknown::try_from(params).map(Into::into),
@@ -407,6 +409,7 @@ pub mod codes {
     pub const RPL_ENDOFSTATS: u16 = 219;
     pub const RPL_UMODEIS: u16 = 221;
     pub const RPL_STATSUPTIME: u16 = 242;
+    pub const RPL_STATSCONN: u16 = 250;
     pub const RPL_LUSERCLIENT: u16 = 251;
     pub const RPL_LUSEROP: u16 = 252;
     pub const RPL_LUSERUNKNOWN: u16 = 253;
@@ -1417,6 +1420,84 @@ impl TryFrom<ParameterList> for StatsUptime {
             .expect("Parameter 0 should exist when list length is at least 2");
         let client = ReplyTarget::try_from(String::from(p))?;
         Ok(StatsUptime { parameters, client })
+    }
+}
+
+/// Nonstandard reply used by solanum (libera.chat) in reply to LUSERS
+/// commands, including in the replies emitted on successful registration.
+///
+/// `RPL_STATSCONN` name taken from <https://defs.ircdocs.horse/defs/numerics>.
+///
+/// Sample reply:
+///
+/// ```text
+/// 250 <client> :Highest connection count: 3072 (3071 clients) (781421 connections received)
+/// ```
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct StatsConn {
+    parameters: ParameterList,
+    client: ReplyTarget,
+}
+
+impl StatsConn {
+    pub fn client(&self) -> &ReplyTarget {
+        &self.client
+    }
+
+    pub fn message(&self) -> &str {
+        let Some(p) = self.parameters.last() else {
+            unreachable!("reply parameters should be nonempty");
+        };
+        p.as_str()
+    }
+}
+
+impl ReplyParts for StatsConn {
+    fn code(&self) -> u16 {
+        codes::RPL_STATSCONN
+    }
+
+    fn parameters(&self) -> &ParameterList {
+        &self.parameters
+    }
+
+    fn is_error(&self) -> bool {
+        false
+    }
+
+    fn into_parts(self) -> (u16, ParameterList) {
+        let code = self.code();
+        (code, self.parameters)
+    }
+}
+
+impl From<StatsConn> for Message {
+    fn from(value: StatsConn) -> Message {
+        Message::from(Reply::from(value))
+    }
+}
+
+impl From<StatsConn> for RawMessage {
+    fn from(value: StatsConn) -> RawMessage {
+        RawMessage::from(Reply::from(value))
+    }
+}
+
+impl TryFrom<ParameterList> for StatsConn {
+    type Error = ReplyError;
+
+    fn try_from(parameters: ParameterList) -> Result<StatsConn, ReplyError> {
+        if parameters.len() < 2 {
+            return Err(ReplyError::ParamQty {
+                min_required: 2,
+                received: parameters.len(),
+            });
+        }
+        let p = parameters
+            .get(0)
+            .expect("Parameter 0 should exist when list length is at least 2");
+        let client = ReplyTarget::try_from(String::from(p))?;
+        Ok(StatsConn { parameters, client })
     }
 }
 

@@ -328,7 +328,8 @@ impl State {
                 output.mode = Some(modestring);
                 Ok((State::Done(Some(Ok(output))), true))
             }
-            (st @ (State::Done(_) | State::Void), _) => Ok((st, false)),
+            (st @ State::Done(_), _) => Ok((st, false)),
+            (State::Void, _) => panic!("handle_reply() called on Void login state"),
             (st, other) => {
                 let expecting = st.expecting();
                 let msg = other.to_irc_line();
@@ -343,6 +344,7 @@ impl State {
                 output.mode = mode.modestring().cloned();
                 Ok((State::Done(Some(Ok(output))), true))
             }
+            State::Void => panic!("handle_mode() called on Void login state"),
             st => {
                 let expecting = st.expecting();
                 let msg = mode.to_irc_line();
@@ -352,14 +354,18 @@ impl State {
     }
 
     fn handle_other(&mut self, climsg: &ClientMessage) -> bool {
-        if matches!(self, State::Got005(_)) {
-            // Accept "other numerics and messages" after RPL_ISUPPORT
-            false
-        } else {
-            let expecting = self.expecting();
-            let msg = climsg.to_irc_line();
-            *self = State::Done(Some(Err(LoginError::Unexpected { expecting, msg })));
-            true
+        match self {
+            State::Got005(_) => {
+                // Accept "other numerics and messages" after RPL_ISUPPORT
+                false
+            }
+            State::Void => panic!("handle_other() called on Void login state"),
+            _ => {
+                let expecting = self.expecting();
+                let msg = climsg.to_irc_line();
+                *self = State::Done(Some(Err(LoginError::Unexpected { expecting, msg })));
+                true
+            }
         }
     }
 
@@ -375,7 +381,7 @@ impl State {
             State::Motd(_) => "RPL_MOTD (372) or RPL_ENDOFMOTD (376)",
             State::AwaitingMode { .. } => "MODE or RPL_UMODEIS (221)",
             State::Done(_) => "nothing",
-            State::Void => "nothing",
+            State::Void => panic!("expecting() called on Void login state"),
         }
     }
 }

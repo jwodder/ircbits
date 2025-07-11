@@ -21,6 +21,16 @@ pub trait ReplyParts {
     fn parameters(&self) -> &ParameterList;
     fn is_error(&self) -> bool;
     fn into_parts(self) -> (u16, ParameterList);
+
+    fn to_irc_line(&self) -> String {
+        let code = self.code();
+        let params = self.parameters();
+        if params.is_empty() {
+            format!("{code:03}")
+        } else {
+            format!("{code:03} {params}")
+        }
+    }
 }
 
 #[enum_dispatch(ReplyParts)] // This also gives us From and TryInto

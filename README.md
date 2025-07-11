@@ -16,9 +16,14 @@ crates.io.
 The code endeavors to follow the spec at <https://modern.ircdocs.horse>
 strictly, including the following points:
 
-- Only the commands and replies documented in the spec are supported, and only
-  when their parameters follow the documented formats (though numeric replies
-  are allowed to have more parameters than documented).
+- Only the commands and replies documented in the spec are supported (plus the
+  nonstandard replies listed below), and only when their parameters follow the
+  documented formats (though numeric replies are allowed to have more
+  parameters than documented).
+
+- In order to achieve basic compatibility with some actual servers, the
+  following nonstandard numeric replies are supported:
+    - `RPL_STATSCONN` (250)
 
 - The only supported channel type prefixes are `#` and `&`.
 

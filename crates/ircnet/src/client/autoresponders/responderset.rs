@@ -3,14 +3,14 @@ use irctext::{ClientMessage, Message};
 
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
-pub struct AutoResponderSet(Vec<Box<dyn AutoResponder>>);
+pub struct AutoResponderSet(Vec<Box<dyn AutoResponder + Send>>);
 
 impl AutoResponderSet {
     pub fn new() -> AutoResponderSet {
         AutoResponderSet::default()
     }
 
-    pub fn push<H: AutoResponder + 'static>(&mut self, handler: H) {
+    pub fn push<H: AutoResponder + Send + 'static>(&mut self, handler: H) {
         self.0.push(Box::new(handler));
     }
 

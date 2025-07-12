@@ -24,4 +24,23 @@ mod whoisactually {
             assert_eq!(r.message(), "actually using host");
         });
     }
+
+    #[test]
+    fn topicwhotime_libera() {
+        let msg =
+            ":calcium.libera.chat 333 jwodder #python nedbat!~nedbat@python/psf/nedbat 1698253660";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            source: Some(Source::Server(host)),
+            payload: Payload::Reply(Reply::TopicWhoTime(r)),
+        } => {
+            assert_eq!(host, Host::Domain("calcium.libera.chat"));
+            assert_eq!(r.client(), "jwodder");
+            assert_eq!(r.channel(), "#python");
+            assert_eq!(r.user().nickname, "nedbat");
+            assert_eq!(r.user().user.as_ref().unwrap(), "~nedbat");
+            assert_eq!(r.user().host.as_ref().unwrap(), "python/psf/nedbat");
+            assert_eq!(r.setat(), 1698253660);
+        });
+    }
 }

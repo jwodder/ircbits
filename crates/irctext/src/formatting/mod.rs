@@ -191,6 +191,9 @@ impl<'a> StyledLine<'a> {
         let mut s = String::new();
         let mut prev_style = Style::default();
         for span in self {
+            if span.content.is_empty() {
+                continue;
+            }
             match StyleDiff::new(prev_style, span.style) {
                 StyleDiff::Reset => s.push(RESET_CHAR),
                 StyleDiff::Delta {

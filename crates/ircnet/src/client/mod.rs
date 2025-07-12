@@ -212,9 +212,9 @@ impl Client {
 pub enum ClientError {
     #[error("failed to connect to IRC server")]
     Connect(#[from] ConnectionError),
-    #[error("failed send message to server")]
+    #[error("failed to send message to server")]
     Send(#[source] MessageCodecError),
-    #[error("failed receive message from server")]
+    #[error("failed to receive message from server")]
     Recv(#[source] MessageCodecError),
     #[error("connection terminated while running command")]
     Disconnect,

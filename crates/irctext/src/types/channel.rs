@@ -17,6 +17,7 @@ use thiserror::Error;
 pub struct Channel(String);
 
 validstr!(Channel, ParseChannelError, validate);
+strserde!(Channel, "an IRC channel name");
 
 fn validate(s: &str) -> Result<(), ParseChannelError> {
     if !channel_prefixed(s) {

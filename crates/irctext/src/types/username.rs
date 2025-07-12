@@ -7,6 +7,7 @@ use thiserror::Error;
 pub struct Username(String);
 
 validstr!(Username, ParseUsernameError, validate);
+strserde!(Username, "an IRC username");
 
 fn validate(s: &str) -> Result<(), ParseUsernameError> {
     if s.is_empty() {

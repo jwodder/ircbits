@@ -36,6 +36,7 @@ use thiserror::Error;
 pub struct Nickname(String);
 
 validstr!(Nickname, ParseNicknameError, validate);
+strserde!(Nickname, "an IRC nickname");
 
 fn validate(s: &str) -> Result<(), ParseNicknameError> {
     if s.is_empty() {

@@ -5,6 +5,7 @@ use thiserror::Error;
 pub struct FinalParam(String);
 
 validstr!(FinalParam, ParseFinalParamError, validate);
+strserde!(FinalParam, "an IRC trailing parameter");
 
 impl From<MedialParam> for FinalParam {
     fn from(value: MedialParam) -> FinalParam {

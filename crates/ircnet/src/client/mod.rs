@@ -1,8 +1,10 @@
 //! High-level IRC client
 pub mod autoresponders;
+mod builder;
 pub mod commands;
 pub use self::autoresponders::AutoResponder;
 use self::autoresponders::AutoResponderSet;
+pub use self::builder::*;
 pub use self::commands::Command;
 use crate::connect::{
     ConnectionError, MessageChannel,
@@ -16,6 +18,14 @@ use std::collections::VecDeque;
 use thiserror::Error;
 use tokio::time::{Instant, timeout_at};
 use tokio_util::codec::Framed;
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+pub struct ConnectionParams {
+    pub host: String,
+    pub port: u16,
+    pub tls: bool,
+}
 
 #[allow(missing_debug_implementations)]
 pub struct Client {
@@ -43,8 +53,8 @@ pub struct Client {
 impl Client {
     /// Create a new `Client` connected to the given server & port.  If `tls`
     /// is true, the connection will use SSL/TLS.
-    pub async fn connect(server: &str, port: u16, tls: bool) -> Result<Client, ClientError> {
-        let conn = connect(server, port, tls).await?;
+    pub async fn connect(params: ConnectionParams) -> Result<Client, ClientError> {
+        let conn = connect(&params.host, params.port, params.tls).await?;
         let codec = MessageCodec::new_with_max_length(MAX_LINE_LENGTH);
         let channel = Framed::new(conn, codec);
         let autoresponders = AutoResponderSet::new();
@@ -60,6 +70,10 @@ impl Client {
     /// Install the given `AutoResponder` in the client
     pub fn add_autoresponder<T: AutoResponder + Send + 'static>(&mut self, ar: T) {
         self.autoresponders.push(ar);
+    }
+
+    fn set_autoresponders(&mut self, set: AutoResponderSet) {
+        self.autoresponders = set;
     }
 
     /// Send a client message to the server.

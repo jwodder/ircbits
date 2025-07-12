@@ -4,6 +4,7 @@ use thiserror::Error;
 pub struct MedialParam(String);
 
 validstr!(MedialParam, ParseMedialParamError, validate);
+strserde!(MedialParam, "an IRC middle parameter");
 
 fn validate(s: &str) -> Result<(), ParseMedialParamError> {
     if s.is_empty() {

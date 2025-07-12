@@ -95,6 +95,9 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
             realname: args.realname,
         }))
         .await??;
+    for msg in client.take_unhandled() {
+        report(&format_msg(msg));
+    }
     let mut login_msg = format!(
         "[LOGIN] Logged in as {}; server: {} (version: {})",
         login_output.my_nick,

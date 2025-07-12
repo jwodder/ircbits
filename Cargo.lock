@@ -609,7 +609,6 @@ dependencies = [
  "clap",
  "ircnet",
  "irctext",
- "itertools 0.14.0",
  "jiff",
  "serde",
  "tokio",

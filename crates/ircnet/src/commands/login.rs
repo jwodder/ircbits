@@ -389,32 +389,32 @@ impl State {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LoginOutput {
     // SASL: CAP LS
-    my_nick: Nickname,
-    server_info: ServerInfo,
-    isupport: Vec<ISupportParam>,
-    luser_stats: LuserStats,
-    motd: Option<String>, // None if the server reports no MOTD was set
-    mode: Option<ModeString>,
+    pub my_nick: Nickname,
+    pub server_info: ServerInfo,
+    pub isupport: Vec<ISupportParam>,
+    pub luser_stats: LuserStats,
+    pub motd: Option<String>, // None if the server reports no MOTD was set
+    pub mode: Option<ModeString>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ServerInfo {
-    server_name: String,
-    version: String,
-    user_modes: String,
-    channel_modes: String,
-    param_channel_modes: Option<String>,
+    pub server_name: String,
+    pub version: String,
+    pub user_modes: String,
+    pub channel_modes: String,
+    pub param_channel_modes: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct LuserStats {
-    operators: Option<u64>,
-    unknown_connections: Option<u64>,
-    channels: Option<u64>,
-    local_clients: Option<u64>,
-    max_local_clients: Option<u64>,
-    global_clients: Option<u64>,
-    max_global_clients: Option<u64>,
+    pub operators: Option<u64>,
+    pub unknown_connections: Option<u64>,
+    pub channels: Option<u64>,
+    pub local_clients: Option<u64>,
+    pub max_local_clients: Option<u64>,
+    pub global_clients: Option<u64>,
+    pub max_global_clients: Option<u64>,
 }
 
 #[derive(Clone, Debug, Eq, Error, PartialEq)]

@@ -5,8 +5,11 @@ pub use self::attributes::*;
 pub use self::color100::*;
 pub use self::rgbcolor::*;
 use std::borrow::Cow;
-use std::fmt::{self, Write};
+use std::fmt::Write;
 use std::ops::Range;
+
+#[cfg(feature = "anstyle")]
+use std::fmt;
 
 const BOLD_CHAR: char = '\x02';
 const ITALIC_CHAR: char = '\x1D';
@@ -87,9 +90,9 @@ pub struct StyledSpan<'a> {
     pub content: Cow<'a, str>,
 }
 
+#[cfg(feature = "anstyle")]
+#[cfg_attr(docsrs, doc(cfg(feature = "anstyle")))]
 impl<'a> StyledSpan<'a> {
-    #[cfg(feature = "anstyle")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "anstyle")))]
     pub fn render_ansi(&self) -> RenderStyledSpan<'_, 'a> {
         RenderStyledSpan(self)
     }
@@ -573,4 +576,156 @@ where
         .map(|(_, ch)| ch)
         .and_then(|ch| ch.to_digit(16))
         .and_then(|d| u8::try_from(d).ok())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Examples taken from <https://modern.ircdocs.horse/formatting#examples>
+
+    #[test]
+    fn example1() {
+        let s = "I love \x033IRC! \x03It is the \x037best protocol ever!";
+        let sline = StyledLine::parse(s);
+        assert_eq!(
+            sline,
+            StyledLine(vec![
+                StyledSpan {
+                    style: Style::default(),
+                    content: "I love ".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        foreground: Color100::GREEN.into(),
+                        ..Style::default()
+                    },
+                    content: "IRC! ".into(),
+                },
+                StyledSpan {
+                    style: Style::default(),
+                    content: "It is the ".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        foreground: Color100::ORANGE.into(),
+                        ..Style::default()
+                    },
+                    content: "best protocol ever!".into(),
+                },
+            ])
+        );
+    }
+
+    #[test]
+    fn example2() {
+        let s = "This is a \x1D\x0313,9cool \x03message";
+        let sline = StyledLine::parse(s);
+        assert_eq!(
+            sline,
+            StyledLine(vec![
+                StyledSpan {
+                    style: Style::default(),
+                    content: "This is a ".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        foreground: Color100::PINK.into(),
+                        background: Color100::LIGHT_GREEN.into(),
+                        attributes: Attribute::Italic.into()
+                    },
+                    content: "cool ".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        attributes: Attribute::Italic.into(),
+                        ..Style::default()
+                    },
+                    content: "message".into(),
+                }
+            ])
+        );
+    }
+
+    #[test]
+    fn example3() {
+        let s = "IRC \x02is \x034,12so \x03great\x0F!";
+        let sline = StyledLine::parse(s);
+        assert_eq!(
+            sline,
+            StyledLine(vec![
+                StyledSpan {
+                    style: Style::default(),
+                    content: "IRC ".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        attributes: Attribute::Bold.into(),
+                        ..Style::default()
+                    },
+                    content: "is ".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        foreground: Color100::RED.into(),
+                        background: Color100::LIGHT_BLUE.into(),
+                        attributes: Attribute::Bold.into(),
+                    },
+                    content: "so ".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        attributes: Attribute::Bold.into(),
+                        ..Style::default()
+                    },
+                    content: "great".into(),
+                },
+                StyledSpan {
+                    style: Style::default(),
+                    content: "!".into()
+                },
+            ])
+        );
+    }
+
+    #[test]
+    fn example4() {
+        let s = "Rules: Don't spam 5\x0313,8,6\x03,7,8, and especially not \x029\x02\x1D!";
+        let sline = StyledLine::parse(s);
+        assert_eq!(
+            sline,
+            StyledLine(vec![
+                StyledSpan {
+                    style: Style::default(),
+                    content: "Rules: Don't spam 5".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        foreground: Color100::PINK.into(),
+                        background: Color100::YELLOW.into(),
+                        ..Style::default()
+                    },
+                    content: ",6".into(),
+                },
+                StyledSpan {
+                    style: Style::default(),
+                    content: ",7,8, and especially not ".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        attributes: Attribute::Bold.into(),
+                        ..Style::default()
+                    },
+                    content: "9".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        attributes: Attribute::Italic.into(),
+                        ..Style::default()
+                    },
+                    content: "!".into(),
+                },
+            ])
+        );
+    }
 }

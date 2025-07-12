@@ -780,4 +780,68 @@ mod tests {
             })
         );
     }
+
+    mod roundtrip {
+        use super::*;
+
+        #[test]
+        fn colored_text_reset_colors_digits() {
+            let sline = StyledLine(vec![
+                StyledSpan {
+                    style: Style {
+                        foreground: Color100::BLUE.into(),
+                        background: Color100::WHITE.into(),
+                        attributes: Attribute::Bold.into(),
+                    },
+                    content: "Cloudy!".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        attributes: Attribute::Bold.into(),
+                        ..Style::default()
+                    },
+                    content: "12345".into(),
+                },
+            ]);
+            assert_eq!(StyledLine::parse(&sline.format()), sline);
+        }
+
+        #[test]
+        fn foreground_comma_digits() {
+            let sline = StyledLine::from(StyledSpan {
+                style: Style {
+                    foreground: Color100::GREEN.into(),
+                    ..Style::default()
+                },
+                content: ",123".into(),
+            });
+            assert_eq!(StyledLine::parse(&sline.format()), sline);
+        }
+
+        #[test]
+        fn color100_fg_rgb_bg() {
+            let sline = StyledLine::from(StyledSpan {
+                style: Style {
+                    foreground: Color100::YELLOW.into(),
+                    background: RgbColor(0x36, 0x36, 0x36).into(),
+                    ..Style::default()
+                },
+                content: "My eyes hurt.".into(),
+            });
+            assert_eq!(StyledLine::parse(&sline.format()), sline);
+        }
+
+        #[test]
+        fn rgb_fg_color100_bg() {
+            let sline = StyledLine::from(StyledSpan {
+                style: Style {
+                    foreground: RgbColor(0x36, 0x36, 0x36).into(),
+                    background: Color100::YELLOW.into(),
+                    ..Style::default()
+                },
+                content: "My eyes hurt.".into(),
+            });
+            assert_eq!(StyledLine::parse(&sline.format()), sline);
+        }
+    }
 }

@@ -539,17 +539,16 @@ where
         .next_if(|(_, ch)| ch.is_ascii_digit())
         .map(|(_, ch)| ch)
         .and_then(|ch| ch.to_digit(10))
-        .and_then(|d| u8::try_from(d).ok());
-    let d2 = iter
+        .and_then(|d| u8::try_from(d).ok())?;
+    let index = if let Some(d2) = iter
         .next_if(|(_, ch)| ch.is_ascii_digit())
         .map(|(_, ch)| ch)
         .and_then(|ch| ch.to_digit(10))
-        .and_then(|d| u8::try_from(d).ok());
-    let index = match (d1, d2) {
-        (Some(d1), None) => d1,
-        (Some(d1), Some(d2)) => d1 * 10 + d2,
-        (None, None) => return None,
-        (None, Some(_)) => unreachable!(),
+        .and_then(|d| u8::try_from(d).ok())
+    {
+        d1 * 10 + d2
+    } else {
+        d1
     };
     Color100::try_from(index).ok()
 }

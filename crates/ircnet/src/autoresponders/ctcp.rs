@@ -1,7 +1,8 @@
 use super::AutoResponder;
 use irctext::{
-    ClientMessage, ClientSource, CtcpMessage, CtcpParams, Message, Payload, Source,
+    ClientMessage, ClientSource, Message, Payload, Source,
     clientmsgs::Notice,
+    ctcp::{CtcpMessage, CtcpParams},
 };
 use jiff::{Timestamp, Zoned, tz::TimeZone};
 

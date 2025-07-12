@@ -21,5 +21,9 @@ rstest = { version = "0.25.0", default-features = false }
 [features]
 anstyle = ["dep:anstyle"]
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [lints]
 workspace = true

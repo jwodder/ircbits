@@ -4,17 +4,17 @@ use ircnet::{
     client::{
         ClientError, SessionBuilder, SessionParams,
         autoresponders::{CtcpQueryResponder, PingResponder},
+        commands::JoinCommand,
     },
     connect::codecs::MessageCodecError,
 };
 use irctext::{
-    ClientMessage, FinalParam, Message, Payload, Reply, Source,
-    clientmsgs::{Join, Quit},
+    ClientMessage, FinalParam, Message, Payload, Source,
+    clientmsgs::Quit,
     ctcp::{CtcpMessage, CtcpParams},
     formatting::StyledLine,
     types::Channel,
 };
-use itertools::Itertools; // join
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::io::{IsTerminal, stderr};
@@ -130,7 +130,60 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
         args.channels
     };
     for chan in channels {
-        client.send(Join::new_channel(chan).into()).await?;
+        let output = client.run(JoinCommand::new(chan.clone())).await??;
+        report(&format!("[JOIN] Joined {chan}"));
+        if let Some(topic) = output.topic {
+            report(&format!(
+                "[JOIN] [{chan}] Topic: {}",
+                ircfmt_to_ansi(&topic)
+            ));
+            if let Some((setter, setat)) = output.topic_setter.zip(output.topic_set_at) {
+                let timestamp = fmt_unix_timestamp(setat);
+                report(&format!(
+                    "[JOIN] [{chan}] Topic set at {timestamp} by {setter}"
+                ));
+            }
+        } else {
+            report(&format!("[JOIN] [{chan}] No topic set"));
+        }
+        let mut s = format!(
+            "[JOIN] [{chan}] {status:?} channel",
+            status = output.channel_status
+        );
+        let mut users = 0u32;
+        let mut founders = 0u32;
+        let mut protected = 0u32;
+        let mut operators = 0u32;
+        let mut halfops = 0u32;
+        let mut voiced = 0u32;
+        for (prefix, _) in output.users {
+            users += 1;
+            match prefix {
+                Some('~') => founders += 1,
+                Some('&') => protected += 1,
+                Some('@') => operators += 1,
+                Some('%') => halfops += 1,
+                Some('+') => voiced += 1,
+                _ => (),
+            }
+        }
+        write!(&mut s, "; {users} users").unwrap();
+        if founders > 0 {
+            write!(&mut s, ", {founders} founders").unwrap();
+        }
+        if protected > 0 {
+            write!(&mut s, ", {protected} protected").unwrap();
+        }
+        if operators > 0 {
+            write!(&mut s, ", {operators} operators").unwrap();
+        }
+        if halfops > 0 {
+            write!(&mut s, ", {halfops} halfops").unwrap();
+        }
+        if voiced > 0 {
+            write!(&mut s, ", {voiced} voiced").unwrap();
+        }
+        report(&s);
     }
     loop {
         select! {
@@ -261,28 +314,6 @@ fn format_msg(msg: Message) -> String {
             format!("[WALLOPS] {}", ircfmt_to_ansi(m.text()))
         }
         Payload::ClientMessage(_) => format!("[OTHER] Unexpected client message: {msg}"),
-        Payload::Reply(Reply::NoTopic(r)) => {
-            format!("[NOTOPIC] [{}] No topic set", r.channel())
-        }
-        Payload::Reply(Reply::Topic(r)) => {
-            format!("[TOPIC] [{}] {}", r.channel(), ircfmt_to_ansi(r.topic()))
-        }
-        Payload::Reply(Reply::TopicWhoTime(r)) => {
-            let who = r.user();
-            let timestamp = fmt_unix_timestamp(r.setat());
-            format!(
-                "[TOPICWHO] [{}] Topic set at {timestamp} by {who}",
-                r.channel()
-            )
-        }
-        Payload::Reply(Reply::NamReply(r)) => {
-            format!(
-                "[MEMBERS] [{}] {}",
-                r.channel(),
-                r.clients().iter().map(|(_, nick)| nick).join(", ")
-            )
-        }
-        Payload::Reply(Reply::EndOfNames(r)) => format!("[MEMBERS] [{}] [END]", r.channel()),
         Payload::Reply(_) => format!("[OTHER] Unexpected reply: {msg}"),
     }
 }

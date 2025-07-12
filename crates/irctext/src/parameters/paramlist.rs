@@ -163,7 +163,7 @@ impl TryFrom<ParameterList> for (Option<FinalParam>,) {
     type Error = ParameterListSizeError;
 
     fn try_from(params: ParameterList) -> Result<(Option<FinalParam>,), ParameterListSizeError> {
-        match (params.len(), params.finalp.is_some()) {
+        match (params.medial.len(), params.finalp.is_some()) {
             (1, false) => Ok((params.medial.into_iter().next().map(FinalParam::from),)),
             (0, _) => Ok((params.finalp,)),
             _ => Err(ParameterListSizeError::Range {
@@ -207,7 +207,7 @@ impl TryFrom<ParameterList> for (MedialParam, Option<FinalParam>) {
     fn try_from(
         params: ParameterList,
     ) -> Result<(MedialParam, Option<FinalParam>), ParameterListSizeError> {
-        match (params.len(), params.finalp.is_some()) {
+        match (params.medial.len(), params.finalp.is_some()) {
             (2, false) => {
                 let mut medials = params.medial.into_iter();
                 let p1 = medials
@@ -239,7 +239,7 @@ impl TryFrom<ParameterList> for (MedialParam, MedialParam, Option<FinalParam>) {
     fn try_from(
         params: ParameterList,
     ) -> Result<(MedialParam, MedialParam, Option<FinalParam>), ParameterListSizeError> {
-        match (params.len(), params.finalp.is_some()) {
+        match (params.medial.len(), params.finalp.is_some()) {
             (3, false) => {
                 let mut medials = params.medial.into_iter();
                 let p1 = medials

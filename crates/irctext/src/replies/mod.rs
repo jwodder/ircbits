@@ -5491,8 +5491,8 @@ impl NamReply {
         &self.client
     }
 
-    pub fn channel_status(&self) -> &ChannelStatus {
-        &self.channel_status
+    pub fn channel_status(&self) -> ChannelStatus {
+        self.channel_status
     }
 
     pub fn channel(&self) -> &Channel {

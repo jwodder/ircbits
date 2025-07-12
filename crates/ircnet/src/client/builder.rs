@@ -29,8 +29,9 @@ impl SessionBuilder {
         }
     }
 
-    pub fn add_autoresponder<T: AutoResponder + Send + 'static>(&mut self, ar: T) {
+    pub fn with_autoresponder<T: AutoResponder + Send + 'static>(mut self, ar: T) -> Self {
         self.autoresponders.push(ar);
+        self
     }
 
     pub async fn build(self) -> Result<(Client, LoginOutput), SessionBuildError> {

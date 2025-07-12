@@ -2,9 +2,8 @@ use anyhow::Context;
 use clap::Parser;
 use ircnet::{
     client::{
-        Client, ClientError, ConnectionParams,
+        ClientError, SessionBuilder, SessionParams,
         autoresponders::{CtcpQueryResponder, PingResponder},
-        commands::{Login, LoginParams},
     },
     connect::codecs::MessageCodecError,
 };
@@ -13,40 +12,45 @@ use irctext::{
     clientmsgs::{Join, Quit},
     ctcp::{CtcpMessage, CtcpParams},
     formatting::StyledLine,
-    types::{Channel, Nickname, Username},
+    types::Channel,
 };
 use itertools::Itertools; // join
+use std::collections::HashMap;
 use std::fmt::Write;
 use std::io::{IsTerminal, stderr};
+use std::path::PathBuf;
 use tokio::select;
 use tracing::Level;
 use tracing_subscriber::{filter::Targets, fmt::time::OffsetTime, prelude::*};
 
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
 struct Arguments {
-    #[arg(short = 'n', long)]
-    nickname: Nickname,
+    #[arg(short = 'c', long, default_value = "ircbits.toml")]
+    config: PathBuf,
 
-    #[arg(short = 'p', long)]
-    password: FinalParam,
-
-    #[arg(short = 'r', long)]
-    realname: FinalParam,
-
-    #[arg(short = 'u', long)]
-    username: Username,
-
-    #[arg(long)]
-    tls: bool,
+    #[arg(short = 'P', long, default_value = "irc")]
+    profile: String,
 
     #[arg(long)]
     trace: bool,
 
-    server: String,
-
-    port: u16,
-
     channels: Vec<Channel>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, Eq, PartialEq)]
+struct Profile {
+    #[serde(flatten)]
+    session_params: SessionParams,
+
+    #[serde(default)]
+    ircwatch: ProgramParams,
+}
+
+#[derive(Clone, Debug, Default, serde::Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+struct ProgramParams {
+    #[serde(default)]
+    default_channels: Vec<Channel>,
 }
 
 // See
@@ -67,6 +71,7 @@ fn main() -> anyhow::Result<()> {
             .with(
                 Targets::new()
                     .with_target(env!("CARGO_CRATE_NAME"), Level::TRACE)
+                    .with_target("ircnet", Level::TRACE)
                     .with_default(Level::INFO),
             )
             .init();
@@ -76,36 +81,29 @@ fn main() -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn run(args: Arguments) -> anyhow::Result<()> {
-    report(&format!("* Connecting to {} …", args.server));
-    let mut client = Client::connect(ConnectionParams {
-        host: args.server,
-        port: args.port,
-        tls: args.tls,
-    })
-    .await?;
-    client.add_autoresponder(PingResponder::new());
-    client.add_autoresponder(
-        CtcpQueryResponder::new()
-            .with_version(
-                env!("CARGO_CRATE_NAME")
-                    .parse::<CtcpParams>()
-                    .expect("Crate name should be valid CTCP params"),
-            )
-            .with_source(
-                env!("CARGO_PKG_REPOSITORY")
-                    .parse::<CtcpParams>()
-                    .expect("Project repository URL should be valid CTCP params"),
-            ),
-    );
-    report("* Logging in …");
-    let login_output = client
-        .run(Login::new(LoginParams {
-            password: args.password,
-            nickname: args.nickname,
-            username: args.username,
-            realname: args.realname,
-        }))
-        .await??;
+    let cfgdata = std::fs::read(&args.config).context("failed to read configuration file")?;
+    let mut cfg = toml::from_slice::<HashMap<String, Profile>>(&cfgdata)
+        .context("failed to parse configuration file")?;
+    let Some(profile) = cfg.remove(&args.profile) else {
+        anyhow::bail!("{:?} profile not found in configuration file", args.profile);
+    };
+    let (mut client, login_output) = SessionBuilder::new(profile.session_params)
+        .with_autoresponder(PingResponder::new())
+        .with_autoresponder(
+            CtcpQueryResponder::new()
+                .with_version(
+                    env!("CARGO_CRATE_NAME")
+                        .parse::<CtcpParams>()
+                        .expect("Crate name should be valid CTCP params"),
+                )
+                .with_source(
+                    env!("CARGO_PKG_REPOSITORY")
+                        .parse::<CtcpParams>()
+                        .expect("Project repository URL should be valid CTCP params"),
+                ),
+        )
+        .build()
+        .await?;
     for msg in client.take_unhandled() {
         report(&format_msg(msg));
     }
@@ -126,8 +124,13 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
     } else {
         report("[NOMOTD] No Message of the Day set");
     }
-    for channel in args.channels {
-        client.send(Join::new_channel(channel).into()).await?;
+    let channels = if args.channels.is_empty() {
+        profile.ircwatch.default_channels
+    } else {
+        args.channels
+    };
+    for chan in channels {
+        client.send(Join::new_channel(chan).into()).await?;
     }
     loop {
         select! {

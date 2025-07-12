@@ -5,6 +5,7 @@ pub mod clientmsgs;
 mod command;
 mod consts;
 mod ctcp;
+pub mod formatting;
 mod message;
 mod parameters;
 mod raw_message;

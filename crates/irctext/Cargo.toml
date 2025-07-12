@@ -10,6 +10,7 @@ license.workspace = true
 [dependencies]
 anstyle = { version = "1.0.11", optional = true }
 enum_dispatch = "0.3.13"
+serde = { version = "1.0.219", features = ["derive"], optional = true }
 strum = { version = "0.27.1", features = ["derive"] }
 thiserror = "2.0.12"
 url = "2.5.0"
@@ -20,6 +21,7 @@ rstest = { version = "0.25.0", default-features = false }
 
 [features]
 anstyle = ["dep:anstyle"]
+serde = ["dep:serde"]
 
 [package.metadata.docs.rs]
 all-features = true

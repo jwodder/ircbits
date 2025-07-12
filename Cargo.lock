@@ -571,6 +571,7 @@ dependencies = [
  "assert_matches",
  "enum_dispatch",
  "rstest",
+ "serde",
  "strum",
  "thiserror",
  "url",

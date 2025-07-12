@@ -140,3 +140,60 @@ macro_rules! validstr {
         }
     };
 }
+
+macro_rules! strserde {
+    ($t:ty, $expecting:literal) => {
+        #[cfg(feature = "serde")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+        impl serde::Serialize for $t {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::ser::Serializer,
+            {
+                serializer.serialize_str(self.as_ref())
+            }
+        }
+
+        #[cfg(feature = "serde")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+        impl<'de> serde::Deserialize<'de> for $t {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::de::Deserializer<'de>,
+            {
+                struct Visitor;
+
+                impl serde::de::Visitor<'_> for Visitor {
+                    type Value = $t;
+
+                    fn expecting(
+                        &self,
+                        formatter: &mut std::fmt::Formatter<'_>,
+                    ) -> std::fmt::Result {
+                        formatter.write_str($expecting)
+                    }
+
+                    fn visit_str<E>(self, input: &str) -> Result<Self::Value, E>
+                    where
+                        E: serde::de::Error,
+                    {
+                        input
+                            .parse::<$t>()
+                            .map_err(|_| E::invalid_value(serde::de::Unexpected::Str(input), &self))
+                    }
+
+                    fn visit_string<E>(self, input: String) -> Result<Self::Value, E>
+                    where
+                        E: serde::de::Error,
+                    {
+                        <$t>::try_from(input).map_err(|e| {
+                            E::invalid_value(serde::de::Unexpected::Str(&e.string), &self)
+                        })
+                    }
+                }
+
+                deserializer.deserialize_string(Visitor)
+            }
+        }
+    };
+}

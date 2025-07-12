@@ -4449,7 +4449,7 @@ pub struct TopicWhoTime {
     parameters: ParameterList,
     client: ReplyTarget,
     channel: Channel,
-    nickname: Nickname,
+    user: ClientSource,
     setat: u64,
 }
 
@@ -4462,8 +4462,10 @@ impl TopicWhoTime {
         &self.channel
     }
 
-    pub fn nickname(&self) -> &Nickname {
-        &self.nickname
+    // modern.ircdocs.horse says this parameter is a nickname, but on
+    // libera.chat, it's a nick!user@host string
+    pub fn user(&self) -> &ClientSource {
+        &self.user
     }
 
     pub fn setat(&self) -> u64 {
@@ -4523,7 +4525,9 @@ impl TryFrom<ParameterList> for TopicWhoTime {
         let p = parameters
             .get(2)
             .expect("Parameter 2 should exist when list length is at least 4");
-        let nickname = Nickname::try_from(String::from(p))?;
+        // modern.ircdocs.horse says this parameter is a nickname, but on
+        // libera.chat, it's a nick!user@host string
+        let user = ClientSource::try_from(String::from(p))?;
         let p = parameters
             .get(3)
             .expect("Parameter 3 should exist when list length is at least 4");
@@ -4540,7 +4544,7 @@ impl TryFrom<ParameterList> for TopicWhoTime {
             parameters,
             client,
             channel,
-            nickname,
+            user,
             setat,
         })
     }

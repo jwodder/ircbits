@@ -8,6 +8,7 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
+anstream = "0.6.19"
 anyhow = "1.0.98"
 clap = { version = "4.5.41", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
 ircnet = { path = "../ircnet" }

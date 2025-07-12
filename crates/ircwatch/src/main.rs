@@ -1,9 +1,12 @@
 use anyhow::Context;
 use clap::Parser;
-use ircnet::client::{
-    Client,
-    autoresponders::{CtcpQueryResponder, PingResponder},
-    commands::{Login, LoginParams},
+use ircnet::{
+    client::{
+        Client, ClientError,
+        autoresponders::{CtcpQueryResponder, PingResponder},
+        commands::{Login, LoginParams},
+    },
+    connect::codecs::MessageCodecError,
 };
 use irctext::{
     ClientMessage, FinalParam, Message, Payload, Reply, Source,
@@ -122,10 +125,13 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
     loop {
         select! {
             r = client.recv() => {
-                if let Some(msg) = r? {
-                    report(&format_msg(msg));
-                } else {
-                    break;
+                match r {
+                    Ok(Some(msg)) => report(&format_msg(msg)),
+                    Ok(None) => break,
+                    Err(ClientError::Recv(MessageCodecError::Parse(e))) => {
+                        report(&format!("[PARSE FAILURE] {:?}", anyhow::Error::new(e)));
+                    }
+                    Err(e) => return Err(e.into()),
                 }
             }
             () = recv_stop_signal() => {

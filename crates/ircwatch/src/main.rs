@@ -165,7 +165,7 @@ fn report(msg: &str) {
         .time()
         .round(jiff::Unit::Second)
         .expect("Time.round(Second) should not fail");
-    println!("[{timestamp}] {msg}");
+    anstream::println!("[{timestamp}] {msg}");
 }
 
 fn format_msg(msg: Message) -> String {

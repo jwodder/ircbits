@@ -43,4 +43,29 @@ mod whoisactually {
             assert_eq!(r.setat(), 1698253660);
         });
     }
+
+    #[test]
+    fn namreply_with_prefix() {
+        let msg = ":silver.libera.chat 353 jwodder = #python :dostoyevsky2 tk @litharge snowolf DarthOreo enyc_ `Nothing4You fizi[DWBouncers]";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            source: Some(Source::Server(host)),
+            payload: Payload::Reply(Reply::NamReply(r)),
+        } => {
+            assert_eq!(host, Host::Domain("silver.libera.chat"));
+            assert_eq!(r.client(), "jwodder");
+            assert_eq!(r.channel_status(), ChannelStatus::Public);
+            assert_eq!(r.channel(), "#python");
+            assert_eq!(r.clients(), [
+                (None, "dostoyevsky2".parse::<Nickname>().unwrap()),
+                (None, "tk".parse::<Nickname>().unwrap()),
+                (Some('@'), "litharge".parse::<Nickname>().unwrap()),
+                (None, "snowolf".parse::<Nickname>().unwrap()),
+                (None, "DarthOreo".parse::<Nickname>().unwrap()),
+                (None, "enyc_".parse::<Nickname>().unwrap()),
+                (None, "`Nothing4You".parse::<Nickname>().unwrap()),
+                (None, "fizi[DWBouncers]".parse::<Nickname>().unwrap()),
+            ]);
+        });
+    }
 }

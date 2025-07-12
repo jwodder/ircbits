@@ -38,7 +38,7 @@ where
 
 pub(crate) fn pop_channel_membership(s: &str) -> (Option<char>, &str) {
     for ch in crate::CHANNEL_MEMBERSHIPS {
-        if let Some(rest) = s.strip_suffix(ch) {
+        if let Some(rest) = s.strip_prefix(ch) {
             return (Some(ch), rest);
         }
     }

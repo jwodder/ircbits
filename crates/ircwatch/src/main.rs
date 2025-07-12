@@ -76,6 +76,7 @@ fn main() -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn run(args: Arguments) -> anyhow::Result<()> {
+    report(&format!("* Connecting to {} …", args.server));
     let mut client = Client::connect(&args.server, args.port, args.tls).await?;
     client.add_autoresponder(PingResponder::new());
     client.add_autoresponder(
@@ -91,6 +92,7 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
                     .expect("Project repository URL should be valid CTCP params"),
             ),
     );
+    report("* Logging in …");
     let login_output = client
         .run(Login::new(LoginParams {
             password: args.password,
@@ -127,7 +129,10 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
             r = client.recv() => {
                 match r {
                     Ok(Some(msg)) => report(&format_msg(msg)),
-                    Ok(None) => break,
+                    Ok(None) => {
+                        report("* Disconnected");
+                        break;
+                    }
                     Err(ClientError::Recv(MessageCodecError::Parse(e))) => {
                         report(&format!("[PARSE FAILURE] {:?}", anyhow::Error::new(e)));
                     }
@@ -196,17 +201,17 @@ fn format_msg(msg: Message) -> String {
             }
         }
         Payload::ClientMessage(ClientMessage::Join(m)) => {
-            format!("[EVENT] {sender} joins {}", m.channels()[0])
+            format!("* {sender} joins {}", m.channels()[0])
         }
         Payload::ClientMessage(ClientMessage::Part(m)) => {
-            let mut s = format!("[EVENT] {sender} leaves {}", m.channels()[0]);
+            let mut s = format!("* {sender} leaves {}", m.channels()[0]);
             if let Some(txt) = m.reason() {
                 write!(&mut s, ": {}", ircfmt_to_ansi(txt.as_str())).unwrap();
             }
             s
         }
         Payload::ClientMessage(ClientMessage::Quit(m)) => {
-            let mut s = format!("[EVENT] {sender} quits");
+            let mut s = format!("* {sender} quits");
             if let Some(txt) = m.reason() {
                 write!(&mut s, ": {}", ircfmt_to_ansi(txt.as_str())).unwrap();
             }
@@ -216,40 +221,32 @@ fn format_msg(msg: Message) -> String {
             format!("[ERROR] {}", ircfmt_to_ansi(m.reason().as_str()))
         }
         Payload::ClientMessage(ClientMessage::Nick(m)) => {
-            format!("[EVENT] {sender} is now known as {}", m.nickname())
+            format!("* {sender} is now known as {}", m.nickname())
         }
         Payload::ClientMessage(ClientMessage::Topic(m)) => {
             if let Some(topic) = m.topic() {
                 format!(
-                    "[EVENT] {sender} changed the {} topic: {}",
+                    "* {sender} changed the {} topic: {}",
                     m.channel(),
                     ircfmt_to_ansi(topic.as_str())
                 )
             } else {
-                format!("[EVENT] {sender} unset the {} topic", m.channel())
+                format!("* {sender} unset the {} topic", m.channel())
             }
         }
         Payload::ClientMessage(ClientMessage::Invite(m)) => {
-            format!(
-                "[EVENT] {sender} invited {} to {}",
-                m.nickname(),
-                m.channel()
-            )
+            format!("* {sender} invited {} to {}", m.nickname(), m.channel())
         }
         Payload::ClientMessage(ClientMessage::Kick(m)) => {
             if let Some(cmt) = m.comment() {
                 format!(
-                    "[EVENT] {sender} kicked {} from {}: {}",
+                    "* {sender} kicked {} from {}: {}",
                     m.users()[0],
                     m.channel(),
                     ircfmt_to_ansi(cmt.as_str()),
                 )
             } else {
-                format!(
-                    "[EVENT] {sender} kicked {} from {}",
-                    m.users()[0],
-                    m.channel()
-                )
+                format!("* {sender} kicked {} from {}", m.users()[0], m.channel())
             }
         }
         Payload::ClientMessage(ClientMessage::Wallops(m)) => {

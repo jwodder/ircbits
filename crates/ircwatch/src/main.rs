@@ -256,6 +256,9 @@ fn format_msg(msg: Message) -> String {
             format!("[WALLOPS] {}", ircfmt_to_ansi(m.text()))
         }
         Payload::ClientMessage(_) => format!("[OTHER] Unexpected client message: {msg}"),
+        Payload::Reply(Reply::NoTopic(r)) => {
+            format!("[NOTOPIC] [{}] No topic set", r.channel())
+        }
         Payload::Reply(Reply::Topic(r)) => {
             format!("[TOPIC] [{}] {}", r.channel(), ircfmt_to_ansi(r.topic()))
         }

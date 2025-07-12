@@ -7,7 +7,7 @@ use ircnet::client::{
 };
 use irctext::{
     ClientMessage, FinalParam, Message, Payload, Reply, Source,
-    clientmsgs::Join,
+    clientmsgs::{Join, Quit},
     ctcp::{CtcpMessage, CtcpParams},
     formatting::StyledLine,
     types::{Channel, Nickname, Username},
@@ -15,6 +15,7 @@ use irctext::{
 use itertools::Itertools; // join
 use std::fmt::Write;
 use std::io::{IsTerminal, stderr};
+use tokio::select;
 use tracing::Level;
 use tracing_subscriber::{filter::Targets, fmt::time::OffsetTime, prelude::*};
 
@@ -118,10 +119,39 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
     for channel in args.channels {
         client.send(Join::new_channel(channel).into()).await?;
     }
-    while let Some(msg) = client.recv().await? {
-        report(&format_msg(msg));
+    loop {
+        select! {
+            r = client.recv() => {
+                if let Some(msg) = r? {
+                    report(&format_msg(msg));
+                } else {
+                    break;
+                }
+            }
+            () = recv_stop_signal() => {
+                client.send(Quit::new_with_reason("Terminated".parse::<FinalParam>().expect(r#""Terminated" should be valid FinalParam"#)).into()).await?;
+            }
+        }
     }
     Ok(())
+}
+
+#[cfg(unix)]
+async fn recv_stop_signal() -> () {
+    use tokio::signal::unix::{SignalKind, signal};
+    if let Ok(mut term) = signal(SignalKind::terminate()) {
+        select! {
+            _ = tokio::signal::ctrl_c() => (),
+            _ = term.recv() => (),
+        }
+    } else {
+        let _ = tokio::signal::ctrl_c().await;
+    }
+}
+
+#[cfg(not(unix))]
+async fn recv_stop_signal() -> () {
+    let _ = tokio::signal::ctrl_c().await;
 }
 
 fn report(msg: &str) {

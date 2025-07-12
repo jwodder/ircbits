@@ -498,22 +498,23 @@ impl StyleDiff {
                     toggled |= attr;
                 }
             }
-            let color_diff =
-                if after.foreground == Color::default() && after.background == Color::default() {
+            let color_diff = match (
+                before.foreground == after.foreground,
+                before.background == after.background,
+            ) {
+                (true, true) => ColorDiff::NoChange,
+                (false, true) => ColorDiff::SetFg(after.foreground),
+                (_, false)
+                    if after.foreground == Color::default()
+                        && after.background == Color::default() =>
+                {
                     ColorDiff::Reset
-                } else {
-                    match (
-                        before.foreground == after.foreground,
-                        before.background == after.background,
-                    ) {
-                        (true, true) => ColorDiff::NoChange,
-                        (false, true) => ColorDiff::SetFg(after.foreground),
-                        (_, false) => ColorDiff::SetBoth {
-                            fg: after.foreground,
-                            bg: after.background,
-                        },
-                    }
-                };
+                }
+                (_, false) => ColorDiff::SetBoth {
+                    fg: after.foreground,
+                    bg: after.background,
+                },
+            };
             StyleDiff::Delta {
                 toggled,
                 color_diff,
@@ -583,6 +584,52 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn color_comma_end() {
+        let s = "\x03,";
+        let sline = StyledLine::parse(s);
+        assert_eq!(sline, StyledLine::from(StyledSpan::from(",")));
+    }
+
+    #[test]
+    fn color_comma_not_digit() {
+        let s = "\x034,a";
+        let sline = StyledLine::parse(s);
+        assert_eq!(
+            sline,
+            StyledLine(vec![StyledSpan {
+                style: Style {
+                    foreground: Color100::RED.into(),
+                    ..Style::default()
+                },
+                content: ",a".into(),
+            }])
+        );
+    }
+
+    #[test]
+    fn short_hex() {
+        let s = "\x04ff00glarch";
+        let sline = StyledLine::parse(s);
+        assert_eq!(sline, StyledLine::from(StyledSpan::from("ff00glarch")));
+    }
+
+    #[test]
+    fn hex_char_other_fmt() {
+        let s = "\x04\x02foo";
+        let sline = StyledLine::parse(s);
+        assert_eq!(
+            sline,
+            StyledLine::from(StyledSpan {
+                style: Style {
+                    attributes: Attribute::Bold.into(),
+                    ..Style::default()
+                },
+                content: "foo".into()
+            })
+        );
+    }
 
     mod examples {
         use super::*;
@@ -735,50 +782,69 @@ mod tests {
         }
     }
 
-    #[test]
-    fn color_comma_end() {
-        let s = "\x03,";
-        let sline = StyledLine::parse(s);
-        assert_eq!(sline, StyledLine::from(StyledSpan::from(",")));
-    }
+    mod format {
+        use super::*;
 
-    #[test]
-    fn color_comma_not_digit() {
-        let s = "\x034,a";
-        let sline = StyledLine::parse(s);
-        assert_eq!(
-            sline,
-            StyledLine(vec![StyledSpan {
+        #[test]
+        fn reset() {
+            let sline = StyledLine(vec![
+                StyledSpan {
+                    style: Style {
+                        attributes: Attribute::Bold.into(),
+                        ..Style::default()
+                    },
+                    content: "Bold".into(),
+                },
+                StyledSpan::from(" but not brash"),
+            ]);
+            assert_eq!(sline.format(), "\x02Bold\x0F but not brash");
+        }
+
+        #[test]
+        fn two_attrs_on_one_off() {
+            let sline = StyledLine(vec![
+                StyledSpan {
+                    style: Style {
+                        attributes: Attribute::Bold | Attribute::Underline,
+                        ..Style::default()
+                    },
+                    content: "Bold".into(),
+                },
+                StyledSpan {
+                    style: Style {
+                        attributes: Attribute::Bold.into(),
+                        ..Style::default()
+                    },
+                    content: " but not brash".into(),
+                },
+            ]);
+            assert_eq!(sline.format(), "\x02\x1FBold\x1F but not brash");
+        }
+
+        #[test]
+        fn rgb_fg() {
+            let sline = StyledLine::from(StyledSpan {
                 style: Style {
-                    foreground: Color100::RED.into(),
+                    foreground: RgbColor(0xE9, 0x96, 0x95).into(),
                     ..Style::default()
                 },
-                content: ",a".into(),
-            }])
-        );
-    }
+                content: "Cinnamon-y!".into(),
+            });
+            assert_eq!(sline.format(), "\x04e99695Cinnamon-y!");
+        }
 
-    #[test]
-    fn short_hex() {
-        let s = "\x04ff00glarch";
-        let sline = StyledLine::parse(s);
-        assert_eq!(sline, StyledLine::from(StyledSpan::from("ff00glarch")));
-    }
-
-    #[test]
-    fn hex_char_other_fmt() {
-        let s = "\x04\x02foo";
-        let sline = StyledLine::parse(s);
-        assert_eq!(
-            sline,
-            StyledLine::from(StyledSpan {
+        #[test]
+        fn rgb_fgbg() {
+            let sline = StyledLine::from(StyledSpan {
                 style: Style {
-                    attributes: Attribute::Bold.into(),
+                    foreground: RgbColor(0xE9, 0x96, 0x95).into(),
+                    background: RgbColor(0xCC, 0xCC, 0xCC).into(),
                     ..Style::default()
                 },
-                content: "foo".into()
-            })
-        );
+                content: "Cinnamon on silver!".into(),
+            });
+            assert_eq!(sline.format(), "\x04e99695,ccccccCinnamon on silver!");
+        }
     }
 
     mod roundtrip {
@@ -827,6 +893,19 @@ mod tests {
                     ..Style::default()
                 },
                 content: "My eyes hurt.".into(),
+            });
+            assert_eq!(StyledLine::parse(&sline.format()), sline);
+        }
+
+        #[test]
+        fn color100_fg_rgb_bg_comma_digits() {
+            let sline = StyledLine::from(StyledSpan {
+                style: Style {
+                    foreground: Color100::YELLOW.into(),
+                    background: RgbColor(0x36, 0x36, 0x36).into(),
+                    ..Style::default()
+                },
+                content: ",123".into(),
             });
             assert_eq!(StyledLine::parse(&sline.format()), sline);
         }

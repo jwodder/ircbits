@@ -556,6 +556,7 @@ dependencies = [
  "pretty_assertions",
  "rustls-native-certs",
  "rustls-pki-types",
+ "serde",
  "thiserror",
  "tokio",
  "tokio-rustls",

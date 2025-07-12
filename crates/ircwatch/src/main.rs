@@ -2,7 +2,7 @@ use anyhow::Context;
 use clap::Parser;
 use ircnet::{
     client::{
-        Client, ClientError,
+        Client, ClientError, ConnectionParams,
         autoresponders::{CtcpQueryResponder, PingResponder},
         commands::{Login, LoginParams},
     },
@@ -77,7 +77,12 @@ fn main() -> anyhow::Result<()> {
 #[tokio::main]
 async fn run(args: Arguments) -> anyhow::Result<()> {
     report(&format!("* Connecting to {} …", args.server));
-    let mut client = Client::connect(&args.server, args.port, args.tls).await?;
+    let mut client = Client::connect(ConnectionParams {
+        host: args.server,
+        port: args.port,
+        tls: args.tls,
+    })
+    .await?;
     client.add_autoresponder(PingResponder::new());
     client.add_autoresponder(
         CtcpQueryResponder::new()

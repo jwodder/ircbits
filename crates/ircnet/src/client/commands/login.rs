@@ -12,6 +12,7 @@ use thiserror::Error;
 const MODE_TIMEOUT: Duration = Duration::from_secs(1);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct LoginParams {
     pub password: FinalParam,
     pub nickname: Nickname,

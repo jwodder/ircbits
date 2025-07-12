@@ -12,6 +12,7 @@ use irctext::{
     formatting::StyledLine,
     types::{Channel, Nickname, Username},
 };
+use itertools::Itertools; // join
 use std::fmt::Write;
 use std::io::{IsTerminal, stderr};
 use tracing::Level;
@@ -121,7 +122,10 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
 }
 
 fn report(msg: &str) {
-    let timestamp = jiff::Zoned::now().time();
+    let timestamp = jiff::Zoned::now()
+        .time()
+        .round(jiff::Unit::Second)
+        .expect("Time.round(Second) should not fail");
     println!("[{timestamp}] {msg}");
 }
 
@@ -214,17 +218,24 @@ fn format_msg(msg: Message) -> String {
         }
         Payload::ClientMessage(_) => format!("[OTHER] Unexpected client message: {msg}"),
         Payload::Reply(Reply::Topic(r)) => {
-            format!("[{}] [TOPIC] {}", r.channel(), ircfmt_to_ansi(r.topic()))
+            format!("[TOPIC] [{}] {}", r.channel(), ircfmt_to_ansi(r.topic()))
         }
         Payload::Reply(Reply::TopicWhoTime(r)) => {
-            let who = r.nickname();
+            let who = r.user();
             let timestamp = fmt_unix_timestamp(r.setat());
             format!(
-                "[{}] [TOPICWHO] Topic set at {timestamp} by {who}",
+                "[TOPICWHO] [{}] Topic set at {timestamp} by {who}",
                 r.channel()
             )
         }
-        Payload::Reply(Reply::EndOfNames(r)) => format!("[{}] [End of Names]", r.channel()),
+        Payload::Reply(Reply::NamReply(r)) => {
+            format!(
+                "[MEMBERS] [{}] {}",
+                r.channel(),
+                r.clients().iter().map(|(_, nick)| nick).join(", ")
+            )
+        }
+        Payload::Reply(Reply::EndOfNames(r)) => format!("[MEMBERS] [{}] [END]", r.channel()),
         Payload::Reply(_) => format!("[OTHER] Unexpected reply: {msg}"),
     }
 }

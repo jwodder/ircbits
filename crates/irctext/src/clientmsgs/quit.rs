@@ -60,3 +60,40 @@ impl TryFrom<ParameterList> for Quit {
         Ok(Quit { reason })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Payload, Source};
+    use assert_matches::assert_matches;
+
+    #[test]
+    fn parse_with_reason() {
+        let msg = ":Spawns_Carpeting!~mobile@user/spawns-carpeting/x-6969421 QUIT :Quit: ZNC 1.8.2+deb3.1+deb12u1 - https://znc.in";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            source: Some(Source::Client(clisrc)),
+            payload: Payload::ClientMessage(ClientMessage::Quit(quit)),
+        } => {
+            assert_eq!(clisrc.nickname, "Spawns_Carpeting");
+            assert_eq!(clisrc.user.as_ref().unwrap(), "~mobile");
+            assert_eq!(clisrc.host.as_ref().unwrap(), "user/spawns-carpeting/x-6969421");
+            assert_eq!(quit.reason().unwrap(), "Quit: ZNC 1.8.2+deb3.1+deb12u1 - https://znc.in");
+        });
+    }
+
+    #[test]
+    fn parse_no_reason() {
+        let msg = ":Spawns_Carpeting!~mobile@user/spawns-carpeting/x-6969421 QUIT";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            source: Some(Source::Client(clisrc)),
+            payload: Payload::ClientMessage(ClientMessage::Quit(quit)),
+        } => {
+            assert_eq!(clisrc.nickname, "Spawns_Carpeting");
+            assert_eq!(clisrc.user.as_ref().unwrap(), "~mobile");
+            assert_eq!(clisrc.host.as_ref().unwrap(), "user/spawns-carpeting/x-6969421");
+            assert_eq!(quit.reason(), None);
+        });
+    }
+}

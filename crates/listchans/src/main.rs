@@ -9,6 +9,7 @@ use irctext::{
     clientmsgs::{List, Quit},
     ctcp::CtcpParams,
 };
+use patharg::OutputArg;
 use std::collections::HashMap;
 use std::io::{self, BufWriter, IsTerminal, Write};
 use std::path::PathBuf;
@@ -19,6 +20,9 @@ use tracing_subscriber::{filter::Targets, fmt::time::OffsetTime, prelude::*};
 struct Arguments {
     #[arg(short = 'c', long, default_value = "ircbits.toml")]
     config: PathBuf,
+
+    #[arg(short = 'o', long, default_value_t)]
+    outfile: OutputArg,
 
     #[arg(short = 'P', long, default_value = "irc")]
     profile: String,
@@ -81,9 +85,13 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
     let output = client.run(ListCommand::new(List::new())).await?;
     client.send(Quit::new().into()).await?;
     while client.recv_new().await?.is_some() {}
-    let mut stdout = BufWriter::new(io::stdout().lock());
-    serde_json::to_writer_pretty(&mut stdout, &output).context("failed to serialize output")?;
-    stdout.write_all(b"\n")?;
-    stdout.flush()?;
+    let mut out = BufWriter::new(
+        args.outfile
+            .create()
+            .context("failed to open output file")?,
+    );
+    serde_json::to_writer_pretty(&mut out, &output).context("failed to serialize output")?;
+    out.write_all(b"\n")?;
+    out.flush()?;
     Ok(())
 }

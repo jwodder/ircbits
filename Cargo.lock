@@ -746,6 +746,7 @@ dependencies = [
  "clap",
  "ircnet",
  "irctext",
+ "patharg",
  "serde_json",
  "tokio",
  "toml",
@@ -864,6 +865,16 @@ name = "overload"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
+
+[[package]]
+name = "patharg"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d67efed937875267f39986682045e3430c4da4055785825506837ddb037c771"
+dependencies = [
+ "cfg-if",
+ "either",
+]
 
 [[package]]
 name = "percent-encoding"

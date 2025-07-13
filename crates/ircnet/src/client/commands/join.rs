@@ -272,16 +272,16 @@ pub enum JoinError {
     TryAgain { message: String },
     #[error("JOIN failed: registration required: {message:?}")]
     NotRegistered { message: String },
-    #[error("join failed due to overly-long input line: {message:?}")]
+    #[error("JOIN failed due to overly-long input line: {message:?}")]
     InputTooLong { message: String },
-    #[error("join failed because server does not recognize {command:?} command: {message:?}")]
+    #[error("JOIN failed because server does not recognize {command:?} command: {message:?}")]
     UnknownCommand { command: String, message: String },
-    #[error("server sent ERROR message during join: {reason:?}")]
+    #[error("server sent ERROR message during JOIN: {reason:?}")]
     ErrorMessage { reason: String },
-    #[error("join failed with unexpected error reply {code:03}: {reply:?}")]
+    #[error("JOIN failed with unexpected error reply {code:03}: {reply:?}")]
     UnexpectedError { code: u16, reply: String },
     #[error(
-        "join failed because server sent unexpected message: expecting {expecting}, got {msg:?}"
+        "JOIN failed because server sent unexpected message: expecting {expecting}, got {msg:?}"
     )]
     Unexpected {
         expecting: &'static str,

@@ -59,6 +59,7 @@ impl Login {
 // - optional: mode := RPL_UMODEIS (221) or MODE
 
 // Possible error replies on login:
+//  - ERROR message
 //  - ERR_INPUTTOOLONG (417)
 //  - ERR_UNKNOWNCOMMAND (421)
 //      - When using SASL, this may be sent in reply to CAP if the server
@@ -126,6 +127,12 @@ impl Command for Login {
                 }
             }
             Payload::ClientMessage(climsg) => match climsg {
+                ClientMessage::Error(err) => {
+                    self.state = State::Done(Some(Err(LoginError::ErrorMessage {
+                        reason: err.reason().to_string(),
+                    })));
+                    true
+                }
                 ClientMessage::Mode(mode) => self.state.in_place(|state| state.handle_mode(mode)),
                 ClientMessage::Ping(_) | ClientMessage::PrivMsg(_) | ClientMessage::Notice(_) => {
                     false
@@ -437,6 +444,8 @@ pub enum LoginError {
     Banned { message: String },
     #[error("login failed with unexpected error reply {code:03}: {reply:?}")]
     UnexpectedError { code: u16, reply: String },
+    #[error("server sent ERROR message during login: {reason:?}")]
+    ErrorMessage { reason: String },
     #[error("login failed because RPL_WELCOME was addressed to * instead of client nickname")]
     StarWelcome,
     #[error(

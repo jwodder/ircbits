@@ -18,21 +18,21 @@ enum InnerJoin {
 }
 
 impl Join {
-    pub fn new_channel(channel: Channel) -> Join {
+    pub fn new(channel: Channel) -> Join {
         Join(InnerJoin::Channels {
             channels: vec![channel],
             keys: Vec::new(),
         })
     }
 
-    pub fn new_channel_with_key(channel: Channel, key: Key) -> Join {
+    pub fn new_with_key(channel: Channel, key: Key) -> Join {
         Join(InnerJoin::Channels {
             channels: vec![channel],
             keys: vec![key],
         })
     }
 
-    pub fn new_channels<I: IntoIterator<Item = Channel>>(channels: I) -> Option<Join> {
+    pub fn new_multi<I: IntoIterator<Item = Channel>>(channels: I) -> Option<Join> {
         let channels = channels.into_iter().collect::<Vec<_>>();
         if channels.is_empty() {
             None
@@ -44,7 +44,7 @@ impl Join {
         }
     }
 
-    pub fn new_channels_with_keys<I: IntoIterator<Item = (Channel, Key)>>(iter: I) -> Option<Join> {
+    pub fn new_multi_with_keys<I: IntoIterator<Item = (Channel, Key)>>(iter: I) -> Option<Join> {
         let mut channels = Vec::new();
         let mut keys = Vec::new();
         for (chan, k) in iter {

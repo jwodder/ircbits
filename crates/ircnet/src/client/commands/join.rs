@@ -16,14 +16,14 @@ pub struct JoinCommand {
 impl JoinCommand {
     pub fn new(channel: Channel) -> JoinCommand {
         JoinCommand {
-            outgoing: vec![Join::new_channel(channel).into()],
+            outgoing: vec![Join::new(channel).into()],
             state: State::Start,
         }
     }
 
     pub fn new_with_key(channel: Channel, key: Key) -> JoinCommand {
         JoinCommand {
-            outgoing: vec![Join::new_channel_with_key(channel, key).into()],
+            outgoing: vec![Join::new_with_key(channel, key).into()],
             state: State::Start,
         }
     }

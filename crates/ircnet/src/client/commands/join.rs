@@ -52,7 +52,8 @@ impl JoinCommand {
 //  - ERR_NEEDMOREPARAMS (461) ?
 
 impl Command for JoinCommand {
-    type Output = Result<JoinOutput, JoinError>;
+    type Output = JoinOutput;
+    type Error = JoinError;
 
     fn get_client_messages(&mut self) -> Vec<ClientMessage> {
         std::mem::take(&mut self.outgoing)
@@ -125,7 +126,7 @@ impl Command for JoinCommand {
         matches!(self.state, State::Done(_))
     }
 
-    fn get_output(&mut self) -> Self::Output {
+    fn get_output(&mut self) -> Result<JoinOutput, JoinError> {
         if let State::Done(ref mut r) = self.state {
             r.take()
                 .expect("get_output() should not be called more than once")

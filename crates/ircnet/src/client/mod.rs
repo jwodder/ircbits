@@ -218,7 +218,8 @@ impl Client {
                 deadline = Some(Instant::now() + d);
             }
         }
-        Ok(cmd.get_output())
+        cmd.get_output()
+            .map_err(|e| ClientError::Command(Box::new(e)))
     }
 }
 
@@ -230,6 +231,8 @@ pub enum ClientError {
     Send(#[source] MessageCodecError),
     #[error("failed to receive message from server")]
     Recv(#[source] MessageCodecError),
+    #[error("command failed")]
+    Command(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("connection terminated while running command")]
     Disconnect,
 }

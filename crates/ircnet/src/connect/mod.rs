@@ -23,14 +23,14 @@ pub type MessageChannel = Framed<Connection, MessageCodec>;
 
 #[tracing::instrument]
 pub async fn connect(host: &str, port: u16, tls: bool) -> Result<Connection, ConnectionError> {
-    tracing::trace!("Connecting to remote server ...");
+    tracing::info!("Connecting to remote host ...");
     let conn = TcpStream::connect((host, port))
         .await
         .map_err(ConnectionError::Connect)?;
     let addr = conn.peer_addr().ok().map(|addr| addr.to_string());
-    tracing::trace!(remote_addr = addr, "Connected to remote server");
+    tracing::info!(remote_addr = addr, "Connected to remote host");
     if tls {
-        tracing::trace!("Initializing TLS ...");
+        tracing::info!("Initializing TLS ...");
         let certs = rustls_native_certs::load_native_certs();
         if !certs.errors.is_empty() {
             let msg = certs.errors.into_iter().join("; ");
@@ -50,7 +50,7 @@ pub async fn connect(host: &str, port: u16, tls: bool) -> Result<Connection, Con
             .connect(dnsname, conn)
             .await
             .map_err(ConnectionError::Tls)?;
-        tracing::trace!("TLS established");
+        tracing::info!("TLS established");
         Ok(Either::Right(tls_conn))
     } else {
         Ok(Either::Left(conn))

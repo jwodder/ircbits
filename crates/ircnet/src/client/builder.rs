@@ -1,6 +1,7 @@
 use super::autoresponders::{AutoResponder, AutoResponderSet};
 use super::commands::{Login, LoginOutput, LoginParams};
 use super::{Client, ClientError, ConnectionParams};
+use tracing::Instrument;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -34,9 +35,20 @@ impl SessionBuilder {
     }
 
     pub async fn build(self) -> Result<(Client, LoginOutput), ClientError> {
+        let host = self.connect.host.clone();
         let mut client = Client::connect(self.connect).await?;
         client.set_autoresponders(self.autoresponders);
-        let login_output = client.run(Login::new(self.login)).await?;
+        let span = tracing::info_span!("login", host, nickname = self.login.nickname.as_str());
+        let login_output = async {
+            tracing::info!("Logging in to IRC network …");
+            let r = client.run(Login::new(self.login)).await;
+            if r.is_ok() {
+                tracing::info!("Login successful");
+            }
+            r
+        }
+        .instrument(span)
+        .await?;
         Ok((client, login_output))
     }
 }

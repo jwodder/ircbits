@@ -36,24 +36,27 @@ struct Arguments {
 // for an explanation of the main + #[tokio::main]run thing
 fn main() -> anyhow::Result<()> {
     let args = Arguments::parse();
-    if args.trace {
-        let timer =
-            OffsetTime::local_rfc_3339().context("failed to determine local timezone offset")?;
-        tracing_subscriber::registry()
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .with_timer(timer)
-                    .with_ansi(io::stderr().is_terminal())
-                    .with_writer(io::stderr),
-            )
-            .with(
-                Targets::new()
-                    .with_target(env!("CARGO_CRATE_NAME"), Level::TRACE)
-                    .with_target("ircnet", Level::TRACE)
-                    .with_default(Level::INFO),
-            )
-            .init();
-    }
+    let loglevel = if args.trace {
+        Level::TRACE
+    } else {
+        Level::INFO
+    };
+    let timer =
+        OffsetTime::local_rfc_3339().context("failed to determine local timezone offset")?;
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_timer(timer)
+                .with_ansi(io::stderr().is_terminal())
+                .with_writer(io::stderr),
+        )
+        .with(
+            Targets::new()
+                .with_target(env!("CARGO_CRATE_NAME"), loglevel)
+                .with_target("ircnet", loglevel)
+                .with_default(Level::INFO),
+        )
+        .init();
     run(args)
 }
 
@@ -65,6 +68,7 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
     let Some(profile) = cfg.remove(&args.profile) else {
         anyhow::bail!("{:?} profile not found in configuration file", args.profile);
     };
+    tracing::info!("Connecting to IRC …");
     let (mut client, _) = SessionBuilder::new(profile)
         .with_autoresponder(PingResponder::new())
         .with_autoresponder(
@@ -82,7 +86,9 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
         )
         .build()
         .await?;
+    tracing::info!("Listing channels …");
     let output = client.run(ListCommand::new(List::new())).await?;
+    tracing::info!("Quitting …");
     client.send(Quit::new().into()).await?;
     while client.recv_new().await?.is_some() {}
     let mut out = BufWriter::new(

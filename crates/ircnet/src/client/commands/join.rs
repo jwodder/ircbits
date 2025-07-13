@@ -33,7 +33,6 @@ impl JoinCommand {
 //  - JOIN
 //  - One of:
 //     - RPL_TOPIC (332) + optional RPL_TOPICWHOTIME (333)
-//     - RPL_NOTOPIC (331) (maybe not?)
 //     - no replies
 //  - one or more RPL_NAMREPLY (353)
 //  - RPL_ENDOFNAMES (366)

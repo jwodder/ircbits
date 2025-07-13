@@ -68,4 +68,18 @@ mod whoisactually {
             ]);
         });
     }
+
+    #[test]
+    fn unknown_042() {
+        let msg = ":weber.oftc.net 042 jwodder 9J5AACK4S :your unique ID";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            source: Some(Source::Server(host)),
+            payload: Payload::Reply(Reply::Unknown(r)),
+        } => {
+            assert_eq!(host, Host::Domain("weber.oftc.net"));
+            assert_eq!(r.code, 42);
+            assert_eq!(r.parameters, ["jwodder", "9J5AACK4S", "your unique ID"]);
+        });
+    }
 }

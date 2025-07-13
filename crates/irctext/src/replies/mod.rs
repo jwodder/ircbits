@@ -168,6 +168,7 @@ pub enum Reply {
     SaslAborted,
     SaslAlready,
     SaslMechs,
+    Unknown,
 }
 
 impl Reply {
@@ -305,7 +306,7 @@ impl Reply {
             906 => SaslAborted::try_from(params).map(Into::into),
             907 => SaslAlready::try_from(params).map(Into::into),
             908 => SaslMechs::try_from(params).map(Into::into),
-            _ => Err(ReplyError::Unknown(code)),
+            code => Ok(Reply::from(Unknown::new(code, params))),
         }
     }
 }
@@ -327,9 +328,6 @@ impl From<Reply> for RawMessage {
 
 #[derive(Clone, Debug, Eq, Error, PartialEq)]
 pub enum ReplyError {
-    #[error("unknown/unrecognized reply code {0:03}")]
-    Unknown(u16),
-
     #[error("invalid number of parameters: at least {min_required} required, {received} received")]
     ParamQty {
         min_required: usize,
@@ -11066,6 +11064,48 @@ impl TryFrom<ParameterList> for SaslMechs {
             .expect("Parameter 0 should exist when list length is at least 3");
         let client = ReplyTarget::try_from(String::from(p))?;
         Ok(SaslMechs { parameters, client })
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Unknown {
+    pub code: u16,
+    pub parameters: ParameterList,
+}
+
+impl Unknown {
+    pub fn new(code: u16, parameters: ParameterList) -> Unknown {
+        Unknown { code, parameters }
+    }
+}
+
+impl ReplyParts for Unknown {
+    fn code(&self) -> u16 {
+        self.code
+    }
+
+    fn parameters(&self) -> &ParameterList {
+        &self.parameters
+    }
+
+    fn is_error(&self) -> bool {
+        false
+    }
+
+    fn into_parts(self) -> (u16, ParameterList) {
+        (self.code, self.parameters)
+    }
+}
+
+impl From<Unknown> for Message {
+    fn from(value: Unknown) -> Message {
+        Message::from(Reply::from(value))
+    }
+}
+
+impl From<Unknown> for RawMessage {
+    fn from(value: Unknown) -> RawMessage {
+        RawMessage::from(Reply::from(value))
     }
 }
 

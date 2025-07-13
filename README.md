@@ -16,14 +16,16 @@ crates.io.
 The code endeavors to follow the spec at <https://modern.ircdocs.horse>
 strictly, including the following points:
 
-- Only the commands and replies documented in the spec are supported (plus the
-  nonstandard replies listed below), and only when their parameters follow the
-  documented formats (though numeric replies are allowed to have more
-  parameters than documented).
-
-- In order to achieve basic compatibility with some actual servers, the
-  following nonstandard numeric replies are supported:
-    - `RPL_STATSCONN` (250)
+- Only the commands and replies documented in the spec are supported, and only
+  when their parameters follow the documented formats (though numeric replies
+  are allowed to have more parameters than documented).
+    - Exceptions to the above, largely to acheive basic compatibility with some
+      actual servers:
+        - Replies with unknown numeric codes are converted to a catch-all type
+        - The following nonstandard numeric replies are supported:
+            - `RPL_STATSCONN` (250)
+        - The `<nick>` parameter of `RPL_TOPICWHOTIME` (333) is allowed to be
+          of the form `<nick>!<user>@<host>` rather than just a nickname
 
 - The only supported channel type prefixes are `#` and `&`.
 

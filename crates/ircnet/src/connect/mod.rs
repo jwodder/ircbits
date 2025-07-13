@@ -22,9 +22,9 @@ pub type RawMessageChannel = Framed<Connection, RawMessageCodec>;
 pub type MessageChannel = Framed<Connection, MessageCodec>;
 
 #[tracing::instrument]
-pub async fn connect(server: &str, port: u16, tls: bool) -> Result<Connection, ConnectionError> {
+pub async fn connect(host: &str, port: u16, tls: bool) -> Result<Connection, ConnectionError> {
     tracing::trace!("Connecting to remote server ...");
-    let conn = TcpStream::connect((server, port))
+    let conn = TcpStream::connect((host, port))
         .await
         .map_err(ConnectionError::Connect)?;
     let addr = conn.peer_addr().ok().map(|addr| addr.to_string());
@@ -45,7 +45,7 @@ pub async fn connect(server: &str, port: u16, tls: bool) -> Result<Connection, C
             .with_root_certificates(root_cert_store)
             .with_no_client_auth();
         let connector = TlsConnector::from(Arc::new(config));
-        let dnsname = ServerName::try_from(server)?.to_owned();
+        let dnsname = ServerName::try_from(host)?.to_owned();
         let tls_conn = connector
             .connect(dnsname, conn)
             .await

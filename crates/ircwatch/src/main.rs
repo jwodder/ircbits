@@ -130,7 +130,7 @@ async fn run(args: Arguments) -> anyhow::Result<()> {
         args.channels
     };
     for chan in channels {
-        let output = client.run(JoinCommand::new(chan.clone())).await??;
+        let output = client.run(JoinCommand::new(chan.clone())).await?;
         report(&format!("[JOIN] Joined {chan}"));
         if let Some(topic) = output.topic {
             report(&format!(

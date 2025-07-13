@@ -77,7 +77,8 @@ impl Login {
 //      - ERR_SASLALREADY (907)
 
 impl Command for Login {
-    type Output = Result<LoginOutput, LoginError>;
+    type Output = LoginOutput;
+    type Error = LoginError;
 
     fn get_client_messages(&mut self) -> Vec<ClientMessage> {
         std::mem::take(&mut self.outgoing)
@@ -160,7 +161,7 @@ impl Command for Login {
         matches!(self.state, State::Done(_))
     }
 
-    fn get_output(&mut self) -> Self::Output {
+    fn get_output(&mut self) -> Result<LoginOutput, LoginError> {
         if let State::Done(ref mut r) = self.state {
             r.take()
                 .expect("get_output() should not be called more than once")

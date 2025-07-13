@@ -29,9 +29,11 @@ use std::time::Duration;
 ///       `true`, call `get_output()` to get the result of the command, and
 ///       then discard the command.
 pub trait Command {
-    /// Information returned by the command upon completion, whether successful
-    /// or not
+    /// Information returned by the command upon successful completion
     type Output;
+
+    /// Type returned by the command upon failure
+    type Error: std::error::Error + Send + Sync + 'static;
 
     /// Returns outgoing messages to send back to the server.
     ///
@@ -85,5 +87,5 @@ pub trait Command {
     /// This method MUST only be called after `is_done()` returns true and MUST
     /// be called at most once.  If these preconditions are violated, the
     /// implementation MAY panic.
-    fn get_output(&mut self) -> Self::Output;
+    fn get_output(&mut self) -> Result<Self::Output, Self::Error>;
 }

@@ -1,7 +1,6 @@
 use super::autoresponders::{AutoResponder, AutoResponderSet};
-use super::commands::{Login, LoginError, LoginOutput, LoginParams};
+use super::commands::{Login, LoginOutput, LoginParams};
 use super::{Client, ClientError, ConnectionParams};
-use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -34,18 +33,10 @@ impl SessionBuilder {
         self
     }
 
-    pub async fn build(self) -> Result<(Client, LoginOutput), SessionBuildError> {
+    pub async fn build(self) -> Result<(Client, LoginOutput), ClientError> {
         let mut client = Client::connect(self.connect).await?;
         client.set_autoresponders(self.autoresponders);
-        let login_output = client.run(Login::new(self.login)).await??;
+        let login_output = client.run(Login::new(self.login)).await?;
         Ok((client, login_output))
     }
-}
-
-#[derive(Debug, Error)]
-pub enum SessionBuildError {
-    #[error(transparent)]
-    Client(#[from] ClientError),
-    #[error(transparent)]
-    Login(#[from] LoginError),
 }

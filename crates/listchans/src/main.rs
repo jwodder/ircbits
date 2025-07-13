@@ -31,10 +31,8 @@ struct Arguments {
     trace: bool,
 }
 
-// See
-// <https://docs.rs/tracing-subscriber/latest/tracing_subscriber/fmt/time/struct.OffsetTime.html#method.local_rfc_3339>
-// for an explanation of the main + #[tokio::main]run thing
-fn main() -> anyhow::Result<()> {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> anyhow::Result<()> {
     let args = Arguments::parse();
     let loglevel = if args.trace {
         Level::TRACE
@@ -57,11 +55,6 @@ fn main() -> anyhow::Result<()> {
                 .with_default(Level::INFO),
         )
         .init();
-    run(args)
-}
-
-#[tokio::main]
-async fn run(args: Arguments) -> anyhow::Result<()> {
     let cfgdata = std::fs::read(&args.config).context("failed to read configuration file")?;
     let mut cfg = toml::from_slice::<HashMap<String, SessionParams>>(&cfgdata)
         .context("failed to parse configuration file")?;

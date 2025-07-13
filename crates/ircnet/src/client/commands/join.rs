@@ -38,6 +38,7 @@ impl JoinCommand {
 //  - RPL_ENDOFNAMES (366)
 
 // Possible error replies:
+//  - ERROR message
 //  - ERR_NOSUCHCHANNEL (403)
 //  - ERR_TOOMANYCHANNELS (405)
 //  - ERR_CHANNELISFULL (471)
@@ -108,6 +109,12 @@ impl Command for JoinCommand {
                 } else {
                     self.state.in_place(|state| state.handle_reply(rpl))
                 }
+            }
+            Payload::ClientMessage(ClientMessage::Error(err)) => {
+                self.state = State::Done(Some(Err(JoinError::ErrorMessage {
+                    reason: err.reason().to_string(),
+                })));
+                true
             }
             Payload::ClientMessage(ClientMessage::Join(_)) => {
                 self.state.in_place(State::handle_join)
@@ -269,6 +276,8 @@ pub enum JoinError {
     InputTooLong { message: String },
     #[error("join failed because server does not recognize {command:?} command: {message:?}")]
     UnknownCommand { command: String, message: String },
+    #[error("server sent ERROR message during join: {reason:?}")]
+    ErrorMessage { reason: String },
     #[error("join failed with unexpected error reply {code:03}: {reply:?}")]
     UnexpectedError { code: u16, reply: String },
     #[error(

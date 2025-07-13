@@ -13,7 +13,7 @@ use crate::connect::{
     consts::MAX_LINE_LENGTH,
 };
 use futures_util::{SinkExt, TryStreamExt};
-use irctext::{ClientMessage, Message};
+use irctext::{ClientMessage, ClientMessageParts, Message};
 use std::collections::VecDeque;
 use thiserror::Error;
 use tokio::time::{Instant, timeout_at};
@@ -29,6 +29,9 @@ pub struct ConnectionParams {
 
 #[allow(missing_debug_implementations)]
 pub struct Client {
+    /// Name of remote host; used in log messages
+    host: String,
+
     /// The TCP connection to the server, as a stream of `Message`s and a sink
     /// for `ClientMessage`s
     channel: MessageChannel,
@@ -59,6 +62,7 @@ impl Client {
         let channel = Framed::new(conn, codec);
         let autoresponders = AutoResponderSet::new();
         Ok(Client {
+            host: params.host,
             channel,
             autoresponders,
             queued: VecDeque::new(),
@@ -83,6 +87,11 @@ impl Client {
     /// If this method is cancelled, it is guaranteed that the message was not
     /// sent, but the message itself is lost.
     pub async fn send(&mut self, msg: ClientMessage) -> Result<(), ClientError> {
+        tracing::trace!(
+            host = self.host,
+            msg = msg.to_irc_line(),
+            "Sending message to remote server"
+        );
         self.channel.send(msg).await.map_err(ClientError::Send)
     }
 
@@ -134,6 +143,11 @@ impl Client {
             }
             let r = self.channel.try_next().await.map_err(ClientError::Recv)?;
             if let Some(msg) = r {
+                tracing::trace!(
+                    host = self.host,
+                    msg = msg.to_string(),
+                    "Received message from remote server"
+                );
                 // Store outgoing client messages and the received message on
                 // self in order to not lose data on cancellation
                 let handled = self.autoresponders.handle_message(&msg);

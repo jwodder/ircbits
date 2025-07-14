@@ -43,7 +43,7 @@ impl Notice {
             !self.targets.is_empty(),
             "Notice.targets should always be nonempty"
         );
-        let s = join_with_commas(&self.targets);
+        let s = join_with_commas(&self.targets).to_string();
         MedialParam::try_from(s)
             .expect("comma-separated channels and/or nicknames should be a valid MedialParam")
     }

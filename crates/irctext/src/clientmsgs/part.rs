@@ -64,7 +64,7 @@ impl Part {
             !self.channels.is_empty(),
             "Part.channels should always be nonempty"
         );
-        let s = join_with_commas(&self.channels);
+        let s = join_with_commas(&self.channels).to_string();
         MedialParam::try_from(s).expect("comma-separated channels should be a valid MedialParam")
     }
 }

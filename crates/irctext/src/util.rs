@@ -9,35 +9,23 @@ pub(crate) fn split_word(s: &str) -> (&str, &str) {
     }
 }
 
-pub(crate) fn join_with_commas<I>(iter: I) -> String
-where
-    I: IntoIterator,
-    I::Item: AsRef<str>,
-{
-    let mut s = String::new();
-    let mut first = true;
-    for item in iter {
-        if !std::mem::replace(&mut first, false) {
-            s.push(',');
-        }
-        s.push_str(item.as_ref());
-    }
-    s
+pub(crate) fn join_with_space<'a, T>(values: &'a [T]) -> JoinWithChar<'a, T> {
+    JoinWithChar(' ', values)
 }
 
-pub(crate) fn join_with_space<'a, T>(values: &'a [T]) -> JoinWithSpace<'a, T> {
-    JoinWithSpace(values)
+pub(crate) fn join_with_commas<'a, T>(values: &'a [T]) -> JoinWithChar<'a, T> {
+    JoinWithChar(',', values)
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct JoinWithSpace<'a, T>(&'a [T]);
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct JoinWithChar<'a, T>(char, &'a [T]);
 
-impl<T: fmt::Display> fmt::Display for JoinWithSpace<'_, T> {
+impl<T: fmt::Display> fmt::Display for JoinWithChar<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut first = true;
-        for item in self.0 {
+        for item in self.1 {
             if !std::mem::replace(&mut first, false) {
-                f.write_char(' ')?;
+                f.write_char(self.0)?;
             }
             write!(f, "{item}")?;
         }

@@ -90,7 +90,7 @@ impl Join {
                 !channels.is_empty(),
                 "Join.channels should always be nonempty"
             );
-            let s = join_with_commas(channels);
+            let s = join_with_commas(channels).to_string();
             MedialParam::try_from(s)
                 .expect("comma-separated channels should be a valid MedialParam")
         }
@@ -101,7 +101,7 @@ impl Join {
         if keys.is_empty() {
             None
         } else {
-            let s = join_with_commas(keys);
+            let s = join_with_commas(keys).to_string();
             Some(
                 FinalParam::try_from(s).expect("comma-separated keys should be a valid FinalParam"),
             )

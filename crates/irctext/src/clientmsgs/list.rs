@@ -54,7 +54,7 @@ impl List {
         if self.channels.is_empty() {
             None
         } else {
-            let s = join_with_commas(&self.channels);
+            let s = join_with_commas(&self.channels).to_string();
             Some(
                 MedialParam::try_from(s)
                     .expect("comma-separated channels should be a valid MedialParam"),
@@ -66,7 +66,7 @@ impl List {
         if self.elistconds.is_empty() {
             None
         } else {
-            let s = join_with_commas(&self.elistconds);
+            let s = join_with_commas(&self.elistconds).to_string();
             Some(
                 MedialParam::try_from(s)
                     .expect("comma-separated elistconds should be a valid MedialParam"),

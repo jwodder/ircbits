@@ -24,6 +24,8 @@ strictly, including the following points:
         - Replies with unknown numeric codes are converted to a catch-all type
         - The following nonstandard numeric replies are supported:
             - `RPL_STATSCONN` (250)
+            - `ERR_INVALIDCAPCMD` (410), specified by the [Capability
+              Negotation specification][cap]
         - The `<nick>` parameter of `RPL_TOPICWHOTIME` (333) is allowed to be
           of the form `<nick>!<user>@<host>` rather than just a nickname
 
@@ -32,3 +34,5 @@ strictly, including the following points:
 - The only support channel membership prefixes are `~`, `&`, `@`, `%`, and `+`.
 
 - Tags are currently not yet implemented (jwodder/ircbits#4).
+
+[cap]: https://ircv3.net/specs/extensions/capability-negotiation.html

@@ -74,7 +74,7 @@ impl Kick {
             !self.users.is_empty(),
             "Kick.users should always be nonempty"
         );
-        let s = join_with_commas(&self.users);
+        let s = join_with_commas(&self.users).to_string();
         MedialParam::try_from(s).expect("comma-separated nicknames should be a valid MedialParam")
     }
 }

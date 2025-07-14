@@ -33,7 +33,7 @@ impl Names {
     }
 
     fn channels_param(&self) -> FinalParam {
-        let s = join_with_commas(&self.channels);
+        let s = join_with_commas(&self.channels).to_string();
         FinalParam::try_from(s).expect("comma-separated channels should be a valid MedialParam")
     }
 }

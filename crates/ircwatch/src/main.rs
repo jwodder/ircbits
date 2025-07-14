@@ -15,6 +15,7 @@ use irctext::{
     formatting::StyledLine,
     types::Channel,
 };
+use itertools::Itertools; // join
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::io::{IsTerminal, stderr};
@@ -235,30 +236,34 @@ fn format_msg(msg: Message) -> String {
     };
     match msg.payload {
         Payload::ClientMessage(ClientMessage::PrivMsg(m)) => {
-            let target = &m.targets()[0];
-            if target.is_channel() {
-                format!("[{}] {}", target, format_msgtext(&sender, m.text().clone()))
-            } else {
+            let targets = m.targets();
+            if targets.len() == 1 && targets[0].is_nick() {
                 format!("[PRIVMSG] {}", format_msgtext(&sender, m.text().clone()))
+            } else {
+                format!(
+                    "[{}] {}",
+                    m.targets().iter().join(","),
+                    format_msgtext(&sender, m.text().clone())
+                )
             }
         }
         Payload::ClientMessage(ClientMessage::Notice(m)) => {
-            let target = &m.targets()[0];
-            if target.is_channel() {
+            let targets = m.targets();
+            if targets.len() == 1 && targets[0].is_nick() {
+                format!("[NOTICE] {}", format_msgtext(&sender, m.text().clone()))
+            } else {
                 format!(
                     "[{}] [NOTICE] {}",
-                    target,
+                    m.targets().iter().join(","),
                     format_msgtext(&sender, m.text().clone())
                 )
-            } else {
-                format!("[NOTICE] {}", format_msgtext(&sender, m.text().clone()))
             }
         }
         Payload::ClientMessage(ClientMessage::Join(m)) => {
-            format!("* {sender} joins {}", m.channels()[0])
+            format!("* {sender} joins {}", join_and(m.channels()))
         }
         Payload::ClientMessage(ClientMessage::Part(m)) => {
-            let mut s = format!("* {sender} leaves {}", m.channels()[0]);
+            let mut s = format!("* {sender} leaves {}", join_and(m.channels()));
             if let Some(txt) = m.reason() {
                 write!(&mut s, ": {}", ircfmt_to_ansi(txt.as_str())).unwrap();
             }
@@ -295,12 +300,16 @@ fn format_msg(msg: Message) -> String {
             if let Some(cmt) = m.comment() {
                 format!(
                     "* {sender} kicked {} from {}: {}",
-                    m.users()[0],
+                    join_and(m.users()),
                     m.channel(),
                     ircfmt_to_ansi(cmt.as_str()),
                 )
             } else {
-                format!("* {sender} kicked {} from {}", m.users()[0], m.channel())
+                format!(
+                    "* {sender} kicked {} from {}",
+                    join_and(m.users()),
+                    m.channel()
+                )
             }
         }
         Payload::ClientMessage(ClientMessage::Wallops(m)) => {
@@ -350,4 +359,26 @@ fn fmt_unix_timestamp(ts: u64) -> String {
         return format!("@{ts}");
     };
     jts.to_string()
+}
+
+fn join_and<I: IntoIterator<Item: AsRef<str>>>(iter: I) -> String {
+    let mut items = iter
+        .into_iter()
+        .map(|it| it.as_ref().to_owned())
+        .collect::<Vec<_>>();
+    match items.len() {
+        0 => String::from("<empty list>"),
+        1 => items.pop().expect("Vec is nonempty"),
+        2 => format!("{} and {}", items[0], items[1]),
+        n => {
+            let mut s = String::new();
+            for it in &items[..(n - 2)] {
+                s.push_str(it);
+                s.push_str(", ");
+            }
+            s.push_str(" and ");
+            s.push_str(&items[n - 1]);
+            s
+        }
+    }
 }

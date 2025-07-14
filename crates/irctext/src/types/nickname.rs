@@ -29,7 +29,8 @@
 // contain NUL, CR, or LF.
 
 use crate::types::{ModeTarget, MsgTarget, ReplyTarget};
-use crate::{FinalParam, MedialParam};
+use crate::{CaseMapping, FinalParam, MedialParam};
+use std::borrow::Cow;
 use thiserror::Error;
 
 #[derive(Clone, Eq, PartialEq)]
@@ -47,6 +48,24 @@ fn validate(s: &str) -> Result<(), ParseNicknameError> {
         Err(ParseNicknameError::BadCharacter)
     } else {
         Ok(())
+    }
+}
+
+impl Nickname {
+    #[expect(clippy::missing_panics_doc)]
+    pub fn to_lowercase(&self, cm: CaseMapping) -> Nickname {
+        Nickname::try_from(cm.lowercase_str(self.as_str()).into_owned())
+            .expect("Case-mapped nickname should still be valid")
+    }
+
+    #[expect(clippy::missing_panics_doc)]
+    pub fn into_lowercase(self, cm: CaseMapping) -> Nickname {
+        match cm.lowercase_str(self.as_str()) {
+            Cow::Borrowed(_) => self,
+            Cow::Owned(s) => {
+                Nickname::try_from(s).expect("Case-mapped nickname should still be valid")
+            }
+        }
     }
 }
 

@@ -2,6 +2,7 @@
 #[macro_use]
 mod validstr;
 
+mod casemapping;
 pub mod clientmsgs;
 mod command;
 mod consts;
@@ -15,6 +16,7 @@ mod source;
 pub mod types;
 mod util;
 mod verb;
+pub use crate::casemapping::*;
 pub use crate::clientmsgs::{ClientMessage, ClientMessageError, ClientMessageParts};
 pub use crate::command::*;
 pub use crate::consts::*;

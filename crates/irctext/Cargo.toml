@@ -9,6 +9,7 @@ license.workspace = true
 
 [dependencies]
 anstyle = { version = "1.0.11", optional = true }
+base64 = "0.22.1"
 enum_dispatch = "0.3.13"
 serde = { version = "1.0.219", features = ["derive"], optional = true }
 strum = { version = "0.27.1", features = ["derive"] }

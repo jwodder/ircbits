@@ -10,7 +10,8 @@
 // server, but for now, to keep things simple, this library treats '#' and '&'
 // — and only those characters — as channel type prefixes.
 use crate::types::{ModeTarget, MsgTarget};
-use crate::{FinalParam, MedialParam};
+use crate::{CaseMapping, FinalParam, MedialParam};
+use std::borrow::Cow;
 use thiserror::Error;
 
 #[derive(Clone, Eq, PartialEq)]
@@ -26,6 +27,24 @@ fn validate(s: &str) -> Result<(), ParseChannelError> {
         Err(ParseChannelError::BadCharacter)
     } else {
         Ok(())
+    }
+}
+
+impl Channel {
+    #[expect(clippy::missing_panics_doc)]
+    pub fn to_lowercase(&self, cm: CaseMapping) -> Channel {
+        Channel::try_from(cm.lowercase_str(self.as_str()).into_owned())
+            .expect("Case-mapped channel should still be valid")
+    }
+
+    #[expect(clippy::missing_panics_doc)]
+    pub fn into_lowercase(self, cm: CaseMapping) -> Channel {
+        match cm.lowercase_str(self.as_str()) {
+            Cow::Borrowed(_) => self,
+            Cow::Owned(s) => {
+                Channel::try_from(s).expect("Case-mapped channel should still be valid")
+            }
+        }
     }
 }
 

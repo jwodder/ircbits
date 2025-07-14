@@ -214,8 +214,17 @@ pub enum ClientMessageError {
     #[error("unknown/unrecognized client message verb {0:?}")]
     Unknown(String),
 
+    #[error("unknown/unrecognized CAP subcommand: {0:?}")]
+    UnknownCap(String),
+
     #[error(transparent)]
     ParamQty(#[from] ParameterListSizeError),
+
+    #[error("failed to parse capability string")]
+    Capability(#[from] TryFromStringError<ParseCapabilityError>),
+
+    #[error("failed to parse capability value string")]
+    CapabilityValue(#[from] TryFromStringError<ParseCapabilityValueError>),
 
     #[error("failed to parse channel string")]
     Channel(#[from] TryFromStringError<ParseChannelError>),

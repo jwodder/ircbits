@@ -1,5 +1,5 @@
 use crate::ClientMessageError;
-use std::fmt;
+use std::fmt::{self, Write};
 
 pub(crate) fn split_word(s: &str) -> (&str, &str) {
     let s = s.trim_start_matches(' ');
@@ -23,6 +23,26 @@ where
         s.push_str(item.as_ref());
     }
     s
+}
+
+pub(crate) fn join_with_space<'a, T>(values: &'a [T]) -> JoinWithSpace<'a, T> {
+    JoinWithSpace(values)
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct JoinWithSpace<'a, T>(&'a [T]);
+
+impl<T: fmt::Display> fmt::Display for JoinWithSpace<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut first = true;
+        for item in self.0 {
+            if !std::mem::replace(&mut first, false) {
+                f.write_char(' ')?;
+            }
+            write!(f, "{item}")?;
+        }
+        Ok(())
+    }
 }
 
 pub(crate) fn split_param<T>(s: &str) -> Result<Vec<T>, ClientMessageError>

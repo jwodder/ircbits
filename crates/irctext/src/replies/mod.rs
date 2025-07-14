@@ -120,6 +120,7 @@ pub enum Reply {
     TooManyChannels,
     WasNoSuchNick,
     NoOrigin,
+    InvalidCapCmd,
     NoRecipient,
     NoTextToSend,
     InputTooLong,
@@ -258,6 +259,7 @@ impl Reply {
             405 => TooManyChannels::try_from(params).map(Into::into),
             406 => WasNoSuchNick::try_from(params).map(Into::into),
             409 => NoOrigin::try_from(params).map(Into::into),
+            410 => InvalidCapCmd::try_from(params).map(Into::into),
             411 => NoRecipient::try_from(params).map(Into::into),
             412 => NoTextToSend::try_from(params).map(Into::into),
             417 => InputTooLong::try_from(params).map(Into::into),
@@ -480,6 +482,7 @@ pub mod codes {
     pub const ERR_TOOMANYCHANNELS: u16 = 405;
     pub const ERR_WASNOSUCHNICK: u16 = 406;
     pub const ERR_NOORIGIN: u16 = 409;
+    pub const ERR_INVALIDCAPCMD: u16 = 410;
     pub const ERR_NORECIPIENT: u16 = 411;
     pub const ERR_NOTEXTTOSEND: u16 = 412;
     pub const ERR_INPUTTOOLONG: u16 = 417;
@@ -7475,6 +7478,76 @@ impl TryFrom<ParameterList> for NoOrigin {
             .expect("Parameter 0 should exist when list length is at least 2");
         let client = ReplyTarget::try_from(String::from(p))?;
         Ok(NoOrigin { parameters, client })
+    }
+}
+
+// Specified by
+// <https://ircv3.net/specs/extensions/capability-negotiation.html>
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InvalidCapCmd {
+    parameters: ParameterList,
+    client: ReplyTarget,
+}
+
+impl InvalidCapCmd {
+    pub fn client(&self) -> &ReplyTarget {
+        &self.client
+    }
+
+    pub fn message(&self) -> &str {
+        let Some(p) = self.parameters.last() else {
+            unreachable!("reply parameters should be nonempty");
+        };
+        p.as_str()
+    }
+}
+
+impl ReplyParts for InvalidCapCmd {
+    fn code(&self) -> u16 {
+        codes::ERR_INVALIDCAPCMD
+    }
+
+    fn parameters(&self) -> &ParameterList {
+        &self.parameters
+    }
+
+    fn is_error(&self) -> bool {
+        true
+    }
+
+    fn into_parts(self) -> (u16, ParameterList) {
+        let code = self.code();
+        (code, self.parameters)
+    }
+}
+
+impl From<InvalidCapCmd> for Message {
+    fn from(value: InvalidCapCmd) -> Message {
+        Message::from(Reply::from(value))
+    }
+}
+
+impl From<InvalidCapCmd> for RawMessage {
+    fn from(value: InvalidCapCmd) -> RawMessage {
+        RawMessage::from(Reply::from(value))
+    }
+}
+
+impl TryFrom<ParameterList> for InvalidCapCmd {
+    type Error = ReplyError;
+
+    fn try_from(parameters: ParameterList) -> Result<InvalidCapCmd, ReplyError> {
+        if parameters.len() < 2 {
+            return Err(ReplyError::ParamQty {
+                min_required: 2,
+                received: parameters.len(),
+            });
+        }
+        let p = parameters
+            .get(0)
+            .expect("Parameter 0 should exist when list length is at least 2");
+        let client = ReplyTarget::try_from(String::from(p))?;
+        Ok(InvalidCapCmd { parameters, client })
     }
 }
 

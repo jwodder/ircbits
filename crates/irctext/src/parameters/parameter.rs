@@ -1,7 +1,7 @@
 use super::{FinalParam, MedialParam};
 use std::fmt;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Parameter {
     Medial(MedialParam),
     Final(FinalParam),

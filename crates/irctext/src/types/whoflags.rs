@@ -7,7 +7,7 @@ const IS_AWAY: char = 'G';
 const NOT_AWAY: char = 'H';
 
 /// The "flags" portion of `RPL_WHOREPLY`
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoFlags {
     pub is_away: bool,
     pub is_op: bool,
@@ -79,7 +79,7 @@ impl From<WhoFlags> for FinalParam {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseWhoFlagsError {
     #[error("isaway (H/G) token missing")]
     NoIsAway,

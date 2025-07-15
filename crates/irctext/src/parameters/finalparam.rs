@@ -1,7 +1,7 @@
 use super::MedialParam;
 use thiserror::Error;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct FinalParam(String);
 
 validstr!(FinalParam, ParseFinalParamError, validate);
@@ -21,6 +21,6 @@ fn validate(s: &str) -> Result<(), ParseFinalParamError> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 #[error("parameters cannot contain NUL, CR, or LF")]
 pub struct ParseFinalParamError;

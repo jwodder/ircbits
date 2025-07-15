@@ -6,7 +6,7 @@ use crate::{
 use std::fmt;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct RawMessage {
     pub source: Option<Source>,
     pub command: Command,

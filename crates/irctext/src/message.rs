@@ -5,7 +5,7 @@ use crate::{
 use std::fmt;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Message {
     pub source: Option<Source>,
     pub payload: Payload,
@@ -74,7 +74,7 @@ impl From<Message> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Payload {
     ClientMessage(ClientMessage),
     Reply(Reply),
@@ -138,7 +138,7 @@ impl PartialEq<Reply> for Payload {
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(Clone, Debug, Error, Eq, PartialEq)]
 pub enum MessageError {
     #[error(transparent)]
     ClientMessage(#[from] ClientMessageError),
@@ -146,7 +146,7 @@ pub enum MessageError {
     Reply(#[from] ReplyError),
 }
 
-#[derive(Debug, Error)]
+#[derive(Clone, Debug, Error, Eq, PartialEq)]
 pub enum ParseMessageError {
     #[error(transparent)]
     ParseRaw(#[from] ParseRawMessageError),

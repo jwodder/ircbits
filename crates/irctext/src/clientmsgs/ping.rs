@@ -1,7 +1,7 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts, Pong};
 use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Ping {
     token: FinalParam,
 }

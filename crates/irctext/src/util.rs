@@ -17,7 +17,7 @@ pub(crate) fn join_with_commas<'a, T>(values: &'a [T]) -> JoinWithChar<'a, T> {
     JoinWithChar(',', values)
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub(crate) struct JoinWithChar<'a, T>(char, &'a [T]);
 
 impl<T: fmt::Display> fmt::Display for JoinWithChar<'_, T> {
@@ -53,7 +53,7 @@ pub(crate) fn pop_channel_membership(s: &str) -> (Option<char>, &str) {
     (None, s)
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub(crate) struct DisplayMaybeFinal<T>(pub Option<T>);
 
 impl<T: fmt::Display> fmt::Display for DisplayMaybeFinal<T> {
@@ -70,7 +70,7 @@ pub(crate) fn split_spaces(s: &str) -> SplitSpaces<'_> {
     SplitSpaces::new(s)
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub(crate) struct SplitSpaces<'a>(&'a str);
 
 impl<'a> SplitSpaces<'a> {

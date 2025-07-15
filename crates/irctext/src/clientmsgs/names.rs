@@ -3,7 +3,7 @@ use crate::types::Channel;
 use crate::util::{join_with_commas, split_param};
 use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Names {
     channels: Vec<Channel>,
 }

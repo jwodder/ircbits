@@ -1,7 +1,7 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{Message, ParameterList, RawMessage, Verb};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Lusers;
 
 impl ClientMessageParts for Lusers {

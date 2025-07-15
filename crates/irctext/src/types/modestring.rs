@@ -1,7 +1,7 @@
 use crate::{FinalParam, MedialParam};
 use thiserror::Error;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ModeString(String);
 
 validstr!(ModeString, ParseModeStringError, validate);
@@ -28,7 +28,7 @@ impl From<ModeString> for FinalParam {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseModeStringError {
     #[error("mode strings must start with + or -")]
     BadStart,

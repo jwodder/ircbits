@@ -3,7 +3,7 @@ use crate::types::Nickname;
 use crate::{Message, ParameterList, ParameterListSizeError, RawMessage, Verb};
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UserHost {
     nicknames: Vec<Nickname>,
 }

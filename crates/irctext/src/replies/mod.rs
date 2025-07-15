@@ -34,7 +34,7 @@ pub trait ReplyParts {
 }
 
 #[enum_dispatch(ReplyParts)] // This also gives us From and TryInto
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Reply {
     Welcome,
     YourHost,
@@ -533,7 +533,7 @@ pub mod codes {
     pub const RPL_SASLMECHS: u16 = 908;
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Welcome {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -601,7 +601,7 @@ impl TryFrom<ParameterList> for Welcome {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct YourHost {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -669,7 +669,7 @@ impl TryFrom<ParameterList> for YourHost {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Created {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -737,7 +737,7 @@ impl TryFrom<ParameterList> for Created {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MyInfo {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -830,7 +830,7 @@ impl TryFrom<ParameterList> for MyInfo {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ISupport {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -913,7 +913,7 @@ impl TryFrom<ParameterList> for ISupport {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct RemoteISupport {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -996,7 +996,7 @@ impl TryFrom<ParameterList> for RemoteISupport {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Bounce {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1092,7 +1092,7 @@ impl TryFrom<ParameterList> for Bounce {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatsCommands {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1213,7 +1213,7 @@ impl TryFrom<ParameterList> for StatsCommands {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfStats {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1288,7 +1288,7 @@ impl TryFrom<ParameterList> for EndOfStats {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UModeIs {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1356,7 +1356,7 @@ impl TryFrom<ParameterList> for UModeIs {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatsUptime {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1434,7 +1434,7 @@ impl TryFrom<ParameterList> for StatsUptime {
 /// ```text
 /// 250 <client> :Highest connection count: 3072 (3071 clients) (781421 connections received)
 /// ```
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatsConn {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1502,7 +1502,7 @@ impl TryFrom<ParameterList> for StatsConn {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LuserClient {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1570,7 +1570,7 @@ impl TryFrom<ParameterList> for LuserClient {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LuserOp {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1659,7 +1659,7 @@ impl TryFrom<ParameterList> for LuserOp {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LuserUnknown {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1748,7 +1748,7 @@ impl TryFrom<ParameterList> for LuserUnknown {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LuserChannels {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1837,7 +1837,7 @@ impl TryFrom<ParameterList> for LuserChannels {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LuserMe {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1905,7 +1905,7 @@ impl TryFrom<ParameterList> for LuserMe {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AdminMe {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -1977,7 +1977,7 @@ impl TryFrom<ParameterList> for AdminMe {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AdminLoc1 {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2045,7 +2045,7 @@ impl TryFrom<ParameterList> for AdminLoc1 {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AdminLoc2 {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2113,7 +2113,7 @@ impl TryFrom<ParameterList> for AdminLoc2 {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AdminEmail {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2181,7 +2181,7 @@ impl TryFrom<ParameterList> for AdminEmail {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TryAgain {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2262,7 +2262,7 @@ impl TryFrom<ParameterList> for TryAgain {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LocalUsers {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2373,7 +2373,7 @@ impl TryFrom<ParameterList> for LocalUsers {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GlobalUsers {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2484,7 +2484,7 @@ impl TryFrom<ParameterList> for GlobalUsers {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsCertFP {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2565,7 +2565,7 @@ impl TryFrom<ParameterList> for WhoIsCertFP {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct None {
     parameters: ParameterList,
 }
@@ -2609,7 +2609,7 @@ impl TryFrom<ParameterList> for None {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Away {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2690,7 +2690,7 @@ impl TryFrom<ParameterList> for Away {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UserHostRpl {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2766,7 +2766,7 @@ impl TryFrom<ParameterList> for UserHostRpl {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UnAway {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2834,7 +2834,7 @@ impl TryFrom<ParameterList> for UnAway {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NowAway {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2902,7 +2902,7 @@ impl TryFrom<ParameterList> for NowAway {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsRegNick {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -2983,7 +2983,7 @@ impl TryFrom<ParameterList> for WhoIsRegNick {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsUser {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -3081,7 +3081,7 @@ impl TryFrom<ParameterList> for WhoIsUser {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsServer {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -3169,7 +3169,7 @@ impl TryFrom<ParameterList> for WhoIsServer {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsOperator {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -3250,7 +3250,7 @@ impl TryFrom<ParameterList> for WhoIsOperator {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoWasUser {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -3348,7 +3348,7 @@ impl TryFrom<ParameterList> for WhoWasUser {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfWho {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -3423,7 +3423,7 @@ impl TryFrom<ParameterList> for EndOfWho {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsIdle {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -3540,7 +3540,7 @@ impl TryFrom<ParameterList> for WhoIsIdle {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfWhoIs {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -3621,7 +3621,7 @@ impl TryFrom<ParameterList> for EndOfWhoIs {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsChannels {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -3710,7 +3710,7 @@ impl TryFrom<ParameterList> for WhoIsChannels {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsSpecial {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -3791,7 +3791,7 @@ impl TryFrom<ParameterList> for WhoIsSpecial {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ListStart {
     parameters: ParameterList,
 }
@@ -3850,7 +3850,7 @@ impl TryFrom<ParameterList> for ListStart {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct List {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -3949,7 +3949,7 @@ impl TryFrom<ParameterList> for List {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ListEnd {
     parameters: ParameterList,
 }
@@ -4008,7 +4008,7 @@ impl TryFrom<ParameterList> for ListEnd {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ChannelModeIs {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -4103,7 +4103,7 @@ impl TryFrom<ParameterList> for ChannelModeIs {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CreationTime {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -4195,7 +4195,7 @@ impl TryFrom<ParameterList> for CreationTime {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsAccount {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -4283,7 +4283,7 @@ impl TryFrom<ParameterList> for WhoIsAccount {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoTopic {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -4364,7 +4364,7 @@ impl TryFrom<ParameterList> for NoTopic {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Topic {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -4445,7 +4445,7 @@ impl TryFrom<ParameterList> for Topic {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TopicWhoTime {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -4551,7 +4551,7 @@ impl TryFrom<ParameterList> for TopicWhoTime {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct InviteList {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -4625,7 +4625,7 @@ impl TryFrom<ParameterList> for InviteList {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfInviteList {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -4693,7 +4693,7 @@ impl TryFrom<ParameterList> for EndOfInviteList {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsActually {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -4844,7 +4844,7 @@ impl TryFrom<ParameterList> for WhoIsActually {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Inviting {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -4928,7 +4928,7 @@ impl TryFrom<ParameterList> for Inviting {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct InvExList {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5009,7 +5009,7 @@ impl TryFrom<ParameterList> for InvExList {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfInvExList {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5090,7 +5090,7 @@ impl TryFrom<ParameterList> for EndOfInvExList {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExceptList {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5171,7 +5171,7 @@ impl TryFrom<ParameterList> for ExceptList {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfExceptList {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5252,7 +5252,7 @@ impl TryFrom<ParameterList> for EndOfExceptList {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Version {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5334,7 +5334,7 @@ impl TryFrom<ParameterList> for Version {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoReply {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5478,7 +5478,7 @@ impl TryFrom<ParameterList> for WhoReply {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NamReply {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5577,7 +5577,7 @@ impl TryFrom<ParameterList> for NamReply {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Links {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5681,7 +5681,7 @@ impl TryFrom<ParameterList> for Links {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfLinks {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5749,7 +5749,7 @@ impl TryFrom<ParameterList> for EndOfLinks {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfNames {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5830,7 +5830,7 @@ impl TryFrom<ParameterList> for EndOfNames {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct BanList {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -5931,7 +5931,7 @@ impl TryFrom<ParameterList> for BanList {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfBanList {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6012,7 +6012,7 @@ impl TryFrom<ParameterList> for EndOfBanList {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfWhoWas {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6093,7 +6093,7 @@ impl TryFrom<ParameterList> for EndOfWhoWas {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Info {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6161,7 +6161,7 @@ impl TryFrom<ParameterList> for Info {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Motd {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6229,7 +6229,7 @@ impl TryFrom<ParameterList> for Motd {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfInfo {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6297,7 +6297,7 @@ impl TryFrom<ParameterList> for EndOfInfo {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MotdStart {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6365,7 +6365,7 @@ impl TryFrom<ParameterList> for MotdStart {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfMotd {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6433,7 +6433,7 @@ impl TryFrom<ParameterList> for EndOfMotd {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsHost {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6514,7 +6514,7 @@ impl TryFrom<ParameterList> for WhoIsHost {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsModes {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6595,7 +6595,7 @@ impl TryFrom<ParameterList> for WhoIsModes {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct YoureOper {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6663,7 +6663,7 @@ impl TryFrom<ParameterList> for YoureOper {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Rehashing {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6738,7 +6738,7 @@ impl TryFrom<ParameterList> for Rehashing {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Time {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6840,7 +6840,7 @@ impl TryFrom<ParameterList> for Time {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UnknownError {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -6933,7 +6933,7 @@ impl TryFrom<ParameterList> for UnknownError {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoSuchNick {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7014,7 +7014,7 @@ impl TryFrom<ParameterList> for NoSuchNick {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoSuchServer {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7089,7 +7089,7 @@ impl TryFrom<ParameterList> for NoSuchServer {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoSuchChannel {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7170,7 +7170,7 @@ impl TryFrom<ParameterList> for NoSuchChannel {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CannotSendToChan {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7251,7 +7251,7 @@ impl TryFrom<ParameterList> for CannotSendToChan {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TooManyChannels {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7332,7 +7332,7 @@ impl TryFrom<ParameterList> for TooManyChannels {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WasNoSuchNick {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7413,7 +7413,7 @@ impl TryFrom<ParameterList> for WasNoSuchNick {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoOrigin {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7483,7 +7483,7 @@ impl TryFrom<ParameterList> for NoOrigin {
 
 // Specified by
 // <https://ircv3.net/specs/extensions/capability-negotiation.html>
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct InvalidCapCmd {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7551,7 +7551,7 @@ impl TryFrom<ParameterList> for InvalidCapCmd {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoRecipient {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7619,7 +7619,7 @@ impl TryFrom<ParameterList> for NoRecipient {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoTextToSend {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7687,7 +7687,7 @@ impl TryFrom<ParameterList> for NoTextToSend {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct InputTooLong {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7755,7 +7755,7 @@ impl TryFrom<ParameterList> for InputTooLong {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UnknownCommand {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7836,7 +7836,7 @@ impl TryFrom<ParameterList> for UnknownCommand {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoMotd {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7904,7 +7904,7 @@ impl TryFrom<ParameterList> for NoMotd {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoNicknameGiven {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -7972,7 +7972,7 @@ impl TryFrom<ParameterList> for NoNicknameGiven {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ErroneousNickname {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8047,7 +8047,7 @@ impl TryFrom<ParameterList> for ErroneousNickname {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NicknameInUse {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8128,7 +8128,7 @@ impl TryFrom<ParameterList> for NicknameInUse {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NickCollision {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8209,7 +8209,7 @@ impl TryFrom<ParameterList> for NickCollision {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UserNotInChannel {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8300,7 +8300,7 @@ impl TryFrom<ParameterList> for UserNotInChannel {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NotOnChannel {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8381,7 +8381,7 @@ impl TryFrom<ParameterList> for NotOnChannel {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UserOnChannel {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8472,7 +8472,7 @@ impl TryFrom<ParameterList> for UserOnChannel {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NotRegistered {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8540,7 +8540,7 @@ impl TryFrom<ParameterList> for NotRegistered {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NeedMoreParams {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8621,7 +8621,7 @@ impl TryFrom<ParameterList> for NeedMoreParams {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AlreadyRegistered {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8689,7 +8689,7 @@ impl TryFrom<ParameterList> for AlreadyRegistered {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PasswdMismatch {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8757,7 +8757,7 @@ impl TryFrom<ParameterList> for PasswdMismatch {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct YoureBannedCreep {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8825,7 +8825,7 @@ impl TryFrom<ParameterList> for YoureBannedCreep {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ChannelIsFull {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8906,7 +8906,7 @@ impl TryFrom<ParameterList> for ChannelIsFull {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UnknownMode {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -8981,7 +8981,7 @@ impl TryFrom<ParameterList> for UnknownMode {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct InviteOnlyChan {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9062,7 +9062,7 @@ impl TryFrom<ParameterList> for InviteOnlyChan {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct BannedFromChan {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9143,7 +9143,7 @@ impl TryFrom<ParameterList> for BannedFromChan {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct BadChannelKey {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9224,7 +9224,7 @@ impl TryFrom<ParameterList> for BadChannelKey {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct BadChanMask {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9299,7 +9299,7 @@ impl TryFrom<ParameterList> for BadChanMask {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoPrivileges {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9367,7 +9367,7 @@ impl TryFrom<ParameterList> for NoPrivileges {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ChanOPrivsNeeded {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9448,7 +9448,7 @@ impl TryFrom<ParameterList> for ChanOPrivsNeeded {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CantKillServer {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9516,7 +9516,7 @@ impl TryFrom<ParameterList> for CantKillServer {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoOperHost {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9584,7 +9584,7 @@ impl TryFrom<ParameterList> for NoOperHost {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UmodeUnknownFlag {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9652,7 +9652,7 @@ impl TryFrom<ParameterList> for UmodeUnknownFlag {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsersDontMatch {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9720,7 +9720,7 @@ impl TryFrom<ParameterList> for UsersDontMatch {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct HelpNotFound {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9795,7 +9795,7 @@ impl TryFrom<ParameterList> for HelpNotFound {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct InvalidKey {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9876,7 +9876,7 @@ impl TryFrom<ParameterList> for InvalidKey {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StartTLS {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -9944,7 +9944,7 @@ impl TryFrom<ParameterList> for StartTLS {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIsSecure {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10025,7 +10025,7 @@ impl TryFrom<ParameterList> for WhoIsSecure {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StartTLSError {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10093,7 +10093,7 @@ impl TryFrom<ParameterList> for StartTLSError {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct InvalidModeParam {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10188,7 +10188,7 @@ impl TryFrom<ParameterList> for InvalidModeParam {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct HelpStart {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10263,7 +10263,7 @@ impl TryFrom<ParameterList> for HelpStart {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct HelpTxt {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10338,7 +10338,7 @@ impl TryFrom<ParameterList> for HelpTxt {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct EndOfHelp {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10413,7 +10413,7 @@ impl TryFrom<ParameterList> for EndOfHelp {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NoPrivs {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10488,7 +10488,7 @@ impl TryFrom<ParameterList> for NoPrivs {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LoggedIn {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10576,7 +10576,7 @@ impl TryFrom<ParameterList> for LoggedIn {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LoggedOut {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10657,7 +10657,7 @@ impl TryFrom<ParameterList> for LoggedOut {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct NickLocked {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10725,7 +10725,7 @@ impl TryFrom<ParameterList> for NickLocked {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SaslSuccess {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10793,7 +10793,7 @@ impl TryFrom<ParameterList> for SaslSuccess {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SaslFail {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10861,7 +10861,7 @@ impl TryFrom<ParameterList> for SaslFail {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SaslTooLong {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10929,7 +10929,7 @@ impl TryFrom<ParameterList> for SaslTooLong {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SaslAborted {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -10997,7 +10997,7 @@ impl TryFrom<ParameterList> for SaslAborted {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SaslAlready {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -11065,7 +11065,7 @@ impl TryFrom<ParameterList> for SaslAlready {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SaslMechs {
     parameters: ParameterList,
     client: ReplyTarget,
@@ -11140,7 +11140,7 @@ impl TryFrom<ParameterList> for SaslMechs {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Unknown {
     pub code: u16,
     pub parameters: ParameterList,

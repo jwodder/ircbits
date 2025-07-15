@@ -3,7 +3,7 @@
 // deduce that they cannot contain commas.
 use thiserror::Error;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Key(String);
 
 validstr!(Key, ParseKeyError, validate);

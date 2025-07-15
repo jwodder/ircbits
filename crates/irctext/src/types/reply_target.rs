@@ -5,7 +5,7 @@ use thiserror::Error;
 
 /// The target of a reply sent from a server to a client, including both
 /// numeric replies and server-to-client `CAP` messages
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ReplyTarget {
     Nick(Nickname),
     Star,
@@ -123,6 +123,6 @@ impl From<ReplyTarget> for FinalParam {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 #[error(transparent)]
 pub struct ParseReplyTargetError(#[from] ParseNicknameError);

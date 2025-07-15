@@ -4,7 +4,7 @@ use super::FinalParam;
 use std::borrow::Cow;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum CtcpMessage {
     Action(Option<CtcpParams>),
     ClientInfo(Option<CtcpParams>),
@@ -137,7 +137,7 @@ impl From<CtcpMessage> for FinalParam {
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CtcpCommand(String);
 
 validstr!(CtcpCommand, ParseCtcpCommandError, validate_cmd);
@@ -158,7 +158,7 @@ fn validate_cmd(s: &str) -> Result<(), ParseCtcpCommandError> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseCtcpCommandError {
     #[error("CTCP commands cannot be empty")]
     Empty,
@@ -166,7 +166,7 @@ pub enum ParseCtcpCommandError {
     BadCharacter,
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CtcpParams(String);
 
 validstr!(CtcpParams, ParseCtcpParamsError, validate_params);
@@ -187,7 +187,7 @@ fn validate_params(s: &str) -> Result<(), ParseCtcpParamsError> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseCtcpParamsError {
     #[error("CTCP parameters cannot be empty")]
     Empty,

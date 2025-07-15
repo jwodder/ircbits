@@ -3,7 +3,7 @@ use crate::types::Channel;
 use crate::util::{DisplayMaybeFinal, join_with_commas, split_param};
 use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Part {
     channels: Vec<Channel>,
     reason: Option<FinalParam>,

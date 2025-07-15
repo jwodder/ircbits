@@ -3,7 +3,7 @@ use crate::types::{ModeString, ModeTarget};
 use crate::{Message, ParameterList, ParameterListSizeError, RawMessage, Verb};
 use std::fmt::Write;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Mode {
     target: ModeTarget,
     modestring: Option<ModeString>,

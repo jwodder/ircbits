@@ -2,7 +2,7 @@ use crate::{FinalParam, MedialParam};
 use thiserror::Error;
 
 // Like a `MedialParam`, but not allowing commas
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct EListCond(String);
 
 validstr!(EListCond, ParseEListCondError, validate);
@@ -31,7 +31,7 @@ impl From<EListCond> for FinalParam {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseEListCondError {
     #[error("elistconds cannot be empty")]
     Empty,

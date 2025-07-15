@@ -170,6 +170,11 @@ async fn main() -> anyhow::Result<()> {
                             ClientMessage::Kick(m) => {
                                 if let Some(chan) = canon_channels.get(m.channel()) && m.users().iter().any(|nick| nick == &me) {
                                     log.log(Event::new(&network, Some(chan.as_str().to_owned()), "kicked"))?;
+                                    let chan = chan.to_owned(); // Stop borrowing from canon_channels so we can mutate it
+                                    canon_channels.remove(&chan);
+                                    if canon_channels.is_empty() {
+                                        client.send(Quit::new().into()).await?;
+                                    }
                                 }
                             }
                             _ => (),
@@ -272,5 +277,14 @@ impl ChannelCanonicalizer {
     fn get(&self, channel: &Channel) -> Option<&Channel> {
         let lower = channel.to_lowercase(self.casemapping);
         self.lower2canon.get(&lower)
+    }
+
+    fn remove(&mut self, channel: &Channel) {
+        let lower = channel.to_lowercase(self.casemapping);
+        self.lower2canon.remove(&lower);
+    }
+
+    fn is_empty(&self) -> bool {
+        self.lower2canon.is_empty()
     }
 }

@@ -189,6 +189,7 @@ impl State {
             ),
             (State::GotJoin, Reply::NamReply(r)) => (
                 State::GotNamReply(JoinOutput {
+                    channel: r.channel().to_owned(),
                     topic: None,
                     topic_setter: None,
                     topic_set_at: None,
@@ -199,6 +200,7 @@ impl State {
             ),
             (State::GotTopic { topic }, Reply::NamReply(r)) => (
                 State::GotNamReply(JoinOutput {
+                    channel: r.channel().to_owned(),
                     topic: Some(topic),
                     topic_setter: None,
                     topic_set_at: None,
@@ -216,6 +218,7 @@ impl State {
                 Reply::NamReply(r),
             ) => (
                 State::GotNamReply(JoinOutput {
+                    channel: r.channel().to_owned(),
                     topic: Some(topic),
                     topic_setter: Some(topic_setter),
                     topic_set_at: Some(topic_set_at),
@@ -247,6 +250,7 @@ impl State {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct JoinOutput {
+    pub channel: Channel,
     pub topic: Option<String>,
     pub topic_setter: Option<ClientSource>,
     pub topic_set_at: Option<u64>,

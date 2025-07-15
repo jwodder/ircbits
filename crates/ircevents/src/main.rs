@@ -55,24 +55,27 @@ struct ProgramParams {
 async fn main() -> anyhow::Result<()> {
     let args = Arguments::parse();
 
-    if args.trace {
-        let timer =
-            OffsetTime::local_rfc_3339().context("failed to determine local timezone offset")?;
-        tracing_subscriber::registry()
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .with_timer(timer)
-                    .with_ansi(stderr().is_terminal())
-                    .with_writer(stderr),
-            )
-            .with(
-                Targets::new()
-                    .with_target(env!("CARGO_CRATE_NAME"), Level::TRACE)
-                    .with_target("ircnet", Level::TRACE)
-                    .with_default(Level::INFO),
-            )
-            .init();
-    }
+    let loglevel = if args.trace {
+        Level::TRACE
+    } else {
+        Level::INFO
+    };
+    let timer =
+        OffsetTime::local_rfc_3339().context("failed to determine local timezone offset")?;
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_timer(timer)
+                .with_ansi(stderr().is_terminal())
+                .with_writer(stderr),
+        )
+        .with(
+            Targets::new()
+                .with_target(env!("CARGO_CRATE_NAME"), loglevel)
+                .with_target("ircnet", loglevel)
+                .with_default(Level::INFO),
+        )
+        .init();
 
     let cfgdata = std::fs::read(&args.config).context("failed to read configuration file")?;
     let mut cfg = toml::from_slice::<HashMap<String, Profile>>(&cfgdata)
@@ -97,6 +100,7 @@ async fn main() -> anyhow::Result<()> {
     };
     let mut log = EventLogger::new(outfile);
 
+    tracing::info!("Connecting to IRC …");
     let (mut client, login_output) = SessionBuilder::new(profile.session_params)
         .with_autoresponder(PingResponder::new())
         .with_autoresponder(
@@ -137,6 +141,7 @@ async fn main() -> anyhow::Result<()> {
 
     let mut canon_channels = ChannelCanonicalizer::new(casemapping);
     for chan in profile.ircevents.channels {
+        tracing::info!("Joining {chan} …");
         let output = client.run(JoinCommand::new(chan.clone())).await?;
         let chan = output.channel;
         log.log(Event::new(
@@ -169,19 +174,25 @@ async fn main() -> anyhow::Result<()> {
                             }
                             ClientMessage::Kick(m) => {
                                 if let Some(chan) = canon_channels.get(m.channel()) && m.users().iter().any(|nick| nick == &me) {
+                                    tracing::info!(comment = m.comment().map(ToString::to_string), "Kicked from {chan}");
                                     log.log(Event::new(&network, Some(chan.as_str().to_owned()), "kicked"))?;
                                     let chan = chan.to_owned(); // Stop borrowing from canon_channels so we can mutate it
                                     canon_channels.remove(&chan);
                                     if canon_channels.is_empty() {
+                                        tracing::info!("No channels left; quitting");
                                         client.send(Quit::new().into()).await?;
                                     }
                                 }
+                            }
+                            ClientMessage::Error(m) => {
+                                tracing::info!("Server sent ERROR message: {}", m.reason());
                             }
                             _ => (),
                         }
                     }
                     Ok(Some(_)) => (),
                     Ok(None) => {
+                        tracing::info!("Connection closed");
                         log.log(Event::new(&network, None, "disconnected"))?;
                         break;
                     }
@@ -192,6 +203,7 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
             () = recv_stop_signal() => {
+                tracing::info!("Signal received; quitting");
                 client.send(Quit::new_with_reason("Terminated".parse::<FinalParam>().expect(r#""Terminated" should be valid FinalParam"#)).into()).await?;
             }
         }

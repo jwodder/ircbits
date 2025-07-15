@@ -13,6 +13,7 @@ futures-util = { version = "0.3.31", default-features = false, features = ["sink
 irctext = { path = "../irctext" }
 itertools = "0.14.0"
 jiff = "0.2.15"
+replace_with = "0.1.8"
 rustls-native-certs = "0.8.1"
 rustls-pki-types = "1.10.0"
 serde = { version = "1.0.219", features = ["derive"], optional = true }

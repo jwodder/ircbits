@@ -1,7 +1,7 @@
 //! Low-level IRC connection & communication facilities
 pub mod codecs;
 pub mod consts;
-use self::codecs::{MessageCodec, RawMessageCodec};
+use self::codecs::{LinesCodec, MessageCodec, RawMessageCodec};
 use itertools::Itertools; // join
 use rustls_pki_types::{InvalidDnsNameError, ServerName};
 use std::sync::Arc;
@@ -16,6 +16,8 @@ use tokio_util::{codec::Framed, either::Either};
 pub type TlsStream = tokio_rustls::client::TlsStream<TcpStream>;
 
 pub type Connection = Either<TcpStream, TlsStream>;
+
+pub type LinesChannel = Framed<Connection, LinesCodec>;
 
 pub type RawMessageChannel = Framed<Connection, RawMessageCodec>;
 

@@ -7,13 +7,13 @@ use self::autoresponders::AutoResponderSet;
 pub use self::builder::*;
 pub use self::commands::Command;
 use crate::connect::{
-    ConnectionError, MessageChannel,
-    codecs::{MessageCodec, MessageCodecError},
+    ConnectionError, LinesChannel,
+    codecs::{LinesCodec, LinesCodecError},
     connect,
     consts::MAX_LINE_LENGTH,
 };
 use futures_util::{SinkExt, TryStreamExt};
-use irctext::{ClientMessage, ClientMessageParts, Message};
+use irctext::{ClientMessage, ClientMessageParts, Message, ParseMessageError, TryFromStringError};
 use std::collections::VecDeque;
 use thiserror::Error;
 use tokio::time::{Instant, timeout_at};
@@ -32,9 +32,8 @@ pub struct Client {
     /// Name of remote host; used in log messages
     host: String,
 
-    /// The TCP connection to the server, as a stream of `Message`s and a sink
-    /// for `ClientMessage`s
-    channel: MessageChannel,
+    /// The TCP connection to the server, as a stream & sink of lines
+    channel: LinesChannel,
 
     /// Set of `AutoResponder`s installed on this client
     autoresponders: AutoResponderSet,
@@ -58,7 +57,7 @@ impl Client {
     /// is true, the connection will use SSL/TLS.
     pub async fn connect(params: ConnectionParams) -> Result<Client, ClientError> {
         let conn = connect(&params.host, params.port, params.tls).await?;
-        let codec = MessageCodec::new_with_max_length(MAX_LINE_LENGTH);
+        let codec = LinesCodec::new_with_max_length(MAX_LINE_LENGTH);
         let channel = Framed::new(conn, codec);
         let autoresponders = AutoResponderSet::new();
         Ok(Client {
@@ -87,12 +86,9 @@ impl Client {
     /// If this method is cancelled, it is guaranteed that the message was not
     /// sent, but the message itself is lost.
     pub async fn send(&mut self, msg: ClientMessage) -> Result<(), ClientError> {
-        tracing::trace!(
-            host = self.host,
-            msg = msg.to_irc_line(),
-            "Sending message to remote server"
-        );
-        self.channel.send(msg).await.map_err(ClientError::Send)
+        let line = msg.to_irc_line();
+        tracing::trace!(host = self.host, line, "Sending message to remote server");
+        self.channel.send(line).await.map_err(ClientError::Send)
     }
 
     /// Receive the next message from the server that is not handled by an
@@ -142,12 +138,13 @@ impl Client {
                 return Ok(Some(msg));
             }
             let r = self.channel.try_next().await.map_err(ClientError::Recv)?;
-            if let Some(msg) = r {
+            if let Some(line) = r {
                 tracing::trace!(
                     host = self.host,
-                    msg = msg.to_string(),
+                    line,
                     "Received message from remote server"
                 );
+                let msg = Message::try_from(line)?;
                 // Store outgoing client messages and the received message on
                 // self in order to not lose data on cancellation
                 let handled = self.autoresponders.handle_message(&msg);
@@ -170,8 +167,14 @@ impl Client {
     ///
     /// This method is cancellation-safe.
     async fn flush_queue(&mut self) -> Result<(), ClientError> {
-        while let Some(msg) = self.queued.front().cloned() {
-            let r = self.send(msg).await;
+        while let Some(msg) = self.queued.front() {
+            let line = msg.to_irc_line();
+            tracing::trace!(
+                host = self.host,
+                line,
+                "Sending autoresponse to remote server"
+            );
+            let r = self.channel.send(line).await.map_err(ClientError::Send);
             let _ = self.queued.pop_front();
             r?;
         }
@@ -242,9 +245,11 @@ pub enum ClientError {
     #[error("failed to connect to IRC server")]
     Connect(#[from] ConnectionError),
     #[error("failed to send message to server")]
-    Send(#[source] MessageCodecError),
+    Send(#[source] LinesCodecError),
     #[error("failed to receive message from server")]
-    Recv(#[source] MessageCodecError),
+    Recv(#[source] LinesCodecError),
+    #[error("failed to parse incoming message")]
+    Parse(#[from] TryFromStringError<ParseMessageError>),
     #[error("command failed")]
     Command(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("connection terminated while running command")]

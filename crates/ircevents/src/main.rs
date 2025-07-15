@@ -8,7 +8,7 @@ use ircnet::client::{
 };
 use irctext::{
     CaseMapping, ClientMessage, FinalParam, Message, Payload,
-    clientmsgs::Quit,
+    clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
     types::{Channel, ISupportParam, MsgTarget},
 };
@@ -48,6 +48,7 @@ struct Profile {
 #[derive(Clone, Debug, Default, serde::Deserialize, Eq, PartialEq)]
 struct ProgramParams {
     channels: Vec<Channel>,
+    away: Option<FinalParam>,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -129,6 +130,10 @@ async fn main() -> anyhow::Result<()> {
         })
         .unwrap_or_default();
     let me = login_output.my_nick;
+
+    if let Some(p) = profile.ircevents.away {
+        client.send(Away::new(p).into()).await?;
+    }
 
     let mut canon_channels = ChannelCanonicalizer::new(casemapping);
     for chan in profile.ircevents.channels {

@@ -28,6 +28,9 @@ impl Authenticate {
                     unreachable!("base64 text should be valid final param");
                 };
                 msgs.push(Authenticate::new(param));
+                if end < 400 && b64.is_empty() {
+                    return msgs;
+                }
             }
         }
     }

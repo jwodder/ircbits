@@ -2,7 +2,7 @@ use crate::{FinalParam, MedialParam, TryFromStringError};
 use std::fmt;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ISupportParam {
     Set(ISupportKey),
     Unset(ISupportKey),
@@ -91,7 +91,7 @@ impl From<ISupportParam> for FinalParam {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseISupportParamError {
     #[error("invalid ISUPPORT key")]
     Key(#[from] ParseISupportKeyError),
@@ -102,7 +102,7 @@ pub enum ParseISupportParamError {
 
 // modern.ircdocs.horse says that ISUPPORT keys should be limited to 20
 // characters, but I'm not going to enforce that.
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq, PartialOrd)]
 pub struct ISupportKey(String);
 
 validstr!(ISupportKey, ParseISupportKeyError, validate);
@@ -117,7 +117,7 @@ fn validate(s: &str) -> Result<(), ParseISupportKeyError> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseISupportKeyError {
     #[error("ISUPPORT keys cannot be empty")]
     Empty,
@@ -125,7 +125,7 @@ pub enum ParseISupportKeyError {
     BadCharacter,
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ISupportValue(String);
 
 impl ISupportValue {
@@ -242,7 +242,7 @@ impl<'a> PartialEq<&'a str> for ISupportValue {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseISupportValueError {
     #[error("ISUPPORT values must only contain printable non-space ASCII characters")]
     BadCharacter,
@@ -250,7 +250,7 @@ pub enum ParseISupportValueError {
     BadEscape,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct EscapedISupportValue<'a>(&'a ISupportValue);
 
 impl fmt::Display for EscapedISupportValue<'_> {

@@ -5,10 +5,10 @@ use crate::{
     FinalParam, MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage, Verb,
 };
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Join(InnerJoin);
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 enum InnerJoin {
     Channels {
         channels: Vec<Channel>,

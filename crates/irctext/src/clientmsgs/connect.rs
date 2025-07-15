@@ -2,7 +2,7 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::{MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage, Verb};
 use std::fmt::Write;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Connect {
     target_server: MedialParam,
     port: Option<u16>,

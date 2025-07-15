@@ -6,7 +6,7 @@ use std::fmt;
 use thiserror::Error;
 
 /// The target of a `MODE` message
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ModeTarget {
     Channel(Channel),
     Nick(Nickname),
@@ -145,7 +145,7 @@ impl PartialEq<Nickname> for ModeTarget {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseModeTargetError {
     #[error(transparent)]
     Channel(#[from] ParseChannelError),

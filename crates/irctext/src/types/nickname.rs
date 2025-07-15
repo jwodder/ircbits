@@ -33,7 +33,7 @@ use crate::{CaseMapping, FinalParam, MedialParam};
 use std::borrow::Cow;
 use thiserror::Error;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Nickname(String);
 
 validstr!(Nickname, ParseNicknameError, validate);
@@ -99,7 +99,7 @@ impl PartialEq<ReplyTarget> for Nickname {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseNicknameError {
     #[error("nicknames cannot be empty")]
     Empty,

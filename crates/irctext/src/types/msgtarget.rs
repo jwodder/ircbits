@@ -6,7 +6,7 @@ use std::fmt;
 use thiserror::Error;
 
 /// The target of a `PRIVMSG` or `NOTICE` message
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum MsgTarget {
     Channel(Channel),
     Nick(Nickname),
@@ -154,7 +154,7 @@ impl PartialEq<Nickname> for MsgTarget {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseMsgTargetError {
     #[error(transparent)]
     Channel(#[from] ParseChannelError),

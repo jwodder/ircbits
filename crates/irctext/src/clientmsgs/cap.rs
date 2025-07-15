@@ -25,7 +25,7 @@ use thiserror::Error;
 // subcommand parameter — we can reliably determine whether a message being
 // parsed has a `<nick-or-star>` parameter.
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Cap {
     LsRequest(CapLsRequest),
     LsResponse(CapLsResponse),
@@ -311,7 +311,7 @@ impl TryFrom<ParameterList> for Cap {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct CapLsRequest {
     pub version: Option<u32>,
 }
@@ -377,7 +377,7 @@ impl From<CapLsRequest> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CapLsResponse {
     pub target: ReplyTarget,
     // Whether there's an asterisk parameter between the subcommand and the
@@ -459,7 +459,7 @@ impl From<CapLsResponse> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CapListRequest;
 
 impl ClientMessageParts for CapListRequest {
@@ -502,7 +502,7 @@ impl From<CapListRequest> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CapListResponse {
     pub target: ReplyTarget,
     // Whether there's an asterisk parameter between the subcommand and the
@@ -566,7 +566,7 @@ impl From<CapListResponse> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CapReq {
     pub capabilities: Vec<CapabilityRequest>,
 }
@@ -617,7 +617,7 @@ impl From<CapReq> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CapAck {
     pub target: ReplyTarget,
     pub capabilities: Vec<CapabilityRequest>,
@@ -671,7 +671,7 @@ impl From<CapAck> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CapNak {
     pub target: ReplyTarget,
     pub capabilities: Vec<Capability>,
@@ -725,7 +725,7 @@ impl From<CapNak> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CapEnd;
 
 impl ClientMessageParts for CapEnd {
@@ -768,7 +768,7 @@ impl From<CapEnd> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CapNew {
     pub target: ReplyTarget,
     pub capabilities: Vec<Capability>,
@@ -822,7 +822,7 @@ impl From<CapNew> for RawMessage {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CapDel {
     pub target: ReplyTarget,
     pub capabilities: Vec<Capability>,
@@ -876,7 +876,7 @@ impl From<CapDel> for RawMessage {
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Capability(String);
 
 validstr!(Capability, ParseCapabilityError, validate_capability);
@@ -915,7 +915,7 @@ pub enum ParseCapabilityError {
     BadCharacter,
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct CapabilityValue(String);
 
 validstr!(
@@ -949,7 +949,7 @@ impl From<CapabilityValue> for FinalParam {
 #[error("capability values cannot contain NUL, CR, LF, or SPACE")]
 pub struct ParseCapabilityValueError;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CapabilityRequest {
     pub capability: Capability,
     pub disable: bool,

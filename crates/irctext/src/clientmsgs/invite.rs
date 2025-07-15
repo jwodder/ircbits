@@ -2,7 +2,7 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::{Channel, Nickname};
 use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Invite {
     nickname: Nickname,
     channel: Channel,

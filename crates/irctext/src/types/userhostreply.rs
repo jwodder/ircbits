@@ -6,7 +6,7 @@ use thiserror::Error;
 const IS_AWAY: char = '-';
 const NOT_AWAY: char = '+';
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UserHostReply {
     pub nickname: Nickname,
     pub is_op: bool,
@@ -85,7 +85,7 @@ impl From<UserHostReply> for FinalParam {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseUserHostReplyError {
     #[error("equals sign missing")]
     NoEq,

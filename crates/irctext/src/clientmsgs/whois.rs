@@ -2,7 +2,7 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::Nickname;
 use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoIs {
     target: Option<MedialParam>,
     nickname: Nickname,

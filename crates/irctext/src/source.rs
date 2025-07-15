@@ -15,7 +15,7 @@ use std::fmt;
 use thiserror::Error;
 use url::Host;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Source {
     Server(Host),
     Client(ClientSource),
@@ -88,7 +88,7 @@ impl PartialEq<ClientSource> for Source {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ClientSource {
     pub nickname: Nickname,
     // Note that the user component may begin with a tilde if the IRC server
@@ -155,7 +155,7 @@ pub enum ParseSourceError {
     Client(#[from] ParseClientSourceError),
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseClientSourceError {
     #[error("invalid nickname")]
     Nickname(#[from] ParseNicknameError),

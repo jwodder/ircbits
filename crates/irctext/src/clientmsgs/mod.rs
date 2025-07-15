@@ -99,7 +99,7 @@ pub trait ClientMessageParts {
 }
 
 #[enum_dispatch(ClientMessageParts)] // This also gives us From and TryInto
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ClientMessage {
     Admin,
     Authenticate,
@@ -209,7 +209,7 @@ impl From<ClientMessage> for RawMessage {
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(Clone, Debug, Eq, Error, PartialEq)]
 pub enum ClientMessageError {
     #[error("unknown/unrecognized client message verb {0:?}")]
     Unknown(String),

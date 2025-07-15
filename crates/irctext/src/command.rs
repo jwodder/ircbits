@@ -2,7 +2,7 @@ use super::verb::Verb;
 use std::fmt;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Command {
     Verb(Verb),
     Reply(u16),
@@ -74,6 +74,6 @@ impl PartialEq<u16> for Command {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 #[error("invalid command")]
 pub struct ParseCommandError;

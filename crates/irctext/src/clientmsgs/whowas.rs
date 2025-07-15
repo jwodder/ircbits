@@ -4,7 +4,7 @@ use crate::util::DisplayMaybeFinal;
 use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
 use std::num::NonZeroUsize;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WhoWas {
     nickname: Nickname,
     count: Option<NonZeroUsize>,

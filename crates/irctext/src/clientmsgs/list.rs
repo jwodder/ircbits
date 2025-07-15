@@ -3,7 +3,7 @@ use crate::types::{Channel, EListCond, channel::channel_prefixed};
 use crate::util::{join_with_commas, split_param};
 use crate::{MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage, Verb};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct List {
     channels: Vec<Channel>,
     elistconds: Vec<EListCond>,

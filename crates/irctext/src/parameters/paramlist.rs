@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 use std::fmt;
 use thiserror::Error;
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct ParameterList {
     medial: Vec<MedialParam>,
     finalp: Option<FinalParam>,
@@ -332,7 +332,7 @@ impl TryFrom<ParameterList> for (MedialParam, MedialParam, MedialParam, FinalPar
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseParameterListError {
     #[error(transparent)]
     Medial(#[from] ParseMedialParamError),
@@ -340,7 +340,7 @@ pub enum ParseParameterListError {
     Final(#[from] ParseFinalParamError),
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParameterListSizeError {
     #[error("invalid number of parameters: {required} required, {received} received")]
     Exact { required: usize, received: usize },
@@ -354,7 +354,7 @@ pub enum ParameterListSizeError {
     },
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct ParameterListBuilder(ParameterList);
 
 impl ParameterListBuilder {

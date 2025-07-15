@@ -14,7 +14,7 @@ use crate::{CaseMapping, FinalParam, MedialParam};
 use std::borrow::Cow;
 use thiserror::Error;
 
-#[derive(Clone, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Channel(String);
 
 validstr!(Channel, ParseChannelError, validate);
@@ -72,7 +72,7 @@ impl PartialEq<MsgTarget> for Channel {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseChannelError {
     #[error("channels must start with '#' or '&'")]
     BadStart,

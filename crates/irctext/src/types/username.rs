@@ -3,7 +3,7 @@
 use crate::{FinalParam, MedialParam};
 use thiserror::Error;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Username(String);
 
 validstr!(Username, ParseUsernameError, validate);
@@ -33,7 +33,7 @@ impl From<Username> for FinalParam {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseUsernameError {
     #[error("usernames cannot be empty")]
     Empty,

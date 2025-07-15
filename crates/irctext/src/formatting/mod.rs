@@ -118,7 +118,7 @@ impl<'a> From<&'a str> for StyledSpan<'a> {
 
 #[cfg(feature = "anstyle")]
 #[cfg_attr(docsrs, doc(cfg(feature = "anstyle")))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RenderStyledSpan<'a, 'b>(&'a StyledSpan<'b>);
 
 #[cfg(feature = "anstyle")]
@@ -297,7 +297,7 @@ impl<'a> StyledLine<'a> {
 
 #[cfg(feature = "anstyle")]
 #[cfg_attr(docsrs, doc(cfg(feature = "anstyle")))]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RenderStyledLine<'a, 'b>(&'a StyledLine<'b>);
 
 #[cfg(feature = "anstyle")]

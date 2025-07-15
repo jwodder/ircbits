@@ -1,12 +1,9 @@
 use anyhow::Context;
 use clap::Parser;
-use ircnet::{
-    client::{
-        ClientError, SessionBuilder, SessionParams,
-        autoresponders::{CtcpQueryResponder, PingResponder},
-        commands::JoinCommand,
-    },
-    connect::codecs::MessageCodecError,
+use ircnet::client::{
+    ClientError, SessionBuilder, SessionParams,
+    autoresponders::{CtcpQueryResponder, PingResponder},
+    commands::JoinCommand,
 };
 use irctext::{
     ClientMessage, FinalParam, Message, Payload, Source,
@@ -188,7 +185,7 @@ async fn main() -> anyhow::Result<()> {
                         report("* Disconnected");
                         break;
                     }
-                    Err(ClientError::Recv(MessageCodecError::Parse(e))) => {
+                    Err(ClientError::Parse(e)) => {
                         report(&format!("[PARSE FAILURE] {:?}", anyhow::Error::new(e)));
                     }
                     Err(e) => return Err(e.into()),

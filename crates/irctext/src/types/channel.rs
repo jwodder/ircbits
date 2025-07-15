@@ -14,7 +14,7 @@ use crate::{CaseMapping, FinalParam, MedialParam};
 use std::borrow::Cow;
 use thiserror::Error;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Channel(String);
 
 validstr!(Channel, ParseChannelError, validate);

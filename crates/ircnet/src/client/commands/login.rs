@@ -23,6 +23,13 @@ pub struct LoginParams {
     pub nickname: Nickname,
     pub username: Username,
     pub realname: FinalParam,
+    #[cfg_attr(feature = "serde", serde(default = "default_sasl"))]
+    pub sasl: bool,
+}
+
+#[cfg(feature = "serde")]
+fn default_sasl() -> bool {
+    true
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -39,14 +46,24 @@ impl Login {
                 .into_iter()
                 .map(ClientMessage::from)
                 .collect::<Vec<_>>();
-        let cap_ls = ClientMessage::from(CapLsRequest::new_with_version(302));
-        let pass = ClientMessage::from(Pass::new(params.password));
-        let nick = ClientMessage::from(Nick::new(params.nickname));
-        let user = ClientMessage::from(User::new(params.username, params.realname));
+        let mut outgoing = Vec::with_capacity(4);
+        if params.sasl {
+            outgoing.push(ClientMessage::from(CapLsRequest::new_with_version(302)));
+        }
+        outgoing.push(ClientMessage::from(Pass::new(params.password)));
+        outgoing.push(ClientMessage::from(Nick::new(params.nickname)));
+        outgoing.push(ClientMessage::from(User::new(
+            params.username,
+            params.realname,
+        )));
         Login {
-            outgoing: vec![cap_ls, pass, nick, user],
+            outgoing,
             auth_msgs,
-            state: State::Start,
+            state: if params.sasl {
+                State::Start
+            } else {
+                State::Awaiting001 { capabilities: None }
+            },
         }
     }
 }
@@ -763,13 +780,13 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore]
     fn plain_login() {
         let params = LoginParams {
             password: "hunter2".parse::<FinalParam>().unwrap(),
             nickname: "jwodder".parse::<Nickname>().unwrap(),
             username: "jwuser".parse::<Username>().unwrap(),
             realname: "Just this guy, you know?".parse::<FinalParam>().unwrap(),
+            sasl: false,
         };
         let mut cmd = Login::new(params);
         let outgoing = cmd.get_client_messages();
@@ -979,6 +996,7 @@ mod tests {
             nickname: "jwodder".parse::<Nickname>().unwrap(),
             username: "jwuser".parse::<Username>().unwrap(),
             realname: "Just this guy, you know?".parse::<FinalParam>().unwrap(),
+            sasl: true,
         };
         let mut cmd = Login::new(params);
 

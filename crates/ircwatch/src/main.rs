@@ -312,6 +312,13 @@ fn format_msg(msg: Message) -> String {
         Payload::ClientMessage(ClientMessage::Wallops(m)) => {
             format!("[WALLOPS] {}", ircfmt_to_ansi(m.text()))
         }
+        Payload::ClientMessage(ClientMessage::Mode(m)) if m.modestring().is_some() => {
+            let mut comment = m.modestring().expect("is some").to_string();
+            if !m.arguments().is_empty() {
+                write!(&mut comment, " {}", m.arguments()).unwrap();
+            }
+            format!("* {sender} changed the mode for {}: {comment}", m.target())
+        }
         Payload::ClientMessage(_) => format!("[OTHER] Unexpected client message: {msg}"),
         Payload::Reply(_) => format!("[OTHER] Unexpected reply: {msg}"),
     }

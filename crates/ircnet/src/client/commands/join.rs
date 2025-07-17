@@ -2,7 +2,7 @@ use super::Command;
 use irctext::{
     ClientMessage, ClientSource, Message, Payload, Reply, ReplyParts,
     clientmsgs::Join,
-    types::{Channel, ChannelStatus, Key, Nickname},
+    types::{Channel, ChannelMembership, ChannelStatus, Key, Nickname},
 };
 use std::time::Duration;
 use thiserror::Error;
@@ -255,7 +255,7 @@ pub struct JoinOutput {
     pub topic_setter: Option<ClientSource>,
     pub topic_set_at: Option<u64>,
     pub channel_status: ChannelStatus,
-    pub users: Vec<(Option<char>, Nickname)>,
+    pub users: Vec<(Option<ChannelMembership>, Nickname)>,
 }
 
 #[derive(Clone, Debug, Eq, Error, PartialEq)]

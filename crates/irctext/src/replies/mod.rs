@@ -1,9 +1,9 @@
 use crate::types::{
-    Channel, ChannelStatus, ISupportParam, ModeString, ModeTarget, MsgTarget, Nickname,
-    ParseChannelError, ParseChannelStatusError, ParseISupportParamError, ParseModeStringError,
-    ParseModeTargetError, ParseMsgTargetError, ParseNicknameError, ParseReplyTargetError,
-    ParseUserHostReplyError, ParseUsernameError, ParseWhoFlagsError, ReplyTarget, UserHostReply,
-    Username, WhoFlags,
+    Channel, ChannelMembership, ChannelStatus, ISupportParam, ModeString, ModeTarget, MsgTarget,
+    Nickname, ParseChannelError, ParseChannelStatusError, ParseISupportParamError,
+    ParseModeStringError, ParseModeTargetError, ParseMsgTargetError, ParseNicknameError,
+    ParseReplyTargetError, ParseUserHostReplyError, ParseUsernameError, ParseWhoFlagsError,
+    ReplyTarget, UserHostReply, Username, WhoFlags,
 };
 use crate::util::{pop_channel_membership, split_spaces, split_word};
 use crate::{
@@ -3626,7 +3626,7 @@ pub struct WhoIsChannels {
     parameters: ParameterList,
     client: ReplyTarget,
     nickname: Nickname,
-    channels: Vec<(Option<char>, Channel)>,
+    channels: Vec<(Option<ChannelMembership>, Channel)>,
 }
 
 impl WhoIsChannels {
@@ -3638,7 +3638,7 @@ impl WhoIsChannels {
         &self.nickname
     }
 
-    pub fn channels(&self) -> &[(Option<char>, Channel)] {
+    pub fn channels(&self) -> &[(Option<ChannelMembership>, Channel)] {
         &self.channels
     }
 }
@@ -5484,7 +5484,7 @@ pub struct NamReply {
     client: ReplyTarget,
     channel_status: ChannelStatus,
     channel: Channel,
-    clients: Vec<(Option<char>, Nickname)>,
+    clients: Vec<(Option<ChannelMembership>, Nickname)>,
 }
 
 impl NamReply {
@@ -5500,7 +5500,7 @@ impl NamReply {
         &self.channel
     }
 
-    pub fn clients(&self) -> &[(Option<char>, Nickname)] {
+    pub fn clients(&self) -> &[(Option<ChannelMembership>, Nickname)] {
         &self.clients
     }
 }

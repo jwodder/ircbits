@@ -59,7 +59,7 @@ mod whoisactually {
             assert_eq!(r.clients(), [
                 (None, "dostoyevsky2".parse::<Nickname>().unwrap()),
                 (None, "tk".parse::<Nickname>().unwrap()),
-                (Some('@'), "litharge".parse::<Nickname>().unwrap()),
+                (Some(ChannelMembership::Operator), "litharge".parse::<Nickname>().unwrap()),
                 (None, "snowolf".parse::<Nickname>().unwrap()),
                 (None, "DarthOreo".parse::<Nickname>().unwrap()),
                 (None, "enyc_".parse::<Nickname>().unwrap()),

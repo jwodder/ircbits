@@ -1,3 +1,4 @@
+use crate::types::ChannelMembership;
 use crate::util::pop_channel_membership;
 use crate::{FinalParam, MedialParam, TryFromStringError};
 use std::fmt;
@@ -11,7 +12,7 @@ const NOT_AWAY: char = 'H';
 pub struct WhoFlags {
     pub is_away: bool,
     pub is_op: bool,
-    pub channel_membership: Option<char>,
+    pub channel_membership: Option<ChannelMembership>,
     // "user mode characters and other arbitrary server-specific flags"
     pub flags: String,
 }
@@ -23,7 +24,7 @@ impl fmt::Display for WhoFlags {
             write!(f, "*")?;
         }
         if let Some(cm) = self.channel_membership {
-            write!(f, "{cm}")?;
+            write!(f, "{}", cm.as_prefix())?;
         }
         write!(f, "{}", self.flags)?;
         Ok(())

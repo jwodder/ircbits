@@ -1,4 +1,5 @@
 use crate::ClientMessageError;
+use crate::types::ChannelMembership;
 use std::fmt::{self, Write};
 
 pub(crate) fn split_word(s: &str) -> (&str, &str) {
@@ -44,13 +45,15 @@ where
         .map_err(Into::into)
 }
 
-pub(crate) fn pop_channel_membership(s: &str) -> (Option<char>, &str) {
-    for ch in crate::CHANNEL_MEMBERSHIPS {
-        if let Some(rest) = s.strip_prefix(ch) {
-            return (Some(ch), rest);
-        }
+pub(crate) fn pop_channel_membership(s: &str) -> (Option<ChannelMembership>, &str) {
+    let mut iter = s.chars();
+    if let Some(ch) = iter.next()
+        && let Some(mem) = ChannelMembership::from_prefix(ch)
+    {
+        (Some(mem), iter.as_str())
+    } else {
+        (None, s)
     }
-    (None, s)
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

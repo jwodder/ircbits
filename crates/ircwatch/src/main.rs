@@ -10,7 +10,7 @@ use irctext::{
     clientmsgs::Quit,
     ctcp::{CtcpMessage, CtcpParams},
     formatting::StyledLine,
-    types::Channel,
+    types::{Channel, ChannelMembership},
 };
 use itertools::Itertools; // join
 use std::collections::HashMap;
@@ -150,11 +150,11 @@ async fn main() -> anyhow::Result<()> {
         for (prefix, _) in output.users {
             users += 1;
             match prefix {
-                Some('~') => founders += 1,
-                Some('&') => protected += 1,
-                Some('@') => operators += 1,
-                Some('%') => halfops += 1,
-                Some('+') => voiced += 1,
+                Some(ChannelMembership::Founder) => founders += 1,
+                Some(ChannelMembership::Protected) => protected += 1,
+                Some(ChannelMembership::Operator) => operators += 1,
+                Some(ChannelMembership::HalfOperator) => halfops += 1,
+                Some(ChannelMembership::Voiced) => voiced += 1,
                 _ => (),
             }
         }

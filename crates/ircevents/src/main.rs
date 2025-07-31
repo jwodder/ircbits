@@ -197,8 +197,10 @@ async fn main() -> anyhow::Result<()> {
                         break;
                     }
                     Err(e) => {
+                        let e = anyhow::Error::new(e);
+                        tracing::error!(?e, "Error communicating with server");
                         log.log(Event::new(&network, None, "error"))?;
-                        return Err(e.into());
+                        return Err(e);
                     }
                 }
             }

@@ -220,7 +220,7 @@ impl<'a> StyledLine<'a> {
                         }
                         ColorDiff::SetFg(color) => match color {
                             Color::Color100(c) => {
-                                write!(&mut s, "{COLOR_CHAR}{:02}", u8::from(c)).unwrap();
+                                let _ = write!(&mut s, "{COLOR_CHAR}{:02}", u8::from(c));
                                 if span.content.starts_with(',')
                                     && span.content[1..].starts_with(|ch: char| ch.is_ascii_digit())
                                 {
@@ -229,36 +229,33 @@ impl<'a> StyledLine<'a> {
                                 }
                             }
                             Color::Rgb(RgbColor(r, g, b)) => {
-                                write!(&mut s, "{HEX_COLOR_CHAR}{r:02x}{g:02x}{b:02x}").unwrap();
+                                let _ = write!(&mut s, "{HEX_COLOR_CHAR}{r:02x}{g:02x}{b:02x}");
                             }
                         },
                         ColorDiff::SetBoth { fg, bg } => match (fg, bg) {
                             (Color::Color100(fg), Color::Color100(bg)) => {
-                                write!(
+                                let _ = write!(
                                     &mut s,
                                     "{COLOR_CHAR}{:02},{:02}",
                                     u8::from(fg),
                                     u8::from(bg)
-                                )
-                                .unwrap();
+                                );
                             }
                             (
                                 Color::Rgb(RgbColor(r1, g1, b1)),
                                 Color::Rgb(RgbColor(r2, g2, b2)),
                             ) => {
-                                write!(
+                                let _ = write!(
                                     &mut s,
                                     "{HEX_COLOR_CHAR}{r1:02x}{g1:02x}{b1:02x},{r2:02x}{g2:02x}{b2:02x}",
-                                )
-                                .unwrap();
+                                );
                             }
                             (Color::Color100(fg), Color::Rgb(RgbColor(r, g, b))) => {
-                                write!(
+                                let _ = write!(
                                     &mut s,
                                     "{HEX_COLOR_CHAR}000000,{r:02x}{g:02x}{b:02x}{COLOR_CHAR}{:02}",
                                     u8::from(fg)
-                                )
-                                .unwrap();
+                                );
                                 if span.content.starts_with(',')
                                     && span.content[1..].starts_with(|ch: char| ch.is_ascii_digit())
                                 {
@@ -267,12 +264,11 @@ impl<'a> StyledLine<'a> {
                                 }
                             }
                             (Color::Rgb(RgbColor(r, g, b)), Color::Color100(bg)) => {
-                                write!(
+                                let _ = write!(
                                     &mut s,
                                     "{COLOR_CHAR}99,{:02}{HEX_COLOR_CHAR}{r:02x}{g:02x}{b:02x}",
                                     u8::from(bg)
-                                )
-                                .unwrap();
+                                );
                             }
                         },
                     }

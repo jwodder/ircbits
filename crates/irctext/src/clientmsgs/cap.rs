@@ -347,7 +347,7 @@ impl ClientMessageParts for CapLsRequest {
     fn to_irc_line(&self) -> String {
         let mut s = String::from("CAP LS");
         if let Some(v) = self.version {
-            write!(&mut s, " {v}").unwrap();
+            let _ = write!(&mut s, " {v}");
         }
         s
     }
@@ -430,7 +430,7 @@ impl ClientMessageParts for CapLsResponse {
         if self.continued {
             s.push_str("* ");
         }
-        write!(&mut s, ":{}", self.final_param()).unwrap();
+        let _ = write!(&mut s, ":{}", self.final_param());
         s
     }
 }
@@ -537,7 +537,7 @@ impl ClientMessageParts for CapListResponse {
         if self.continued {
             s.push_str("* ");
         }
-        write!(&mut s, ":{}", join_with_space(&self.capabilities)).unwrap();
+        let _ = write!(&mut s, ":{}", join_with_space(&self.capabilities));
         s
     }
 }

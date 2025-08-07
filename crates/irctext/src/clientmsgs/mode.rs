@@ -66,9 +66,9 @@ impl ClientMessageParts for Mode {
     fn to_irc_line(&self) -> String {
         let mut s = format!("MODE {}", self.target);
         if let Some(ref modestring) = self.modestring {
-            write!(&mut s, " {modestring}").unwrap();
+            let _ = write!(&mut s, " {modestring}");
             if !self.arguments.is_empty() {
-                write!(&mut s, " {}", self.arguments).unwrap();
+                let _ = write!(&mut s, " {}", self.arguments);
             }
         }
         s

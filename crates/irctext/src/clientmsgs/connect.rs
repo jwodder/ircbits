@@ -70,9 +70,9 @@ impl ClientMessageParts for Connect {
     fn to_irc_line(&self) -> String {
         let mut s = format!("CONNECT {}", self.target_server);
         if let Some(port) = self.port {
-            write!(&mut s, " {port}").unwrap();
+            let _ = write!(&mut s, " {port}");
             if let Some(ref remote) = self.remote_server {
-                write!(&mut s, " {remote}").unwrap();
+                let _ = write!(&mut s, " {remote}");
             }
         }
         s

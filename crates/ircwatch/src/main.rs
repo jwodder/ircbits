@@ -105,7 +105,7 @@ async fn main() -> anyhow::Result<()> {
         login_output.server_info.version
     );
     if let Some(ref ms) = login_output.mode {
-        write!(&mut login_msg, "; user mode: {ms}").unwrap();
+        let _ = write!(&mut login_msg, "; user mode: {ms}");
     }
     report(&login_msg);
     if let Some(ref motd) = login_output.motd {
@@ -158,21 +158,21 @@ async fn main() -> anyhow::Result<()> {
                 _ => (),
             }
         }
-        write!(&mut s, "; {users} users").unwrap();
+        let _ = write!(&mut s, "; {users} users");
         if founders > 0 {
-            write!(&mut s, ", {founders} founders").unwrap();
+            let _ = write!(&mut s, ", {founders} founders");
         }
         if protected > 0 {
-            write!(&mut s, ", {protected} protected").unwrap();
+            let _ = write!(&mut s, ", {protected} protected");
         }
         if operators > 0 {
-            write!(&mut s, ", {operators} operators").unwrap();
+            let _ = write!(&mut s, ", {operators} operators");
         }
         if halfops > 0 {
-            write!(&mut s, ", {halfops} halfops").unwrap();
+            let _ = write!(&mut s, ", {halfops} halfops");
         }
         if voiced > 0 {
-            write!(&mut s, ", {voiced} voiced").unwrap();
+            let _ = write!(&mut s, ", {voiced} voiced");
         }
         report(&s);
     }
@@ -262,14 +262,14 @@ fn format_msg(msg: Message) -> String {
         Payload::ClientMessage(ClientMessage::Part(m)) => {
             let mut s = format!("* {sender} leaves {}", join_and(m.channels()));
             if let Some(txt) = m.reason() {
-                write!(&mut s, ": {}", ircfmt_to_ansi(txt.as_str())).unwrap();
+                let _ = write!(&mut s, ": {}", ircfmt_to_ansi(txt.as_str()));
             }
             s
         }
         Payload::ClientMessage(ClientMessage::Quit(m)) => {
             let mut s = format!("* {sender} quits");
             if let Some(txt) = m.reason() {
-                write!(&mut s, ": {}", ircfmt_to_ansi(txt.as_str())).unwrap();
+                let _ = write!(&mut s, ": {}", ircfmt_to_ansi(txt.as_str()));
             }
             s
         }
@@ -315,7 +315,7 @@ fn format_msg(msg: Message) -> String {
         Payload::ClientMessage(ClientMessage::Mode(m)) if m.modestring().is_some() => {
             let mut comment = m.modestring().expect("is some").to_string();
             if !m.arguments().is_empty() {
-                write!(&mut comment, " {}", m.arguments()).unwrap();
+                let _ = write!(&mut comment, " {}", m.arguments());
             }
             format!("* {sender} changed the mode for {}: {comment}", m.target())
         }

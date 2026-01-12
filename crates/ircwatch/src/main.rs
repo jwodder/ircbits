@@ -130,7 +130,7 @@ async fn main() -> anyhow::Result<()> {
                 "[JOIN] [{chan}] Topic: {}",
                 ircfmt_to_ansi(&topic)
             ));
-            if let Some((setter, setat)) = output.topic_setter.zip(output.topic_set_at) {
+            if let Some((setter, setat)) = output.topic_set_by.zip(output.topic_set_at) {
                 let timestamp = fmt_unix_timestamp(setat);
                 report(&format!(
                     "[JOIN] [{chan}] Topic set at {timestamp} by {setter}"

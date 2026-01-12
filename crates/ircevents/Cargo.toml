@@ -16,7 +16,7 @@ irctext = { path = "../irctext" }
 jiff.workspace = true
 patharg.workspace = true
 serde = { workspace = true, features = ["derive"] }
-serde-jsonlines = "0.7.0"
+serde-jsonlines.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "signal"] }
 toml.workspace = true
 tracing.workspace = true

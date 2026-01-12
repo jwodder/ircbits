@@ -191,7 +191,7 @@ impl State {
                 State::GotNamReply(JoinOutput {
                     channel: r.channel().to_owned(),
                     topic: None,
-                    topic_setter: None,
+                    topic_set_by: None,
                     topic_set_at: None,
                     channel_status: r.channel_status(),
                     users: r.clients().to_vec(),
@@ -202,7 +202,7 @@ impl State {
                 State::GotNamReply(JoinOutput {
                     channel: r.channel().to_owned(),
                     topic: Some(topic),
-                    topic_setter: None,
+                    topic_set_by: None,
                     topic_set_at: None,
                     channel_status: r.channel_status(),
                     users: r.clients().to_vec(),
@@ -220,7 +220,7 @@ impl State {
                 State::GotNamReply(JoinOutput {
                     channel: r.channel().to_owned(),
                     topic: Some(topic),
-                    topic_setter: Some(topic_setter),
+                    topic_set_by: Some(topic_setter),
                     topic_set_at: Some(topic_set_at),
                     channel_status: r.channel_status(),
                     users: r.clients().to_vec(),
@@ -252,7 +252,7 @@ impl State {
 pub struct JoinOutput {
     pub channel: Channel,
     pub topic: Option<String>,
-    pub topic_setter: Option<ClientSource>,
+    pub topic_set_by: Option<ClientSource>,
     pub topic_set_at: Option<u64>,
     pub channel_status: ChannelStatus,
     pub users: Vec<(Option<ChannelMembership>, Nickname)>,

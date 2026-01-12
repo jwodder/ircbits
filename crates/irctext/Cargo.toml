@@ -11,9 +11,9 @@ license.workspace = true
 anstyle = { version = "1.0.11", optional = true }
 base64 = "0.22.1"
 enum_dispatch = "0.3.13"
-serde = { version = "1.0.219", features = ["derive"], optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
 strum = { version = "0.27.1", features = ["derive"] }
-thiserror = "2.0.12"
+thiserror.workspace = true
 url = "2.5.0"
 
 [dev-dependencies]

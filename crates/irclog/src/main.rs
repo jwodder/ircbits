@@ -101,8 +101,13 @@ async fn main() -> anyhow::Result<()> {
         .open(args.outfile)
         .context("failed to open output file")?;
     let log = EventLogger::new(outfile);
-    tokio::spawn(report_events(log, receiver));
+    let loghandle = tokio::spawn(report_events(log, receiver));
+    let r = irc(profile, sender).await;
+    let _ = loghandle.await;
+    r
+}
 
+async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()> {
     tracing::info!("Connecting to IRC …");
     let (mut client, login_output) = SessionBuilder::new(profile.session_params)
         .with_autoresponder(PingResponder::new())
@@ -163,7 +168,8 @@ async fn main() -> anyhow::Result<()> {
                     }
                     Err(e) => {
                         let e = anyhow::Error::new(e);
-                        tracing::error!(?e, "Error communicating with server");
+                        tracing::error!(?e, "Error communicating with server; disconnecting");
+                        sender.send(Event::Disconnected {timestamp: Zoned::now()}).await?;
                         return Err(e);
                     }
                 }

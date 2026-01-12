@@ -168,7 +168,8 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                     }
                     Err(e) => {
                         let e = anyhow::Error::new(e);
-                        tracing::error!(?e, "Error communicating with server");
+                        tracing::error!(?e, "Error communicating with server; disconnecting");
+                        sender.send(Event::Disconnected {timestamp: Zoned::now()}).await?;
                         return Err(e);
                     }
                 }

@@ -14,7 +14,11 @@ use std::collections::HashMap;
 use std::io::{self, BufWriter, IsTerminal, Write};
 use std::path::PathBuf;
 use tracing::Level;
-use tracing_subscriber::{filter::Targets, fmt::time::OffsetTime, prelude::*};
+use tracing_subscriber::{
+    filter::Targets,
+    fmt::{format::Writer, time::FormatTime},
+    prelude::*,
+};
 
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
 struct Arguments {
@@ -39,12 +43,10 @@ async fn main() -> anyhow::Result<()> {
     } else {
         Level::INFO
     };
-    let timer =
-        OffsetTime::local_rfc_3339().context("failed to determine local timezone offset")?;
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::fmt::layer()
-                .with_timer(timer)
+                .with_timer(JiffTimer)
                 .with_ansi(io::stderr().is_terminal())
                 .with_writer(io::stderr),
         )
@@ -93,4 +95,16 @@ async fn main() -> anyhow::Result<()> {
     out.write_all(b"\n")?;
     out.flush()?;
     Ok(())
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct JiffTimer;
+
+impl FormatTime for JiffTimer {
+    fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
+        let now = jiff::Zoned::now();
+        let ts = now.timestamp();
+        let offset = now.offset();
+        write!(w, "{}", ts.display_with_offset(offset))
+    }
 }

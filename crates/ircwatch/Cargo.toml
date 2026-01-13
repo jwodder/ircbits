@@ -9,6 +9,7 @@ license.workspace = true
 
 [dependencies]
 anstream = "0.6.19"
+anstyle.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 ircnet = { path = "../ircnet", features = ["serde"] }

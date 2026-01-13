@@ -448,7 +448,7 @@ impl AddFields for JoinOutput {
                     (String::from("nickname"), Value::from(String::from(nick))),
                     (
                         String::from("membership"),
-                        Value::from(format!("{memship:?}")),
+                        Value::from(memship.map(|m| format!("{m:?}"))),
                     ),
                 ])
             })

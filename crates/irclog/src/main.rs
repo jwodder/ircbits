@@ -40,10 +40,12 @@ struct Arguments {
     #[arg(short = 'P', long, default_value = "irc")]
     profile: String,
 
+    #[arg(short = 'R', long)]
+    rotate_size: Option<bytesize::ByteSize>,
+
     #[arg(long)]
     trace: bool,
 }
-// TODO: Log rotation size option
 
 #[derive(Clone, Debug, serde::Deserialize, Eq, PartialEq)]
 struct Profile {
@@ -63,7 +65,6 @@ struct ProgramParams {
 #[tokio::main(worker_threads = 2)]
 async fn main() -> anyhow::Result<()> {
     let args = Arguments::parse();
-
     let loglevel = if args.trace {
         Level::TRACE
     } else {
@@ -83,7 +84,6 @@ async fn main() -> anyhow::Result<()> {
                 .with_default(Level::INFO),
         )
         .init();
-
     let cfgdata = std::fs::read(&args.config).context("failed to read configuration file")?;
     let mut cfg = toml::from_slice::<HashMap<String, Profile>>(&cfgdata)
         .context("failed to parse configuration file")?;
@@ -94,10 +94,9 @@ async fn main() -> anyhow::Result<()> {
     if profile.irclog.channels.is_empty() {
         anyhow::bail!("No channels configured for profile {network:?}");
     }
-
     let (sender, receiver) = mpsc::channel(MESSAGE_CHANNEL_SIZE);
-    let log = EventLogger::new(args.outfile, None)?;
-    let loghandle = tokio::spawn(report_events(log, receiver));
+    let log = EventLogger::new(args.outfile, args.rotate_size.map(|b| b.as_u64()))?;
+    let loghandle = tokio::spawn(log_events(log, receiver));
     let r = irc(profile, sender).await;
     let _ = loghandle.await;
     r
@@ -128,11 +127,9 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
             output: login_output,
         })
         .await?;
-
     if let Some(p) = profile.irclog.away {
         client.send(Away::new(p).into()).await?;
     }
-
     for chan in profile.irclog.channels {
         tracing::info!("Joining {chan} …");
         let output = client.run(JoinCommand::new(chan.clone())).await?;
@@ -143,7 +140,6 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
             })
             .await?;
     }
-
     loop {
         select! {
             r = client.recv() => {
@@ -209,7 +205,7 @@ async fn recv_stop_signal() -> () {
     let _ = tokio::signal::ctrl_c().await;
 }
 
-async fn report_events(mut log: EventLogger, mut receiver: mpsc::Receiver<Event>) {
+async fn log_events(mut log: EventLogger, mut receiver: mpsc::Receiver<Event>) {
     while let Some(ev) = receiver.recv().await {
         if let Err(e) = log.log(ev) {
             tracing::error!(?e, "Failed to write event to log");

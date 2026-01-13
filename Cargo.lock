@@ -494,7 +494,6 @@ dependencies = [
  "irctext",
  "jiff",
  "serde",
- "serde-jsonlines",
  "serde_json",
  "tokio",
  "toml",

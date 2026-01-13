@@ -12,13 +12,13 @@ use irctext::{
     ctcp::CtcpParams,
     types::{Channel, ISupportParam},
 };
-use jiff::Zoned;
+use jiff::{Timestamp, Zoned};
 use serde_json::{Map, Value};
-use serde_jsonlines::JsonLinesWriter;
 use std::collections::HashMap;
-use std::io::{self, BufWriter, IsTerminal, stderr};
+use std::fs::File;
+use std::io::{BufWriter, IsTerminal, Write, stderr};
 use std::num::NonZeroUsize;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::{select, sync::mpsc};
 use tracing::Level;
 use tracing_subscriber::{
@@ -43,6 +43,7 @@ struct Arguments {
     #[arg(long)]
     trace: bool,
 }
+// TODO: Log rotation size option
 
 #[derive(Clone, Debug, serde::Deserialize, Eq, PartialEq)]
 struct Profile {
@@ -95,12 +96,7 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let (sender, receiver) = mpsc::channel(MESSAGE_CHANNEL_SIZE);
-    let outfile = std::fs::File::options()
-        .create(true)
-        .append(true)
-        .open(args.outfile)
-        .context("failed to open output file")?;
-    let log = EventLogger::new(outfile);
+    let log = EventLogger::new(args.outfile, None)?;
     let loghandle = tokio::spawn(report_events(log, receiver));
     let r = irc(profile, sender).await;
     let _ = loghandle.await;
@@ -213,27 +209,63 @@ async fn recv_stop_signal() -> () {
     let _ = tokio::signal::ctrl_c().await;
 }
 
-async fn report_events<W: io::Write>(mut log: EventLogger<W>, mut receiver: mpsc::Receiver<Event>) {
+async fn report_events(mut log: EventLogger, mut receiver: mpsc::Receiver<Event>) {
     while let Some(ev) = receiver.recv().await {
         if let Err(e) = log.log(ev) {
-            tracing::error!(%e, "Failed to write event to log");
+            tracing::error!(?e, "Failed to write event to log");
             return;
         }
     }
 }
 
 #[derive(Debug)]
-struct EventLogger<W: io::Write>(JsonLinesWriter<BufWriter<W>>);
+struct EventLogger {
+    filepath: PathBuf,
+    file: BufWriter<File>,
+    filesize: u64,
+    sizelimit: Option<u64>,
+}
 
-impl<W: io::Write> EventLogger<W> {
-    fn new(writer: W) -> Self {
-        EventLogger(JsonLinesWriter::new(BufWriter::new(writer)))
+impl EventLogger {
+    fn new(filepath: PathBuf, sizelimit: Option<u64>) -> anyhow::Result<Self> {
+        let fp = File::options()
+            .create(true)
+            .append(true)
+            .open(&filepath)
+            .context("failed to open output file")?;
+        let filesize = fp.metadata().context("failed to stat output file")?.len();
+        Ok(EventLogger {
+            filepath,
+            file: BufWriter::new(fp),
+            filesize,
+            sizelimit,
+        })
     }
 
-    fn log(&mut self, event: Event) -> io::Result<()> {
-        let value = event.into_json();
-        self.0.write(&value)?;
-        self.0.flush()?;
+    fn log(&mut self, event: Event) -> anyhow::Result<()> {
+        let mut line = event.into_json().to_string();
+        line.push('\n');
+        let linelen = u64::try_from(line.len()).unwrap_or(u64::MAX);
+        let mut new_file_size = self.filesize.saturating_add(linelen);
+        if let Some(limit) = self.sizelimit
+            && new_file_size > limit
+        {
+            let infix = Timestamp::now().strftime("%Y%m%dT%H%M%SZ").to_string();
+            let rotate_path = insert_extension(&self.filepath, &infix);
+            tracing::info!("Rotating output file to {} ...", rotate_path.display());
+            std::fs::rename(&self.filepath, &rotate_path)
+                .context("failed to rotate output file")?;
+            let fp = File::options()
+                .create(true)
+                .append(true)
+                .open(&self.filepath)
+                .context("failed to reopen output file after rotation")?;
+            self.file = BufWriter::new(fp);
+            new_file_size = linelen;
+        }
+        self.file.write_all(line.as_bytes())?;
+        self.file.flush()?;
+        self.filesize = new_file_size;
         Ok(())
     }
 }
@@ -901,6 +933,41 @@ fn fmt_zoned(z: Zoned) -> String {
 
 fn fmt_unix_timestamp(ts: u64) -> Option<String> {
     let its = i64::try_from(ts).ok()?;
-    let jts = jiff::Timestamp::from_second(its).ok()?;
+    let jts = Timestamp::from_second(its).ok()?;
     Some(jts.to_string())
+}
+
+fn insert_extension(path: &Path, infix: &str) -> PathBuf {
+    if let Some(ext) = path.extension() {
+        path.with_extension(infix).with_added_extension(ext)
+    } else {
+        path.with_extension(infix)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod insert_extension {
+        use super::*;
+
+        #[test]
+        fn basic() {
+            let p = insert_extension(Path::new("foo.txt"), "123");
+            assert_eq!(p, Path::new("foo.123.txt"));
+        }
+
+        #[test]
+        fn no_ext() {
+            let p = insert_extension(Path::new("foo"), "123");
+            assert_eq!(p, Path::new("foo.123"));
+        }
+
+        #[test]
+        fn trailing_dot() {
+            let p = insert_extension(Path::new("foo."), "123");
+            assert_eq!(p, Path::new("foo.123"));
+        }
+    }
 }

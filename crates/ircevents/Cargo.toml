@@ -9,15 +9,14 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+bytesize = "2.3.1"
 clap.workspace = true
-either = "1.15.0"
 ircnet = { path = "../ircnet", features = ["serde"] }
 irctext = { path = "../irctext" }
 jiff.workspace = true
-patharg.workspace = true
 serde = { workspace = true, features = ["derive"] }
-serde-jsonlines.workspace = true
-tokio = { workspace = true, features = ["macros", "rt", "signal"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "signal"] }
 toml.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

@@ -1,3 +1,5 @@
+mod highlight;
+use crate::highlight::highlight;
 use anyhow::Context;
 use clap::Parser;
 use ircnet::client::{
@@ -123,24 +125,25 @@ async fn main() -> anyhow::Result<()> {
         args.channels
     };
     for chan in channels {
+        let hichan = highlight(&chan);
         let output = client.run(JoinCommand::new(chan.clone())).await?;
-        report(&format!("[JOIN] Joined {chan}"));
+        report(&format!("[JOIN] Joined {hichan}"));
         if let Some(topic) = output.topic {
             report(&format!(
-                "[JOIN] [{chan}] Topic: {}",
+                "[JOIN] [{hichan}] Topic: {}",
                 ircfmt_to_ansi(&topic)
             ));
             if let Some((setter, setat)) = output.topic_set_by.zip(output.topic_set_at) {
                 let timestamp = fmt_unix_timestamp(setat);
                 report(&format!(
-                    "[JOIN] [{chan}] Topic set at {timestamp} by {setter}"
+                    "[JOIN] [{hichan}] Topic set at {timestamp} by {setter}"
                 ));
             }
         } else {
-            report(&format!("[JOIN] [{chan}] No topic set"));
+            report(&format!("[JOIN] [{hichan}] No topic set"));
         }
         let mut s = format!(
-            "[JOIN] [{chan}] {status:?} channel",
+            "[JOIN] [{hichan}] {status:?} channel",
             status = output.channel_status
         );
         let mut users = 0u32;
@@ -241,8 +244,8 @@ fn report(msg: &str) {
 
 fn format_msg(msg: Message) -> String {
     let sender = match &msg.source {
-        Some(Source::Server(s)) => s.to_string(),
-        Some(Source::Client(clisrc)) => clisrc.nickname.to_string(),
+        Some(Source::Server(s)) => highlight(&s.to_string()),
+        Some(Source::Client(clisrc)) => highlight(&clisrc.nickname),
         None => String::from("<no source>"),
     };
     match msg.payload {
@@ -253,7 +256,7 @@ fn format_msg(msg: Message) -> String {
             } else {
                 format!(
                     "[{}] {}",
-                    m.targets().iter().join(","),
+                    m.targets().iter().map(|t| highlight(t.as_str())).join(","),
                     format_msgtext(&sender, m.text().clone())
                 )
             }
@@ -265,16 +268,22 @@ fn format_msg(msg: Message) -> String {
             } else {
                 format!(
                     "[{}] [NOTICE] {}",
-                    m.targets().iter().join(","),
+                    m.targets().iter().map(|t| highlight(t.as_str())).join(","),
                     format_msgtext(&sender, m.text().clone())
                 )
             }
         }
         Payload::ClientMessage(ClientMessage::Join(m)) => {
-            format!("* {sender} joins {}", join_and(m.channels()))
+            format!(
+                "* {sender} joins {}",
+                join_and(m.channels().iter().map(|t| highlight(t.as_str())))
+            )
         }
         Payload::ClientMessage(ClientMessage::Part(m)) => {
-            let mut s = format!("* {sender} leaves {}", join_and(m.channels()));
+            let mut s = format!(
+                "* {sender} leaves {}",
+                join_and(m.channels().iter().map(|t| highlight(t.as_str())))
+            );
             if let Some(txt) = m.reason() {
                 let _ = write!(&mut s, ": {}", ircfmt_to_ansi(txt.as_str()));
             }
@@ -291,35 +300,39 @@ fn format_msg(msg: Message) -> String {
             format!("[ERROR] {}", ircfmt_to_ansi(m.reason().as_str()))
         }
         Payload::ClientMessage(ClientMessage::Nick(m)) => {
-            format!("* {sender} is now known as {}", m.nickname())
+            format!("* {sender} is now known as {}", highlight(m.nickname()))
         }
         Payload::ClientMessage(ClientMessage::Topic(m)) => {
             if let Some(topic) = m.topic() {
                 format!(
                     "* {sender} changed the {} topic: {}",
-                    m.channel(),
+                    highlight(m.channel()),
                     ircfmt_to_ansi(topic.as_str())
                 )
             } else {
-                format!("* {sender} unset the {} topic", m.channel())
+                format!("* {sender} unset the {} topic", highlight(m.channel()))
             }
         }
         Payload::ClientMessage(ClientMessage::Invite(m)) => {
-            format!("* {sender} invited {} to {}", m.nickname(), m.channel())
+            format!(
+                "* {sender} invited {} to {}",
+                highlight(m.nickname()),
+                highlight(m.channel())
+            )
         }
         Payload::ClientMessage(ClientMessage::Kick(m)) => {
             if let Some(cmt) = m.comment() {
                 format!(
                     "* {sender} kicked {} from {}: {}",
-                    join_and(m.users()),
-                    m.channel(),
+                    join_and(m.users().iter().map(|u| highlight(u))),
+                    highlight(m.channel()),
                     ircfmt_to_ansi(cmt.as_str()),
                 )
             } else {
                 format!(
                     "* {sender} kicked {} from {}",
-                    join_and(m.users()),
-                    m.channel()
+                    join_and(m.users().iter().map(|u| highlight(u))),
+                    highlight(m.channel())
                 )
             }
         }
@@ -331,7 +344,10 @@ fn format_msg(msg: Message) -> String {
             if !m.arguments().is_empty() {
                 let _ = write!(&mut comment, " {}", m.arguments());
             }
-            format!("* {sender} changed the mode for {}: {comment}", m.target())
+            format!(
+                "* {sender} changed the mode for {}: {comment}",
+                highlight(m.target().as_str())
+            )
         }
         Payload::ClientMessage(_) => format!("[OTHER] Unexpected client message: {msg}"),
         Payload::Reply(_) => format!("[OTHER] Unexpected reply: {msg}"),

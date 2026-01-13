@@ -476,25 +476,6 @@ name = "ircevents"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "clap",
- "either",
- "ircnet",
- "irctext",
- "jiff",
- "patharg",
- "serde",
- "serde-jsonlines",
- "tokio",
- "toml",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "irclog"
-version = "0.0.0"
-dependencies = [
- "anyhow",
  "bytesize",
  "clap",
  "ircnet",
@@ -696,6 +677,25 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "msgtimes"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "either",
+ "ircnet",
+ "irctext",
+ "jiff",
+ "patharg",
+ "serde",
+ "serde-jsonlines",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

@@ -436,7 +436,18 @@ impl AddFields for JoinOutput {
         } else {
             map.insert(String::from("topic_set_by"), Value::Null);
         }
-        map.insert(String::from("topic_set_at"), Value::from(topic_set_at));
+        map.insert(
+            String::from("topic_set_at"),
+            if let Some(ts) = topic_set_at {
+                if let Some(s) = fmt_unix_timestamp(ts) {
+                    Value::from(s)
+                } else {
+                    Value::from(topic_set_at)
+                }
+            } else {
+                Value::Null
+            },
+        );
         map.insert(
             String::from("channel_status"),
             Value::from(format!("{channel_status:?}")),
@@ -886,4 +897,10 @@ fn fmt_zoned(z: Zoned) -> String {
     let ts = z.timestamp();
     let offset = z.offset();
     ts.display_with_offset(offset).to_string()
+}
+
+fn fmt_unix_timestamp(ts: u64) -> Option<String> {
+    let its = i64::try_from(ts).ok()?;
+    let jts = jiff::Timestamp::from_second(its).ok()?;
+    Some(jts.to_string())
 }

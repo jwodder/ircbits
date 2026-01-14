@@ -13,7 +13,7 @@ Options
   format][cfg] [default: `ircbits.toml`]
 
 - `-o PATH`, `--outfile PATH` — Write the output to the given path.  By
-  default, output is written to standard output.
+  default, output is written to the standard output.
 
 - `-P NAME`, `--profile NAME` — Use the connection details under the given
   profile in the configuration file [default: `irc`]

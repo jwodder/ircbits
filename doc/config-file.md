@@ -15,8 +15,10 @@ stated otherwise.
 
 - `host` (string) — the hostname to connect to in order to access the IRC
   network
-- `port` (integer) — the port of the remote host to connect to
-- `tls` (boolean) — whether to use SSL/TLS encryption for the connection
+- `port` (integer; optional) — the port of the remote host to connect to;
+  defaults to 6667 when `tls` is `false` and to 6697 when `tls` is `true`
+- `tls` (boolean; optional; default: `false`) — whether to use SSL/TLS
+  encryption for the connection
 - `password` (string) — the password to log into IRC with
 - `nickname` (string) — the nickname to use when logging into IRC
 - `username` (string) — the username to declare when logging into IRC
@@ -52,10 +54,9 @@ default-channels = ["#python", "##rust", "#nethack"]
 
 [oftc]
 host = "irc.oftc.net"
-port = 6697
 tls = true
 nickname = "edsample"
 username = "edsample"
 realname = "Edward Q. Sample"
-password = "hunter2"
+password = "hunter3"
 ```

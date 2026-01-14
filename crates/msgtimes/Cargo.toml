@@ -2,7 +2,7 @@
 name = "msgtimes"
 edition.workspace = true
 rust-version.workspace = true
-#description = ...
+description = "Record timestamps of messages sent to IRC channels"
 authors.workspace = true
 repository.workspace = true
 license.workspace = true

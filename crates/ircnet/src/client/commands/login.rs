@@ -1275,4 +1275,222 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn sasl_client_non_sasl_server() {
+        let params = LoginParams {
+            password: "hunter2".parse::<FinalParam>().unwrap(),
+            nickname: "jwodder".parse::<Nickname>().unwrap(),
+            username: "jwuser".parse::<Username>().unwrap(),
+            realname: "Just this guy, you know?".parse::<FinalParam>().unwrap(),
+            sasl: true,
+        };
+        let mut cmd = Login::new(params);
+
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            outgoing,
+            [
+                "CAP LS 302",
+                "PASS :hunter2",
+                "NICK jwodder",
+                "USER jwuser 0 * :Just this guy, you know?"
+            ]
+        );
+
+        let notices = [
+            ":molybdenum.libera.chat NOTICE * :*** Checking Ident",
+            ":molybdenum.libera.chat NOTICE * :*** Looking up your hostname...",
+            ":molybdenum.libera.chat NOTICE * :*** Couldn't look up your hostname",
+            ":molybdenum.libera.chat NOTICE * :*** No Ident response",
+        ];
+        for m in notices {
+            let msg = m.parse::<Message>().unwrap();
+            assert!(!cmd.handle_message(&msg));
+            assert!(cmd.get_client_messages().is_empty());
+            assert!(!cmd.is_done());
+        }
+
+        let m = ":molybdenum.libera.chat 421 jwodder CAP :What's a CAP?";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        assert!(cmd.get_client_messages().is_empty());
+        assert!(!cmd.is_done());
+
+        let incoming = [
+            ":molybdenum.libera.chat 001 jwodder :Welcome to the Libera.Chat Internet Relay Chat Network jwodder",
+            ":molybdenum.libera.chat 002 jwodder :Your host is molybdenum.libera.chat[2607:5300:205:300::ae0/6697], running version solanum-1.0-dev",
+            ":molybdenum.libera.chat 003 jwodder :This server was created Thu Jul 18 2024 at 16:57:02 UTC",
+            ":molybdenum.libera.chat 004 jwodder molybdenum.libera.chat solanum-1.0-dev DGIMQRSZaghilopsuwz CFILMPQRSTbcefgijklmnopqrstuvz bkloveqjfI",
+            ":molybdenum.libera.chat 005 jwodder ACCOUNTEXTBAN=a WHOX KNOCK MONITOR=100 ETRACE FNC SAFELIST ELIST=CMNTU CALLERID=g CHANTYPES=# EXCEPTS INVEX :are supported by this server",
+            ":molybdenum.libera.chat 005 jwodder CHANMODES=eIbq,k,flj,CFLMPQRSTcgimnprstuz CHANLIMIT=#:250 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=Libera.Chat STATUSMSG=@+ CASEMAPPING=rfc1459 NICKLEN=16 MAXNICKLEN=16 CHANNELLEN=50 TOPICLEN=390 :are supported by this server",
+            ":molybdenum.libera.chat 005 jwodder DEAF=D TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,agjrxz :are supported by this server",
+            ":molybdenum.libera.chat 251 jwodder :There are 62 users and 31502 invisible on 28 servers",
+            ":molybdenum.libera.chat 252 jwodder 40 :IRC Operators online",
+            ":molybdenum.libera.chat 253 jwodder 66 :unknown connection(s)",
+            ":molybdenum.libera.chat 254 jwodder 22798 :channels formed",
+            ":molybdenum.libera.chat 255 jwodder :I have 2700 clients and 1 servers",
+            ":molybdenum.libera.chat 265 jwodder 2700 3071 :Current local users 2700, max 3071",
+            ":molybdenum.libera.chat 266 jwodder 31564 34153 :Current global users 31564, max 34153",
+            ":molybdenum.libera.chat 250 jwodder :Highest connection count: 3072 (3071 clients) (781421 connections received)",
+            ":molybdenum.libera.chat 375 jwodder :- molybdenum.libera.chat Message of the Day - ",
+            ":molybdenum.libera.chat 372 jwodder :- -[ Molybdenum ]-[ Atomic number: 42 ]-[ Chemical symbol: Mo ]-",
+            ":molybdenum.libera.chat 372 jwodder :-  ",
+            ":molybdenum.libera.chat 372 jwodder :- Molybdenum has been known throughout history, though its",
+            ":molybdenum.libera.chat 372 jwodder :- properties meant that it was confused with lead ores. It was",
+            ":molybdenum.libera.chat 372 jwodder :- first identified as a distinct element in 1778, meaning our",
+            ":molybdenum.libera.chat 372 jwodder :- modern understanding of its existence reaches about as far",
+            ":molybdenum.libera.chat 372 jwodder :- back as American independence.",
+            ":molybdenum.libera.chat 372 jwodder :-  ",
+            ":molybdenum.libera.chat 372 jwodder :- Molybdenum has a very high melting point, 2623°C, the fifth-",
+            ":molybdenum.libera.chat 372 jwodder :- highest temperature of any element.",
+            ":molybdenum.libera.chat 372 jwodder :-  ",
+            ":molybdenum.libera.chat 372 jwodder :- While pure molybdenum is only about as strong as tooth enamel,",
+            ":molybdenum.libera.chat 372 jwodder :- it forms strong alloys that are resistant to corrosion and",
+            ":molybdenum.libera.chat 372 jwodder :- stable under varying temperatures. As a result, these alloys",
+            ":molybdenum.libera.chat 372 jwodder :- are used for metal armour plates, high-performance aircraft",
+            ":molybdenum.libera.chat 372 jwodder :- parts, and pumps for molten metal flows.",
+            ":molybdenum.libera.chat 372 jwodder :-  ",
+            ":molybdenum.libera.chat 372 jwodder :- In its elemental form, it can be used as a fertiliser, and the",
+            ":molybdenum.libera.chat 372 jwodder :- isotope molybdenum-99 is used as a source of technetium-99m,",
+            ":molybdenum.libera.chat 372 jwodder :- an important medical radioisotope used for 3D bone scans and",
+            ":molybdenum.libera.chat 372 jwodder :- the investigation of blood flow when diagnosing heart disease.",
+            ":molybdenum.libera.chat 372 jwodder :-  ",
+            ":molybdenum.libera.chat 372 jwodder :-  ",
+            ":molybdenum.libera.chat 372 jwodder :- Welcome to Libera Chat, the IRC network for",
+            ":molybdenum.libera.chat 372 jwodder :- free & open-source software and peer directed projects.",
+            ":molybdenum.libera.chat 372 jwodder :-  ",
+            ":molybdenum.libera.chat 372 jwodder :- Use of Libera Chat is governed by our network policies.",
+            ":molybdenum.libera.chat 372 jwodder :-  ",
+            ":molybdenum.libera.chat 372 jwodder :- To reduce network abuses we perform open proxy checks",
+            ":molybdenum.libera.chat 372 jwodder :- on hosts at connection time.",
+            ":molybdenum.libera.chat 372 jwodder :-  ",
+            ":molybdenum.libera.chat 372 jwodder :- Please visit us in #libera for questions and support.",
+            ":molybdenum.libera.chat 372 jwodder :-  ",
+            ":molybdenum.libera.chat 372 jwodder :- Website and documentation:  https://libera.chat",
+            ":molybdenum.libera.chat 372 jwodder :- Webchat:                    https://web.libera.chat",
+            ":molybdenum.libera.chat 372 jwodder :- Network policies:           https://libera.chat/policies",
+            ":molybdenum.libera.chat 372 jwodder :- Email:                      support@libera.chat",
+            ":molybdenum.libera.chat 376 jwodder :End of /MOTD command.",
+        ];
+        for m in incoming {
+            let msg = m.parse::<Message>().unwrap();
+            assert!(cmd.handle_message(&msg));
+            assert!(cmd.get_client_messages().is_empty());
+            assert!(!cmd.is_done());
+        }
+
+        let m = ":jwodder MODE jwodder :+Ziw";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        assert!(cmd.get_client_messages().is_empty());
+        assert!(cmd.is_done());
+
+        let output = cmd.get_output().unwrap();
+        pretty_assertions::assert_eq!(
+            output,
+            LoginOutput {
+                capabilities: None,
+                my_nick: "jwodder".parse::<Nickname>().unwrap(),
+                server_info: ServerInfo {
+                    server_name: "molybdenum.libera.chat".into(),
+                    version: "solanum-1.0-dev".into(),
+                    user_modes: "DGIMQRSZaghilopsuwz".into(),
+                    channel_modes: "CFILMPQRSTbcefgijklmnopqrstuvz".into(),
+                    param_channel_modes: Some("bkloveqjfI".to_owned()),
+                },
+                isupport: [
+                    "ACCOUNTEXTBAN=a",
+                    "WHOX",
+                    "KNOCK",
+                    "MONITOR=100",
+                    "ETRACE",
+                    "FNC",
+                    "SAFELIST",
+                    "ELIST=CMNTU",
+                    "CALLERID=g",
+                    "CHANTYPES=#",
+                    "EXCEPTS",
+                    "INVEX",
+                    "CHANMODES=eIbq,k,flj,CFLMPQRSTcgimnprstuz",
+                    "CHANLIMIT=#:250",
+                    "PREFIX=(ov)@+",
+                    "MAXLIST=bqeI:100",
+                    "MODES=4",
+                    "NETWORK=Libera.Chat",
+                    "STATUSMSG=@+",
+                    "CASEMAPPING=rfc1459",
+                    "NICKLEN=16",
+                    "MAXNICKLEN=16",
+                    "CHANNELLEN=50",
+                    "TOPICLEN=390",
+                    "DEAF=D",
+                    "TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR:",
+                    "EXTBAN=$,agjrxz",
+                ]
+                .into_iter()
+                .map(str::parse::<ISupportParam>)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+                luser_stats: LuserStats {
+                    operators: Some(40),
+                    unknown_connections: Some(66),
+                    channels: Some(22798),
+                    local_clients: Some(2700),
+                    max_local_clients: Some(3071),
+                    global_clients: Some(31564),
+                    max_global_clients: Some(34153),
+                },
+                motd: Some(
+                    concat!(
+                        "- molybdenum.libera.chat Message of the Day - \n",
+                        "- -[ Molybdenum ]-[ Atomic number: 42 ]-[ Chemical symbol: Mo ]-\n",
+                        "-  \n",
+                        "- Molybdenum has been known throughout history, though its\n",
+                        "- properties meant that it was confused with lead ores. It was\n",
+                        "- first identified as a distinct element in 1778, meaning our\n",
+                        "- modern understanding of its existence reaches about as far\n",
+                        "- back as American independence.\n",
+                        "-  \n",
+                        "- Molybdenum has a very high melting point, 2623°C, the fifth-\n",
+                        "- highest temperature of any element.\n",
+                        "-  \n",
+                        "- While pure molybdenum is only about as strong as tooth enamel,\n",
+                        "- it forms strong alloys that are resistant to corrosion and\n",
+                        "- stable under varying temperatures. As a result, these alloys\n",
+                        "- are used for metal armour plates, high-performance aircraft\n",
+                        "- parts, and pumps for molten metal flows.\n",
+                        "-  \n",
+                        "- In its elemental form, it can be used as a fertiliser, and the\n",
+                        "- isotope molybdenum-99 is used as a source of technetium-99m,\n",
+                        "- an important medical radioisotope used for 3D bone scans and\n",
+                        "- the investigation of blood flow when diagnosing heart disease.\n",
+                        "-  \n",
+                        "-  \n",
+                        "- Welcome to Libera Chat, the IRC network for\n",
+                        "- free & open-source software and peer directed projects.\n",
+                        "-  \n",
+                        "- Use of Libera Chat is governed by our network policies.\n",
+                        "-  \n",
+                        "- To reduce network abuses we perform open proxy checks\n",
+                        "- on hosts at connection time.\n",
+                        "-  \n",
+                        "- Please visit us in #libera for questions and support.\n",
+                        "-  \n",
+                        "- Website and documentation:  https://libera.chat\n",
+                        "- Webchat:                    https://web.libera.chat\n",
+                        "- Network policies:           https://libera.chat/policies\n",
+                        "- Email:                      support@libera.chat\n",
+                        "End of /MOTD command.",
+                    )
+                    .to_owned()
+                ),
+                mode: Some("+Ziw".parse::<ModeString>().unwrap()),
+            }
+        );
+    }
 }

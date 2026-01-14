@@ -2,7 +2,7 @@
 name = "ircwatch"
 edition.workspace = true
 rust-version.workspace = true
-#description = ...
+description = "Stream IRC messages prettily"
 authors.workspace = true
 repository.workspace = true
 license.workspace = true

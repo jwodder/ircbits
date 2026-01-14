@@ -10,7 +10,7 @@ use crate::connect::{
     ConnectionError, LinesChannel,
     codecs::{LinesCodec, LinesCodecError},
     connect,
-    consts::MAX_LINE_LENGTH,
+    consts::{MAX_LINE_LENGTH, PLAIN_PORT, TLS_PORT},
 };
 use futures_util::{SinkExt, TryStreamExt};
 use irctext::{ClientMessage, ClientMessageParts, Message, ParseMessageError, TryFromStringError};
@@ -23,8 +23,24 @@ use tokio_util::codec::Framed;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ConnectionParams {
     pub host: String,
-    pub port: u16,
+    pub port: Option<u16>,
+    #[cfg_attr(feature = "serde", serde(default = "default_tls"))]
     pub tls: bool,
+}
+
+impl ConnectionParams {
+    pub fn port(&self) -> u16 {
+        match (self.port, self.tls) {
+            (Some(p), _) => p,
+            (None, true) => TLS_PORT,
+            (None, false) => PLAIN_PORT,
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+fn default_tls() -> bool {
+    false
 }
 
 #[allow(missing_debug_implementations)]
@@ -56,7 +72,7 @@ impl Client {
     /// Create a new `Client` connected to the given server & port.  If `tls`
     /// is true, the connection will use SSL/TLS.
     pub async fn connect(params: ConnectionParams) -> Result<Client, ClientError> {
-        let conn = connect(&params.host, params.port, params.tls).await?;
+        let conn = connect(&params.host, params.port(), params.tls).await?;
         let codec = LinesCodec::new_with_max_length(MAX_LINE_LENGTH);
         let channel = Framed::new(conn, codec);
         let autoresponders = AutoResponderSet::new();

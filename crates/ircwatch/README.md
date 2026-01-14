@@ -20,6 +20,8 @@ Options
 - `-P NAME`, `--profile NAME` — Use the connection details under the given
   profile in the configuration file [default: `irc`]
 
-- `--trace` - Emit log events for every message sent & received
+- `--info` — Emit log events
+
+- `--trace` — Emit log events for every message sent & received
 
 [cfg]: https://github.com/jwodder/ircbits/blob/master/doc/config-file.md

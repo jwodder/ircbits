@@ -35,6 +35,9 @@ struct Arguments {
     #[arg(short = 'P', long, default_value = "irc")]
     profile: String,
 
+    #[arg(long, overrides_with = "trace")]
+    info: bool,
+
     #[arg(long)]
     trace: bool,
 
@@ -60,7 +63,14 @@ struct ProgramParams {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let args = Arguments::parse();
-    if args.trace {
+    let loglevel = if args.trace {
+        Some(Level::TRACE)
+    } else if args.info {
+        Some(Level::INFO)
+    } else {
+        None
+    };
+    if let Some(loglevel) = loglevel {
         tracing_subscriber::registry()
             .with(
                 tracing_subscriber::fmt::layer()
@@ -70,8 +80,8 @@ async fn main() -> anyhow::Result<()> {
             )
             .with(
                 Targets::new()
-                    .with_target(env!("CARGO_CRATE_NAME"), Level::TRACE)
-                    .with_target("ircnet", Level::TRACE)
+                    .with_target(env!("CARGO_CRATE_NAME"), loglevel)
+                    .with_target("ircnet", loglevel)
                     .with_default(Level::INFO),
             )
             .init();

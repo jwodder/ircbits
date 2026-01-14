@@ -68,7 +68,7 @@ impl AutoResponder for CtcpQueryResponder {
         let ctcp = CtcpMessage::from(privmsg.text().clone());
         let resp = match ctcp {
             CtcpMessage::ClientInfo(None) => {
-                tracing::trace!(
+                tracing::info!(
                     source = source.to_string(),
                     "Received CLIENTINFO CTCP query; responding ..."
                 );
@@ -100,13 +100,13 @@ impl AutoResponder for CtcpQueryResponder {
             }
             CtcpMessage::Finger(None) => {
                 if let Some(info) = self.finger.clone() {
-                    tracing::trace!(
+                    tracing::info!(
                         source = source.to_string(),
                         "Received FINGER CTCP query; responding ..."
                     );
                     CtcpMessage::Finger(Some(info))
                 } else {
-                    tracing::trace!(
+                    tracing::info!(
                         source = source.to_string(),
                         "Received FINGER CTCP query, but no response defined"
                     );
@@ -114,7 +114,7 @@ impl AutoResponder for CtcpQueryResponder {
                 }
             }
             m @ CtcpMessage::Ping(_) => {
-                tracing::trace!(
+                tracing::info!(
                     source = source.to_string(),
                     "Received PING CTCP query; responding ..."
                 );
@@ -122,13 +122,13 @@ impl AutoResponder for CtcpQueryResponder {
             }
             CtcpMessage::Source(None) => {
                 if let Some(info) = self.source.clone() {
-                    tracing::trace!(
+                    tracing::info!(
                         source = source.to_string(),
                         "Received SOURCE CTCP query; responding ..."
                     );
                     CtcpMessage::Source(Some(info))
                 } else {
-                    tracing::trace!(
+                    tracing::info!(
                         source = source.to_string(),
                         "Received SOURCE CTCP query, but no response defined"
                     );
@@ -136,7 +136,7 @@ impl AutoResponder for CtcpQueryResponder {
                 }
             }
             CtcpMessage::Time(None) => {
-                tracing::trace!(
+                tracing::info!(
                     source = source.to_string(),
                     "Received TIME CTCP query; responding ..."
                 );
@@ -168,13 +168,13 @@ impl AutoResponder for CtcpQueryResponder {
             }
             CtcpMessage::UserInfo(None) => {
                 if let Some(info) = self.userinfo.clone() {
-                    tracing::trace!(
+                    tracing::info!(
                         source = source.to_string(),
                         "Received USERINFO CTCP query; responding ..."
                     );
                     CtcpMessage::UserInfo(Some(info))
                 } else {
-                    tracing::trace!(
+                    tracing::info!(
                         source = source.to_string(),
                         "Received USERINFO CTCP query, but no response defined"
                     );
@@ -183,13 +183,13 @@ impl AutoResponder for CtcpQueryResponder {
             }
             CtcpMessage::Version(None) => {
                 if let Some(info) = self.version.clone() {
-                    tracing::trace!(
+                    tracing::info!(
                         source = source.to_string(),
                         "Received VERSION CTCP query; responding ..."
                     );
                     CtcpMessage::Version(Some(info))
                 } else {
-                    tracing::trace!(
+                    tracing::info!(
                         source = source.to_string(),
                         "Received VERSION CTCP query, but no response defined"
                     );

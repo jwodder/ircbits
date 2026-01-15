@@ -20,17 +20,25 @@ use tracing_subscriber::{
     prelude::*,
 };
 
+/// Log into an IRC network, send a `LIST` command, output the response as
+/// JSON, and disconnect.
+///
+/// Visit <https://github.com/jwodder/ircbits> for more information.
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
 struct Arguments {
+    /// Read IRC network connection details from the given configuration file
     #[arg(short = 'c', long, default_value = "ircbits.toml")]
     config: PathBuf,
 
+    /// Output to the given path
     #[arg(short = 'o', long, default_value_t)]
     outfile: OutputArg,
 
+    /// Select the profile in the configuration file to use
     #[arg(short = 'P', long, default_value = "irc")]
     profile: String,
 
+    /// Emit log events for every message sent & received
     #[arg(long)]
     trace: bool,
 }

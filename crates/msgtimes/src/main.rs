@@ -26,7 +26,7 @@ use tracing_subscriber::{
 };
 
 /// Log into an IRC network, join a given set of channels, and then run
-/// indefinitely, outputing a timestamped JSON object for each `PRIVMSG` and
+/// indefinitely, outputting a timestamped JSON object for each `PRIVMSG` and
 /// `NOTICE` message thereafter received.
 ///
 /// Visit <https://github.com/jwodder/ircbits> for more information.

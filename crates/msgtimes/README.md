@@ -3,7 +3,7 @@
 [![MIT License](https://img.shields.io/github/license/jwodder/ircbits.svg)](https://opensource.org/licenses/MIT)
 
 `msgtimes` logs into an IRC network, joins a given set of channels, and then
-runs indefinitely, outputing a timestamped JSON object for each `PRIVMSG` and
+runs indefinitely, outputting a timestamped JSON object for each `PRIVMSG` and
 `NOTICE` message thereafter received.
 
 Options

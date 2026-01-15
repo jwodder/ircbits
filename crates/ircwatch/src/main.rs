@@ -27,20 +27,30 @@ use tracing_subscriber::{
     prelude::*,
 };
 
+/// Log into an IRC network, join a given set of channels, and then
+/// pretty-print all messages received to standard output until you hit Ctrl-C.
+///
+/// Visit <https://github.com/jwodder/ircbits> for more information.
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
 struct Arguments {
+    /// Read IRC network connection details from the given configuration file
     #[arg(short = 'c', long, default_value = "ircbits.toml")]
     config: PathBuf,
 
+    /// Select the profile in the configuration file to use
     #[arg(short = 'P', long, default_value = "irc")]
     profile: String,
 
+    /// Emit log events
     #[arg(long, overrides_with = "trace")]
     info: bool,
 
+    /// Emit log events for every message sent & received
     #[arg(long)]
     trace: bool,
 
+    /// Channels to join.  If not specified, the channels are taken from the
+    /// configuration file.
     channels: Vec<Channel>,
 }
 

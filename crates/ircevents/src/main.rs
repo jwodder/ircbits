@@ -701,7 +701,7 @@ impl AddFields for ClientMessage {
                 );
             }
             ClientMessage::Names(msg) => {
-                map.insert(String::from("event"), Value::from("motd"));
+                map.insert(String::from("event"), Value::from("names"));
                 map.insert(
                     String::from("channels"),
                     Value::from(

@@ -1,25 +1,25 @@
-use super::{FinalParam, MedialParam};
+use super::{MiddleParam, TrailingParam};
 use std::fmt;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Parameter {
-    Medial(MedialParam),
-    Final(FinalParam),
+    Middle(MiddleParam),
+    Trailing(TrailingParam),
 }
 
 impl Parameter {
-    pub fn is_medial(&self) -> bool {
-        matches!(self, Parameter::Medial(_))
+    pub fn is_middle(&self) -> bool {
+        matches!(self, Parameter::Middle(_))
     }
 
-    pub fn is_final(&self) -> bool {
-        matches!(self, Parameter::Final(_))
+    pub fn is_trailing(&self) -> bool {
+        matches!(self, Parameter::Trailing(_))
     }
 
     pub fn as_str(&self) -> &str {
         match self {
-            Parameter::Medial(p) => p.as_str(),
-            Parameter::Final(p) => p.as_str(),
+            Parameter::Middle(p) => p.as_str(),
+            Parameter::Trailing(p) => p.as_str(),
         }
     }
 }
@@ -27,8 +27,8 @@ impl Parameter {
 impl fmt::Display for Parameter {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Parameter::Medial(p) => write!(f, "{p}"),
-            Parameter::Final(p) => write!(f, "{p}"),
+            Parameter::Middle(p) => write!(f, "{p}"),
+            Parameter::Trailing(p) => write!(f, "{p}"),
         }
     }
 }
@@ -36,8 +36,8 @@ impl fmt::Display for Parameter {
 impl AsRef<str> for Parameter {
     fn as_ref(&self) -> &str {
         match self {
-            Parameter::Medial(p) => p.as_ref(),
-            Parameter::Final(p) => p.as_ref(),
+            Parameter::Middle(p) => p.as_ref(),
+            Parameter::Trailing(p) => p.as_ref(),
         }
     }
 }
@@ -45,8 +45,8 @@ impl AsRef<str> for Parameter {
 impl From<Parameter> for String {
     fn from(value: Parameter) -> String {
         match value {
-            Parameter::Medial(param) => param.into(),
-            Parameter::Final(param) => param.into(),
+            Parameter::Middle(param) => param.into(),
+            Parameter::Trailing(param) => param.into(),
         }
     }
 }
@@ -69,14 +69,14 @@ impl<'a> PartialEq<&'a str> for Parameter {
     }
 }
 
-impl From<MedialParam> for Parameter {
-    fn from(value: MedialParam) -> Parameter {
-        Parameter::Medial(value)
+impl From<MiddleParam> for Parameter {
+    fn from(value: MiddleParam) -> Parameter {
+        Parameter::Middle(value)
     }
 }
 
-impl From<FinalParam> for Parameter {
-    fn from(value: FinalParam) -> Parameter {
-        Parameter::Final(value)
+impl From<TrailingParam> for Parameter {
+    fn from(value: TrailingParam) -> Parameter {
+        Parameter::Trailing(value)
     }
 }

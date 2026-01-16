@@ -1,21 +1,21 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Wallops {
-    text: FinalParam,
+    text: TrailingParam,
 }
 
 impl Wallops {
-    pub fn new(text: FinalParam) -> Wallops {
+    pub fn new(text: TrailingParam) -> Wallops {
         Wallops { text }
     }
 
-    pub fn text(&self) -> &FinalParam {
+    pub fn text(&self) -> &TrailingParam {
         &self.text
     }
 
-    pub fn into_text(self) -> FinalParam {
+    pub fn into_text(self) -> TrailingParam {
         self.text
     }
 }
@@ -24,7 +24,7 @@ impl ClientMessageParts for Wallops {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Wallops,
-            ParameterList::builder().with_final(self.text),
+            ParameterList::builder().with_trailing(self.text),
         )
     }
 

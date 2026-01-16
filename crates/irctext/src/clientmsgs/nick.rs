@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::Nickname;
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Nick {
@@ -25,7 +25,7 @@ impl ClientMessageParts for Nick {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Nick,
-            ParameterList::builder().with_medial(self.nickname).finish(),
+            ParameterList::builder().with_middle(self.nickname).finish(),
         )
     }
 
@@ -50,7 +50,7 @@ impl TryFrom<ParameterList> for Nick {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Nick, ClientMessageError> {
-        let (p,): (FinalParam,) = params.try_into()?;
+        let (p,): (TrailingParam,) = params.try_into()?;
         let nickname = Nickname::try_from(p.into_inner())?;
         Ok(Nick { nickname })
     }

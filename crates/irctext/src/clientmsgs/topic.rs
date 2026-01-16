@@ -1,12 +1,12 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::Channel;
-use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::util::DisplayMaybeTrailing;
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Topic {
     channel: Channel,
-    topic: Option<FinalParam>,
+    topic: Option<TrailingParam>,
 }
 
 impl Topic {
@@ -17,7 +17,7 @@ impl Topic {
         }
     }
 
-    pub fn new_set(channel: Channel, topic: FinalParam) -> Topic {
+    pub fn new_set(channel: Channel, topic: TrailingParam) -> Topic {
         Topic {
             channel,
             topic: Some(topic),
@@ -28,7 +28,7 @@ impl Topic {
         &self.channel
     }
 
-    pub fn topic(&self) -> Option<&FinalParam> {
+    pub fn topic(&self) -> Option<&TrailingParam> {
         self.topic.as_ref()
     }
 }
@@ -36,8 +36,8 @@ impl Topic {
 impl ClientMessageParts for Topic {
     fn into_parts(self) -> (Verb, ParameterList) {
         let params = ParameterList::builder()
-            .with_medial(self.channel)
-            .maybe_with_final(self.topic);
+            .with_middle(self.channel)
+            .maybe_with_trailing(self.topic);
         (Verb::Topic, params)
     }
 
@@ -45,7 +45,7 @@ impl ClientMessageParts for Topic {
         format!(
             "TOPIC {}{}",
             self.channel,
-            DisplayMaybeFinal(self.topic.as_ref())
+            DisplayMaybeTrailing(self.topic.as_ref())
         )
     }
 }
@@ -66,7 +66,7 @@ impl TryFrom<ParameterList> for Topic {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Topic, ClientMessageError> {
-        let (p1, topic): (_, Option<FinalParam>) = params.try_into()?;
+        let (p1, topic): (_, Option<TrailingParam>) = params.try_into()?;
         let channel = Channel::try_from(p1.into_inner())?;
         Ok(Topic { channel, topic })
     }

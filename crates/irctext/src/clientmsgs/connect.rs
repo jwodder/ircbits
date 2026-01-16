@@ -1,16 +1,16 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage, Verb};
+use crate::{Message, MiddleParam, ParameterList, ParameterListSizeError, RawMessage, Verb};
 use std::fmt::Write;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Connect {
-    target_server: MedialParam,
+    target_server: MiddleParam,
     port: Option<u16>,
-    remote_server: Option<MedialParam>,
+    remote_server: Option<MiddleParam>,
 }
 
 impl Connect {
-    pub fn new(target_server: MedialParam) -> Connect {
+    pub fn new(target_server: MiddleParam) -> Connect {
         Connect {
             target_server,
             port: None,
@@ -18,7 +18,7 @@ impl Connect {
         }
     }
 
-    pub fn new_with_port(target_server: MedialParam, port: u16) -> Connect {
+    pub fn new_with_port(target_server: MiddleParam, port: u16) -> Connect {
         Connect {
             target_server,
             port: Some(port),
@@ -27,9 +27,9 @@ impl Connect {
     }
 
     pub fn new_with_remote_server(
-        target_server: MedialParam,
+        target_server: MiddleParam,
         port: u16,
-        remote_server: MedialParam,
+        remote_server: MiddleParam,
     ) -> Connect {
         Connect {
             target_server,
@@ -38,7 +38,7 @@ impl Connect {
         }
     }
 
-    pub fn target_server(&self) -> &MedialParam {
+    pub fn target_server(&self) -> &MiddleParam {
         &self.target_server
     }
 
@@ -46,22 +46,22 @@ impl Connect {
         self.port
     }
 
-    pub fn remote_server(&self) -> Option<&MedialParam> {
+    pub fn remote_server(&self) -> Option<&MiddleParam> {
         self.remote_server.as_ref()
     }
 }
 
 impl ClientMessageParts for Connect {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let mut builder = ParameterList::builder().with_medial(self.target_server);
+        let mut builder = ParameterList::builder().with_middle(self.target_server);
         if let Some(port) = self.port {
             let port_param = port
                 .to_string()
-                .parse::<MedialParam>()
-                .expect("stringified integer should be a valid MedialParam");
-            builder.push_medial(port_param);
+                .parse::<MiddleParam>()
+                .expect("stringified integer should be a valid MiddleParam");
+            builder.push_middle(port_param);
             if let Some(remote) = self.remote_server {
-                builder.push_medial(remote);
+                builder.push_middle(remote);
             }
         }
         (Verb::Connect, builder.finish())
@@ -100,7 +100,7 @@ impl TryFrom<ParameterList> for Connect {
             let p1 = iter
                 .next()
                 .expect("First element should exist when len >= 1");
-            let target_server = MedialParam::try_from(String::from(p1))?;
+            let target_server = MiddleParam::try_from(String::from(p1))?;
             let port = if let Some(p2) = iter.next() {
                 match p2.as_str().parse::<u16>() {
                     Ok(p) => Some(p),
@@ -115,7 +115,7 @@ impl TryFrom<ParameterList> for Connect {
                 None
             };
             let remote_server = if let Some(p3) = iter.next() {
-                Some(MedialParam::try_from(String::from(p3))?)
+                Some(MiddleParam::try_from(String::from(p3))?)
             } else {
                 None
             };

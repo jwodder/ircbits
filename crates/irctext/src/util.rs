@@ -57,9 +57,9 @@ pub(crate) fn pop_channel_membership(s: &str) -> (Option<ChannelMembership>, &st
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub(crate) struct DisplayMaybeFinal<T>(pub Option<T>);
+pub(crate) struct DisplayMaybeTrailing<T>(pub Option<T>);
 
-impl<T: fmt::Display> fmt::Display for DisplayMaybeFinal<T> {
+impl<T: fmt::Display> fmt::Display for DisplayMaybeTrailing<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(ref value) = self.0 {
             write!(f, " :{value}")

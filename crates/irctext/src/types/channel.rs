@@ -10,7 +10,7 @@
 // server, but for now, to keep things simple, this library treats '#' and '&'
 // — and only those characters — as channel type prefixes.
 use crate::types::{ModeTarget, MsgTarget};
-use crate::{CaseMapping, FinalParam, MedialParam};
+use crate::{CaseMapping, MiddleParam, TrailingParam};
 use std::borrow::Cow;
 use thiserror::Error;
 
@@ -48,15 +48,15 @@ impl Channel {
     }
 }
 
-impl From<Channel> for MedialParam {
-    fn from(value: Channel) -> MedialParam {
-        MedialParam::try_from(value.into_inner()).expect("Channel should be valid MedialParam")
+impl From<Channel> for MiddleParam {
+    fn from(value: Channel) -> MiddleParam {
+        MiddleParam::try_from(value.into_inner()).expect("Channel should be valid MiddleParam")
     }
 }
 
-impl From<Channel> for FinalParam {
-    fn from(value: Channel) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<Channel> for TrailingParam {
+    fn from(value: Channel) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 

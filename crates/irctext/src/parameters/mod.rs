@@ -1,10 +1,10 @@
-mod finalparam;
-mod medialparam;
+mod middle;
 mod parameter;
 mod paramlist;
 mod paramref;
-pub use self::finalparam::*;
-pub use self::medialparam::*;
+mod trailing;
+pub use self::middle::*;
 pub use self::parameter::*;
 pub use self::paramlist::*;
 pub use self::paramref::*;
+pub use self::trailing::*;

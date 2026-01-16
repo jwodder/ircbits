@@ -1,10 +1,10 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::util::DisplayMaybeTrailing;
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Version {
-    target: Option<FinalParam>,
+    target: Option<TrailingParam>,
 }
 
 impl Version {
@@ -12,17 +12,17 @@ impl Version {
         Version { target: None }
     }
 
-    pub fn new_with_target(target: FinalParam) -> Version {
+    pub fn new_with_target(target: TrailingParam) -> Version {
         Version {
             target: Some(target),
         }
     }
 
-    pub fn target(&self) -> Option<&FinalParam> {
+    pub fn target(&self) -> Option<&TrailingParam> {
         self.target.as_ref()
     }
 
-    pub fn into_target(self) -> Option<FinalParam> {
+    pub fn into_target(self) -> Option<TrailingParam> {
         self.target
     }
 }
@@ -31,12 +31,12 @@ impl ClientMessageParts for Version {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Version,
-            ParameterList::builder().maybe_with_final(self.target),
+            ParameterList::builder().maybe_with_trailing(self.target),
         )
     }
 
     fn to_irc_line(&self) -> String {
-        format!("VERSION{}", DisplayMaybeFinal(self.target.as_ref()))
+        format!("VERSION{}", DisplayMaybeTrailing(self.target.as_ref()))
     }
 }
 

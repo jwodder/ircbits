@@ -2,7 +2,7 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::ReplyTarget;
 use crate::util::{join_with_space, split_spaces};
 use crate::{
-    FinalParam, MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage,
+    Message, MiddleParam, ParameterList, ParameterListSizeError, RawMessage, TrailingParam,
     TryFromStringError, Verb,
 };
 use std::fmt::{self, Write};
@@ -90,7 +90,7 @@ impl TryFrom<ParameterList> for Cap {
         match params.len() {
             1 => {
                 // CAP <subcommand>
-                let Ok((subcmd,)): Result<(FinalParam,), _> = params.try_into() else {
+                let Ok((subcmd,)): Result<(TrailingParam,), _> = params.try_into() else {
                     unreachable!("ParameterList should be convertible to 1-tuple when len is 1");
                 };
                 match subcmd.to_ascii_uppercase().as_str() {
@@ -114,7 +114,7 @@ impl TryFrom<ParameterList> for Cap {
             }
             2 => {
                 // CAP <subcommand> <parameter>
-                let Ok((subcommand, parameter)): Result<(MedialParam, FinalParam), _> =
+                let Ok((subcommand, parameter)): Result<(MiddleParam, TrailingParam), _> =
                     params.try_into()
                 else {
                     unreachable!("ParameterList should be convertible to 2-tuple when len is 2");
@@ -151,7 +151,7 @@ impl TryFrom<ParameterList> for Cap {
             3 => {
                 // CAP <nick-or-star> <subcommand> <parameter>
                 let Ok((target, subcommand, parameter)): Result<
-                    (MedialParam, MedialParam, FinalParam),
+                    (MiddleParam, MiddleParam, TrailingParam),
                     _,
                 > = params.try_into() else {
                     unreachable!("ParameterList should be convertible to 3-tuple when len is 3");
@@ -239,7 +239,7 @@ impl TryFrom<ParameterList> for Cap {
             4 => {
                 // CAP <nick-or-star> <subcommand> * <parameter>
                 let Ok((target, subcommand, star, parameter)): Result<
-                    (MedialParam, MedialParam, MedialParam, FinalParam),
+                    (MiddleParam, MiddleParam, MiddleParam, TrailingParam),
                     _,
                 > = params.try_into() else {
                     unreachable!("ParameterList should be convertible to 4-tuple when len is 4");
@@ -331,15 +331,15 @@ impl CapLsRequest {
 impl ClientMessageParts for CapLsRequest {
     fn into_parts(self) -> (Verb, ParameterList) {
         let mut builder = ParameterList::builder();
-        let Ok(subcmd) = "LS".parse::<MedialParam>() else {
+        let Ok(subcmd) = "LS".parse::<MiddleParam>() else {
             unreachable!();
         };
-        builder.push_medial(subcmd);
+        builder.push_middle(subcmd);
         if let Some(v) = self.version {
-            let Ok(vs) = MedialParam::try_from(v.to_string()) else {
+            let Ok(vs) = MiddleParam::try_from(v.to_string()) else {
                 unreachable!();
             };
-            builder.push_medial(vs);
+            builder.push_middle(vs);
         }
         (Verb::Cap, builder.finish())
     }
@@ -387,7 +387,7 @@ pub struct CapLsResponse {
 }
 
 impl CapLsResponse {
-    fn final_param(&self) -> FinalParam {
+    fn trailing_param(&self) -> TrailingParam {
         let mut s = String::new();
         let mut first = true;
         for (cap, value) in &self.capabilities {
@@ -400,7 +400,7 @@ impl CapLsResponse {
                 s.push_str(v.as_str());
             }
         }
-        let Ok(p) = FinalParam::try_from(s) else {
+        let Ok(p) = TrailingParam::try_from(s) else {
             unreachable!();
         };
         p
@@ -409,19 +409,19 @@ impl CapLsResponse {
 
 impl ClientMessageParts for CapLsResponse {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let finalp = self.final_param();
-        let mut builder = ParameterList::builder().with_medial(self.target);
-        let Ok(subcmd) = "LS".parse::<MedialParam>() else {
+        let trailing = self.trailing_param();
+        let mut builder = ParameterList::builder().with_middle(self.target);
+        let Ok(subcmd) = "LS".parse::<MiddleParam>() else {
             unreachable!();
         };
-        builder.push_medial(subcmd);
+        builder.push_middle(subcmd);
         if self.continued {
-            let Ok(star) = "*".parse::<MedialParam>() else {
+            let Ok(star) = "*".parse::<MiddleParam>() else {
                 unreachable!();
             };
-            builder.push_medial(star);
+            builder.push_middle(star);
         }
-        let params = builder.with_final(finalp);
+        let params = builder.with_trailing(trailing);
         (Verb::Cap, params)
     }
 
@@ -430,7 +430,7 @@ impl ClientMessageParts for CapLsResponse {
         if self.continued {
             s.push_str("* ");
         }
-        let _ = write!(&mut s, ":{}", self.final_param());
+        let _ = write!(&mut s, ":{}", self.trailing_param());
         s
     }
 }
@@ -464,12 +464,12 @@ pub struct CapListRequest;
 
 impl ClientMessageParts for CapListRequest {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let Ok(subcmd) = "LIST".parse::<MedialParam>() else {
+        let Ok(subcmd) = "LIST".parse::<MiddleParam>() else {
             unreachable!()
         };
         (
             Verb::Cap,
-            ParameterList::builder().with_medial(subcmd).finish(),
+            ParameterList::builder().with_middle(subcmd).finish(),
         )
     }
 
@@ -513,22 +513,22 @@ pub struct CapListResponse {
 
 impl ClientMessageParts for CapListResponse {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let mut builder = ParameterList::builder().with_medial(self.target);
-        let Ok(subcmd) = "LIST".parse::<MedialParam>() else {
+        let mut builder = ParameterList::builder().with_middle(self.target);
+        let Ok(subcmd) = "LIST".parse::<MiddleParam>() else {
             unreachable!();
         };
-        builder.push_medial(subcmd);
+        builder.push_middle(subcmd);
         if self.continued {
-            let Ok(star) = "*".parse::<MedialParam>() else {
+            let Ok(star) = "*".parse::<MiddleParam>() else {
                 unreachable!();
             };
-            builder.push_medial(star);
+            builder.push_middle(star);
         }
-        let Ok(finalp) = FinalParam::try_from(join_with_space(&self.capabilities).to_string())
+        let Ok(trailing) = TrailingParam::try_from(join_with_space(&self.capabilities).to_string())
         else {
             unreachable!()
         };
-        let params = builder.with_final(finalp);
+        let params = builder.with_trailing(trailing);
         (Verb::Cap, params)
     }
 
@@ -573,18 +573,18 @@ pub struct CapReq {
 
 impl ClientMessageParts for CapReq {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let Ok(subcmd) = "REQ".parse::<MedialParam>() else {
+        let Ok(subcmd) = "REQ".parse::<MiddleParam>() else {
             unreachable!()
         };
-        let Ok(finalp) = FinalParam::try_from(join_with_space(&self.capabilities).to_string())
+        let Ok(trailing) = TrailingParam::try_from(join_with_space(&self.capabilities).to_string())
         else {
             unreachable!();
         };
         (
             Verb::Cap,
             ParameterList::builder()
-                .with_medial(subcmd)
-                .with_final(finalp),
+                .with_middle(subcmd)
+                .with_trailing(trailing),
         )
     }
 
@@ -625,16 +625,16 @@ pub struct CapAck {
 
 impl ClientMessageParts for CapAck {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let mut builder = ParameterList::builder().with_medial(self.target);
-        let Ok(subcmd) = "ACK".parse::<MedialParam>() else {
+        let mut builder = ParameterList::builder().with_middle(self.target);
+        let Ok(subcmd) = "ACK".parse::<MiddleParam>() else {
             unreachable!();
         };
-        builder.push_medial(subcmd);
-        let Ok(finalp) = FinalParam::try_from(join_with_space(&self.capabilities).to_string())
+        builder.push_middle(subcmd);
+        let Ok(trailing) = TrailingParam::try_from(join_with_space(&self.capabilities).to_string())
         else {
             unreachable!()
         };
-        let params = builder.with_final(finalp);
+        let params = builder.with_trailing(trailing);
         (Verb::Cap, params)
     }
 
@@ -679,16 +679,16 @@ pub struct CapNak {
 
 impl ClientMessageParts for CapNak {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let mut builder = ParameterList::builder().with_medial(self.target);
-        let Ok(subcmd) = "NAK".parse::<MedialParam>() else {
+        let mut builder = ParameterList::builder().with_middle(self.target);
+        let Ok(subcmd) = "NAK".parse::<MiddleParam>() else {
             unreachable!();
         };
-        builder.push_medial(subcmd);
-        let Ok(finalp) = FinalParam::try_from(join_with_space(&self.capabilities).to_string())
+        builder.push_middle(subcmd);
+        let Ok(trailing) = TrailingParam::try_from(join_with_space(&self.capabilities).to_string())
         else {
             unreachable!()
         };
-        let params = builder.with_final(finalp);
+        let params = builder.with_trailing(trailing);
         (Verb::Cap, params)
     }
 
@@ -730,12 +730,12 @@ pub struct CapEnd;
 
 impl ClientMessageParts for CapEnd {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let Ok(subcmd) = "END".parse::<MedialParam>() else {
+        let Ok(subcmd) = "END".parse::<MiddleParam>() else {
             unreachable!()
         };
         (
             Verb::Cap,
-            ParameterList::builder().with_medial(subcmd).finish(),
+            ParameterList::builder().with_middle(subcmd).finish(),
         )
     }
 
@@ -776,16 +776,16 @@ pub struct CapNew {
 
 impl ClientMessageParts for CapNew {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let mut builder = ParameterList::builder().with_medial(self.target);
-        let Ok(subcmd) = "NEW".parse::<MedialParam>() else {
+        let mut builder = ParameterList::builder().with_middle(self.target);
+        let Ok(subcmd) = "NEW".parse::<MiddleParam>() else {
             unreachable!();
         };
-        builder.push_medial(subcmd);
-        let Ok(finalp) = FinalParam::try_from(join_with_space(&self.capabilities).to_string())
+        builder.push_middle(subcmd);
+        let Ok(trailing) = TrailingParam::try_from(join_with_space(&self.capabilities).to_string())
         else {
             unreachable!()
         };
-        let params = builder.with_final(finalp);
+        let params = builder.with_trailing(trailing);
         (Verb::Cap, params)
     }
 
@@ -830,16 +830,16 @@ pub struct CapDel {
 
 impl ClientMessageParts for CapDel {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let mut builder = ParameterList::builder().with_medial(self.target);
-        let Ok(subcmd) = "DEL".parse::<MedialParam>() else {
+        let mut builder = ParameterList::builder().with_middle(self.target);
+        let Ok(subcmd) = "DEL".parse::<MiddleParam>() else {
             unreachable!();
         };
-        builder.push_medial(subcmd);
-        let Ok(finalp) = FinalParam::try_from(join_with_space(&self.capabilities).to_string())
+        builder.push_middle(subcmd);
+        let Ok(trailing) = TrailingParam::try_from(join_with_space(&self.capabilities).to_string())
         else {
             unreachable!()
         };
-        let params = builder.with_final(finalp);
+        let params = builder.with_trailing(trailing);
         (Verb::Cap, params)
     }
 
@@ -893,15 +893,15 @@ fn validate_capability(s: &str) -> Result<(), ParseCapabilityError> {
     }
 }
 
-impl From<Capability> for MedialParam {
-    fn from(value: Capability) -> MedialParam {
-        MedialParam::try_from(value.into_inner()).expect("Capability should be valid MedialParam")
+impl From<Capability> for MiddleParam {
+    fn from(value: Capability) -> MiddleParam {
+        MiddleParam::try_from(value.into_inner()).expect("Capability should be valid MiddleParam")
     }
 }
 
-impl From<Capability> for FinalParam {
-    fn from(value: Capability) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<Capability> for TrailingParam {
+    fn from(value: Capability) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 
@@ -932,16 +932,16 @@ fn validate_capability_value(s: &str) -> Result<(), ParseCapabilityValueError> {
     }
 }
 
-impl From<CapabilityValue> for MedialParam {
-    fn from(value: CapabilityValue) -> MedialParam {
-        MedialParam::try_from(value.into_inner())
-            .expect("Capability value should be valid MedialParam")
+impl From<CapabilityValue> for MiddleParam {
+    fn from(value: CapabilityValue) -> MiddleParam {
+        MiddleParam::try_from(value.into_inner())
+            .expect("Capability value should be valid MiddleParam")
     }
 }
 
-impl From<CapabilityValue> for FinalParam {
-    fn from(value: CapabilityValue) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<CapabilityValue> for TrailingParam {
+    fn from(value: CapabilityValue) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 

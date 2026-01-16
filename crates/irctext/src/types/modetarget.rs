@@ -1,7 +1,7 @@
 use crate::types::{
     Channel, Nickname, ParseChannelError, ParseNicknameError, channel::channel_prefixed,
 };
-use crate::{FinalParam, MedialParam, TryFromStringError};
+use crate::{MiddleParam, TrailingParam, TryFromStringError};
 use std::fmt;
 use thiserror::Error;
 
@@ -103,15 +103,15 @@ impl From<ModeTarget> for String {
     }
 }
 
-impl From<ModeTarget> for MedialParam {
-    fn from(value: ModeTarget) -> MedialParam {
-        MedialParam::try_from(String::from(value)).expect("Mode target should be valid MedialParam")
+impl From<ModeTarget> for MiddleParam {
+    fn from(value: ModeTarget) -> MiddleParam {
+        MiddleParam::try_from(String::from(value)).expect("Mode target should be valid MiddleParam")
     }
 }
 
-impl From<ModeTarget> for FinalParam {
-    fn from(value: ModeTarget) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<ModeTarget> for TrailingParam {
+    fn from(value: ModeTarget) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 

@@ -54,9 +54,9 @@ impl Mode {
 
 impl ClientMessageParts for Mode {
     fn into_parts(self) -> (Verb, ParameterList) {
-        let builder = ParameterList::builder().with_medial(self.target);
+        let builder = ParameterList::builder().with_middle(self.target);
         let params = if let Some(modestring) = self.modestring {
-            builder.with_medial(modestring).with_list(self.arguments)
+            builder.with_middle(modestring).with_list(self.arguments)
         } else {
             builder.finish()
         };

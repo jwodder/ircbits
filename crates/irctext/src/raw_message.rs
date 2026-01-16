@@ -20,7 +20,7 @@ impl fmt::Display for RawMessage {
         }
         write!(f, "{}", self.command)?;
         for p in self.parameters.iter() {
-            if p.is_medial() {
+            if p.is_middle() {
                 write!(f, " {p}")?;
             } else {
                 write!(f, " :{p}")?;

@@ -1,25 +1,25 @@
-use super::{FinalParam, MedialParam};
+use super::{MiddleParam, TrailingParam};
 use std::fmt;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParamRef<'a> {
-    Medial(&'a MedialParam),
-    Final(&'a FinalParam),
+    Middle(&'a MiddleParam),
+    Trailing(&'a TrailingParam),
 }
 
 impl<'a> ParamRef<'a> {
-    pub fn is_medial(&self) -> bool {
-        matches!(self, ParamRef::Medial(_))
+    pub fn is_middle(&self) -> bool {
+        matches!(self, ParamRef::Middle(_))
     }
 
-    pub fn is_final(&self) -> bool {
-        matches!(self, ParamRef::Final(_))
+    pub fn is_trailing(&self) -> bool {
+        matches!(self, ParamRef::Trailing(_))
     }
 
     pub fn as_str(&self) -> &'a str {
         match self {
-            ParamRef::Medial(p) => p.as_str(),
-            ParamRef::Final(p) => p.as_str(),
+            ParamRef::Middle(p) => p.as_str(),
+            ParamRef::Trailing(p) => p.as_str(),
         }
     }
 }
@@ -27,8 +27,8 @@ impl<'a> ParamRef<'a> {
 impl fmt::Display for ParamRef<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ParamRef::Medial(p) => write!(f, "{p}"),
-            ParamRef::Final(p) => write!(f, "{p}"),
+            ParamRef::Middle(p) => write!(f, "{p}"),
+            ParamRef::Trailing(p) => write!(f, "{p}"),
         }
     }
 }
@@ -36,8 +36,8 @@ impl fmt::Display for ParamRef<'_> {
 impl AsRef<str> for ParamRef<'_> {
     fn as_ref(&self) -> &str {
         match self {
-            ParamRef::Medial(p) => p.as_ref(),
-            ParamRef::Final(p) => p.as_ref(),
+            ParamRef::Middle(p) => p.as_ref(),
+            ParamRef::Trailing(p) => p.as_ref(),
         }
     }
 }

@@ -1,15 +1,15 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::Nickname;
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Kill {
     nickname: Nickname,
-    comment: FinalParam,
+    comment: TrailingParam,
 }
 
 impl Kill {
-    pub fn new(nickname: Nickname, comment: FinalParam) -> Kill {
+    pub fn new(nickname: Nickname, comment: TrailingParam) -> Kill {
         Kill { nickname, comment }
     }
 
@@ -17,7 +17,7 @@ impl Kill {
         &self.nickname
     }
 
-    pub fn comment(&self) -> &FinalParam {
+    pub fn comment(&self) -> &TrailingParam {
         &self.comment
     }
 }
@@ -27,8 +27,8 @@ impl ClientMessageParts for Kill {
         (
             Verb::Kill,
             ParameterList::builder()
-                .with_medial(self.nickname)
-                .with_final(self.comment),
+                .with_middle(self.nickname)
+                .with_trailing(self.comment),
         )
     }
 
@@ -53,7 +53,7 @@ impl TryFrom<ParameterList> for Kill {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Kill, ClientMessageError> {
-        let (p1, comment): (_, FinalParam) = params.try_into()?;
+        let (p1, comment): (_, TrailingParam) = params.try_into()?;
         let nickname = Nickname::try_from(p1.into_inner())?;
         Ok(Kill { nickname, comment })
     }

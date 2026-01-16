@@ -1,15 +1,15 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::Username;
-use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, MiddleParam, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct User {
     username: Username,
-    realname: FinalParam,
+    realname: TrailingParam,
 }
 
 impl User {
-    pub fn new(username: Username, realname: FinalParam) -> User {
+    pub fn new(username: Username, realname: TrailingParam) -> User {
         User { username, realname }
     }
 
@@ -17,7 +17,7 @@ impl User {
         &self.username
     }
 
-    pub fn realname(&self) -> &FinalParam {
+    pub fn realname(&self) -> &TrailingParam {
         &self.realname
     }
 }
@@ -25,16 +25,16 @@ impl User {
 impl ClientMessageParts for User {
     fn into_parts(self) -> (Verb, ParameterList) {
         let params = ParameterList::builder()
-            .with_medial(self.username)
-            .with_medial(
-                "0".parse::<MedialParam>()
-                    .expect(r#""0" should be a valid MedialParam"#),
+            .with_middle(self.username)
+            .with_middle(
+                "0".parse::<MiddleParam>()
+                    .expect(r#""0" should be a valid MiddleParam"#),
             )
-            .with_medial(
-                "*".parse::<MedialParam>()
-                    .expect(r#""*" should be a valid MedialParam"#),
+            .with_middle(
+                "*".parse::<MiddleParam>()
+                    .expect(r#""*" should be a valid MiddleParam"#),
             )
-            .with_final(self.realname);
+            .with_trailing(self.realname);
         (Verb::User, params)
     }
 

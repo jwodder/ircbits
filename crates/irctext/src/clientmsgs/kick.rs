@@ -1,13 +1,13 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::{Channel, Nickname};
-use crate::util::{DisplayMaybeFinal, join_with_commas, split_param};
-use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
+use crate::util::{DisplayMaybeTrailing, join_with_commas, split_param};
+use crate::{Message, MiddleParam, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Kick {
     channel: Channel,
     users: Vec<Nickname>,
-    comment: Option<FinalParam>,
+    comment: Option<TrailingParam>,
 }
 
 impl Kick {
@@ -19,7 +19,7 @@ impl Kick {
         }
     }
 
-    pub fn new_with_comment(channel: Channel, user: Nickname, comment: FinalParam) -> Kick {
+    pub fn new_with_comment(channel: Channel, user: Nickname, comment: TrailingParam) -> Kick {
         Kick {
             channel,
             users: vec![user],
@@ -43,7 +43,7 @@ impl Kick {
     pub fn new_many_with_comment<I: IntoIterator<Item = Nickname>>(
         channel: Channel,
         users: I,
-        comment: FinalParam,
+        comment: TrailingParam,
     ) -> Option<Kick> {
         let users = users.into_iter().collect::<Vec<_>>();
         if users.is_empty() {
@@ -65,17 +65,17 @@ impl Kick {
         &self.users
     }
 
-    pub fn comment(&self) -> Option<&FinalParam> {
+    pub fn comment(&self) -> Option<&TrailingParam> {
         self.comment.as_ref()
     }
 
-    fn users_param(&self) -> MedialParam {
+    fn users_param(&self) -> MiddleParam {
         assert!(
             !self.users.is_empty(),
             "Kick.users should always be nonempty"
         );
         let s = join_with_commas(&self.users).to_string();
-        MedialParam::try_from(s).expect("comma-separated nicknames should be a valid MedialParam")
+        MiddleParam::try_from(s).expect("comma-separated nicknames should be a valid MiddleParam")
     }
 }
 
@@ -85,9 +85,9 @@ impl ClientMessageParts for Kick {
         (
             Verb::Kick,
             ParameterList::builder()
-                .with_medial(self.channel)
-                .with_medial(users_param)
-                .maybe_with_final(self.comment),
+                .with_middle(self.channel)
+                .with_middle(users_param)
+                .maybe_with_trailing(self.comment),
         )
     }
 
@@ -96,7 +96,7 @@ impl ClientMessageParts for Kick {
             "KICK {} {}{}",
             self.channel,
             self.users_param(),
-            DisplayMaybeFinal(self.comment.as_ref())
+            DisplayMaybeTrailing(self.comment.as_ref())
         )
     }
 }
@@ -117,7 +117,7 @@ impl TryFrom<ParameterList> for Kick {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Kick, ClientMessageError> {
-        let (p1, p2, comment): (_, _, Option<FinalParam>) = params.try_into()?;
+        let (p1, p2, comment): (_, _, Option<TrailingParam>) = params.try_into()?;
         let channel = Channel::try_from(p1.into_inner())?;
         let users = split_param::<Nickname>(p2.as_str())?;
         assert!(

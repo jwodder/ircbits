@@ -1,7 +1,7 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::Nickname;
-use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::util::DisplayMaybeTrailing;
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 use std::num::NonZeroUsize;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -37,10 +37,10 @@ impl WhoWas {
 impl ClientMessageParts for WhoWas {
     fn into_parts(self) -> (Verb, ParameterList) {
         let params = ParameterList::builder()
-            .with_medial(self.nickname)
-            .maybe_with_final(self.count.map(|c| {
-                let Ok(param) = FinalParam::try_from(c.to_string()) else {
-                    unreachable!("A stringified integer should be a valid FinalParam");
+            .with_middle(self.nickname)
+            .maybe_with_trailing(self.count.map(|c| {
+                let Ok(param) = TrailingParam::try_from(c.to_string()) else {
+                    unreachable!("A stringified integer should be a valid TrailingParam");
                 };
                 param
             }));
@@ -48,7 +48,11 @@ impl ClientMessageParts for WhoWas {
     }
 
     fn to_irc_line(&self) -> String {
-        format!("WHOWAS {}{}", self.nickname, DisplayMaybeFinal(self.count))
+        format!(
+            "WHOWAS {}{}",
+            self.nickname,
+            DisplayMaybeTrailing(self.count)
+        )
     }
 }
 
@@ -68,7 +72,7 @@ impl TryFrom<ParameterList> for WhoWas {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<WhoWas, ClientMessageError> {
-        let (p1, p2): (_, Option<FinalParam>) = params.try_into()?;
+        let (p1, p2): (_, Option<TrailingParam>) = params.try_into()?;
         let nickname = Nickname::try_from(p1.into_inner())?;
         let count = if let Some(p) = p2 {
             match p.as_str().parse::<NonZeroUsize>() {

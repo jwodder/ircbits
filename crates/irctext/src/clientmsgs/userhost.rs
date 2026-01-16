@@ -31,7 +31,7 @@ impl ClientMessageParts for UserHost {
     fn into_parts(self) -> (Verb, ParameterList) {
         let mut builder = ParameterList::builder();
         for nick in self.nicknames {
-            builder.push_medial(nick);
+            builder.push_middle(nick);
         }
         (Verb::UserHost, builder.finish())
     }

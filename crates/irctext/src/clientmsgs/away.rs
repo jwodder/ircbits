@@ -1,14 +1,14 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::util::DisplayMaybeTrailing;
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Away {
-    text: Option<FinalParam>,
+    text: Option<TrailingParam>,
 }
 
 impl Away {
-    pub fn new(text: FinalParam) -> Away {
+    pub fn new(text: TrailingParam) -> Away {
         Away { text: Some(text) }
     }
 
@@ -16,11 +16,11 @@ impl Away {
         Away { text: None }
     }
 
-    pub fn text(&self) -> Option<&FinalParam> {
+    pub fn text(&self) -> Option<&TrailingParam> {
         self.text.as_ref()
     }
 
-    pub fn into_text(self) -> Option<FinalParam> {
+    pub fn into_text(self) -> Option<TrailingParam> {
         self.text
     }
 }
@@ -29,12 +29,12 @@ impl ClientMessageParts for Away {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Away,
-            ParameterList::builder().maybe_with_final(self.text),
+            ParameterList::builder().maybe_with_trailing(self.text),
         )
     }
 
     fn to_irc_line(&self) -> String {
-        format!("AWAY{}", DisplayMaybeFinal(self.text.as_ref()))
+        format!("AWAY{}", DisplayMaybeTrailing(self.text.as_ref()))
     }
 }
 

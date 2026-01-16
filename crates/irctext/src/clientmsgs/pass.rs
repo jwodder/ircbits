@@ -1,21 +1,21 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Pass {
-    password: FinalParam,
+    password: TrailingParam,
 }
 
 impl Pass {
-    pub fn new(password: FinalParam) -> Pass {
+    pub fn new(password: TrailingParam) -> Pass {
         Pass { password }
     }
 
-    pub fn password(&self) -> &FinalParam {
+    pub fn password(&self) -> &TrailingParam {
         &self.password
     }
 
-    pub fn into_password(self) -> FinalParam {
+    pub fn into_password(self) -> TrailingParam {
         self.password
     }
 }
@@ -24,7 +24,7 @@ impl ClientMessageParts for Pass {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Pass,
-            ParameterList::builder().with_final(self.password),
+            ParameterList::builder().with_trailing(self.password),
         )
     }
 

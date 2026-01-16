@@ -1,22 +1,22 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, MiddleParam, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Oper {
-    name: MedialParam,
-    password: FinalParam,
+    name: MiddleParam,
+    password: TrailingParam,
 }
 
 impl Oper {
-    pub fn new(name: MedialParam, password: FinalParam) -> Oper {
+    pub fn new(name: MiddleParam, password: TrailingParam) -> Oper {
         Oper { name, password }
     }
 
-    pub fn name(&self) -> &MedialParam {
+    pub fn name(&self) -> &MiddleParam {
         &self.name
     }
 
-    pub fn password(&self) -> &FinalParam {
+    pub fn password(&self) -> &TrailingParam {
         &self.password
     }
 }
@@ -26,8 +26,8 @@ impl ClientMessageParts for Oper {
         (
             Verb::Oper,
             ParameterList::builder()
-                .with_medial(self.name)
-                .with_final(self.password),
+                .with_middle(self.name)
+                .with_trailing(self.password),
         )
     }
 

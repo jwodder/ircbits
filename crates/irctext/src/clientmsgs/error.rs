@@ -1,21 +1,21 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Error {
-    reason: FinalParam,
+    reason: TrailingParam,
 }
 
 impl Error {
-    pub fn new(reason: FinalParam) -> Error {
+    pub fn new(reason: TrailingParam) -> Error {
         Error { reason }
     }
 
-    pub fn reason(&self) -> &FinalParam {
+    pub fn reason(&self) -> &TrailingParam {
         &self.reason
     }
 
-    pub fn into_reason(self) -> FinalParam {
+    pub fn into_reason(self) -> TrailingParam {
         self.reason
     }
 }
@@ -24,7 +24,7 @@ impl ClientMessageParts for Error {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Error,
-            ParameterList::builder().with_final(self.reason),
+            ParameterList::builder().with_trailing(self.reason),
         )
     }
 

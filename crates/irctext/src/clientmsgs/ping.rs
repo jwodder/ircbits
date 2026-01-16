@@ -1,21 +1,21 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts, Pong};
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Ping {
-    token: FinalParam,
+    token: TrailingParam,
 }
 
 impl Ping {
-    pub fn new(token: FinalParam) -> Ping {
+    pub fn new(token: TrailingParam) -> Ping {
         Ping { token }
     }
 
-    pub fn token(&self) -> &FinalParam {
+    pub fn token(&self) -> &TrailingParam {
         &self.token
     }
 
-    pub fn into_token(self) -> FinalParam {
+    pub fn into_token(self) -> TrailingParam {
         self.token
     }
 
@@ -30,7 +30,10 @@ impl Ping {
 
 impl ClientMessageParts for Ping {
     fn into_parts(self) -> (Verb, ParameterList) {
-        (Verb::Ping, ParameterList::builder().with_final(self.token))
+        (
+            Verb::Ping,
+            ParameterList::builder().with_trailing(self.token),
+        )
     }
 
     fn to_irc_line(&self) -> String {

@@ -1,33 +1,33 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
+use crate::util::DisplayMaybeTrailing;
+use crate::{Message, MiddleParam, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Stats {
-    query: MedialParam,
-    server: Option<FinalParam>,
+    query: MiddleParam,
+    server: Option<TrailingParam>,
 }
 
 impl Stats {
-    pub fn new(query: MedialParam) -> Stats {
+    pub fn new(query: MiddleParam) -> Stats {
         Stats {
             query,
             server: None,
         }
     }
 
-    pub fn new_with_server(query: MedialParam, server: FinalParam) -> Stats {
+    pub fn new_with_server(query: MiddleParam, server: TrailingParam) -> Stats {
         Stats {
             query,
             server: Some(server),
         }
     }
 
-    pub fn query(&self) -> &MedialParam {
+    pub fn query(&self) -> &MiddleParam {
         &self.query
     }
 
-    pub fn server(&self) -> Option<&FinalParam> {
+    pub fn server(&self) -> Option<&TrailingParam> {
         self.server.as_ref()
     }
 }
@@ -37,8 +37,8 @@ impl ClientMessageParts for Stats {
         (
             Verb::Stats,
             ParameterList::builder()
-                .with_medial(self.query)
-                .maybe_with_final(self.server),
+                .with_middle(self.query)
+                .maybe_with_trailing(self.server),
         )
     }
 
@@ -46,7 +46,7 @@ impl ClientMessageParts for Stats {
         format!(
             "STATS {}{}",
             self.query,
-            DisplayMaybeFinal(self.server.as_ref())
+            DisplayMaybeTrailing(self.server.as_ref())
         )
     }
 }

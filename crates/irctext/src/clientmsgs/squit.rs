@@ -1,22 +1,22 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, MiddleParam, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Squit {
-    server: MedialParam,
-    comment: FinalParam,
+    server: MiddleParam,
+    comment: TrailingParam,
 }
 
 impl Squit {
-    pub fn new(server: MedialParam, comment: FinalParam) -> Squit {
+    pub fn new(server: MiddleParam, comment: TrailingParam) -> Squit {
         Squit { server, comment }
     }
 
-    pub fn server(&self) -> &MedialParam {
+    pub fn server(&self) -> &MiddleParam {
         &self.server
     }
 
-    pub fn comment(&self) -> &FinalParam {
+    pub fn comment(&self) -> &TrailingParam {
         &self.comment
     }
 }
@@ -26,8 +26,8 @@ impl ClientMessageParts for Squit {
         (
             Verb::Squit,
             ParameterList::builder()
-                .with_medial(self.server)
-                .with_final(self.comment),
+                .with_middle(self.server)
+                .with_trailing(self.comment),
         )
     }
 

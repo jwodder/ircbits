@@ -29,7 +29,7 @@
 // contain NUL, CR, or LF.
 
 use crate::types::{ModeTarget, MsgTarget, ReplyTarget};
-use crate::{CaseMapping, FinalParam, MedialParam};
+use crate::{CaseMapping, MiddleParam, TrailingParam};
 use std::borrow::Cow;
 use thiserror::Error;
 
@@ -69,15 +69,15 @@ impl Nickname {
     }
 }
 
-impl From<Nickname> for MedialParam {
-    fn from(value: Nickname) -> MedialParam {
-        MedialParam::try_from(value.into_inner()).expect("Nickname should be valid MedialParam")
+impl From<Nickname> for MiddleParam {
+    fn from(value: Nickname) -> MiddleParam {
+        MiddleParam::try_from(value.into_inner()).expect("Nickname should be valid MiddleParam")
     }
 }
 
-impl From<Nickname> for FinalParam {
-    fn from(value: Nickname) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<Nickname> for TrailingParam {
+    fn from(value: Nickname) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 

@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::{Channel, Nickname};
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Invite {
@@ -25,8 +25,8 @@ impl Invite {
 impl ClientMessageParts for Invite {
     fn into_parts(self) -> (Verb, ParameterList) {
         let params = ParameterList::builder()
-            .with_medial(self.nickname)
-            .with_medial(self.channel)
+            .with_middle(self.nickname)
+            .with_middle(self.channel)
             .finish();
         (Verb::Invite, params)
     }
@@ -52,7 +52,7 @@ impl TryFrom<ParameterList> for Invite {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Invite, ClientMessageError> {
-        let (p1, p2): (_, FinalParam) = params.try_into()?;
+        let (p1, p2): (_, TrailingParam) = params.try_into()?;
         let nickname = Nickname::try_from(p1.into_inner())?;
         let channel = Channel::try_from(p2.into_inner())?;
         Ok(Invite { nickname, channel })

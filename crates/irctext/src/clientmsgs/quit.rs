@@ -1,10 +1,10 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::util::DisplayMaybeTrailing;
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Quit {
-    reason: Option<FinalParam>,
+    reason: Option<TrailingParam>,
 }
 
 impl Quit {
@@ -12,17 +12,17 @@ impl Quit {
         Quit { reason: None }
     }
 
-    pub fn new_with_reason(reason: FinalParam) -> Quit {
+    pub fn new_with_reason(reason: TrailingParam) -> Quit {
         Quit {
             reason: Some(reason),
         }
     }
 
-    pub fn reason(&self) -> Option<&FinalParam> {
+    pub fn reason(&self) -> Option<&TrailingParam> {
         self.reason.as_ref()
     }
 
-    pub fn into_reason(self) -> Option<FinalParam> {
+    pub fn into_reason(self) -> Option<TrailingParam> {
         self.reason
     }
 }
@@ -31,12 +31,12 @@ impl ClientMessageParts for Quit {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Quit,
-            ParameterList::builder().maybe_with_final(self.reason),
+            ParameterList::builder().maybe_with_trailing(self.reason),
         )
     }
 
     fn to_irc_line(&self) -> String {
-        format!("QUIT{}", DisplayMaybeFinal(self.reason.as_ref()))
+        format!("QUIT{}", DisplayMaybeTrailing(self.reason.as_ref()))
     }
 }
 

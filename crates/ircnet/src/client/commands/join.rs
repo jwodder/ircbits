@@ -250,11 +250,24 @@ impl State {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct JoinOutput {
+    /// The name of the channel as given in the `RPL_NAMREPLY` messages
     pub channel: Channel,
+
+    /// The channel's topic, or `None` if no topic is set
     pub topic: Option<String>,
+
+    /// The user who set the current topic, or `None` if not reported
     pub topic_set_by: Option<ClientSource>,
+
+    /// The time at which the current topic was set as a UNIX timestamp, or
+    /// `None` if not reported
     pub topic_set_at: Option<u64>,
+
+    /// The channel's status
     pub channel_status: ChannelStatus,
+
+    /// The users currently joined to the channel along with their membership
+    /// statuses therein
     pub users: Vec<(Option<ChannelMembership>, Nickname)>,
 }
 

@@ -2,7 +2,7 @@
 name = "ircevents"
 edition.workspace = true
 rust-version.workspace = true
-#description = ...
+description = "Log IRC events as JSON"
 authors.workspace = true
 repository.workspace = true
 license.workspace = true

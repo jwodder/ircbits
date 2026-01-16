@@ -124,9 +124,7 @@ async fn main() -> anyhow::Result<()> {
     }
     let mut login_msg = format!(
         "[LOGIN] Logged in as {}; server: {} (version: {})",
-        login_output.my_nick,
-        login_output.server_info.server_name,
-        login_output.server_info.version
+        login_output.my_nick, login_output.server_info.name, login_output.server_info.version
     );
     if let Some(ref ms) = login_output.mode {
         let _ = write!(&mut login_msg, "; user mode: {ms}");

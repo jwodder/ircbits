@@ -6,6 +6,10 @@
 runs indefinitely, outputting a timestamped JSON object for each `PRIVMSG` and
 `NOTICE` message thereafter received.
 
+A running `msgtimes` instance can be shut down gracefully by sending it SIGINT
+(Ctrl-C) or SIGTERM, which will cause it to send a `QUIT` message to the server
+and then exit once the server closes the connection.
+
 Options
 =======
 

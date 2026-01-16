@@ -18,6 +18,7 @@ use url::Host;
 #[enum_dispatch]
 pub trait ReplyParts {
     fn code(&self) -> u16;
+    fn name(&self) -> Option<&'static str>;
     fn parameters(&self) -> &ParameterList;
     fn is_error(&self) -> bool;
     fn into_parts(self) -> (u16, ParameterList);
@@ -557,6 +558,10 @@ impl ReplyParts for Welcome {
         codes::RPL_WELCOME
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WELCOME")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -625,6 +630,10 @@ impl ReplyParts for YourHost {
         codes::RPL_YOURHOST
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_YOURHOST")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -691,6 +700,10 @@ impl Created {
 impl ReplyParts for Created {
     fn code(&self) -> u16 {
         codes::RPL_CREATED
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_CREATED")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -786,6 +799,10 @@ impl ReplyParts for MyInfo {
         codes::RPL_MYINFO
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_MYINFO")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -857,6 +874,10 @@ impl ISupport {
 impl ReplyParts for ISupport {
     fn code(&self) -> u16 {
         codes::RPL_ISUPPORT
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ISUPPORT")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -940,6 +961,10 @@ impl RemoteISupport {
 impl ReplyParts for RemoteISupport {
     fn code(&self) -> u16 {
         codes::RPL_REMOTEISUPPORT
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_REMOTEISUPPORT")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1030,6 +1055,10 @@ impl Bounce {
 impl ReplyParts for Bounce {
     fn code(&self) -> u16 {
         codes::RPL_BOUNCE
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_BOUNCE")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1129,6 +1158,10 @@ impl StatsCommands {
 impl ReplyParts for StatsCommands {
     fn code(&self) -> u16 {
         codes::RPL_STATSCOMMANDS
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_STATSCOMMANDS")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1244,6 +1277,10 @@ impl ReplyParts for EndOfStats {
         codes::RPL_ENDOFSTATS
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFSTATS")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -1312,6 +1349,10 @@ impl ReplyParts for UModeIs {
         codes::RPL_UMODEIS
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_UMODEIS")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -1378,6 +1419,10 @@ impl StatsUptime {
 impl ReplyParts for StatsUptime {
     fn code(&self) -> u16 {
         codes::RPL_STATSUPTIME
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_STATSUPTIME")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1458,6 +1503,10 @@ impl ReplyParts for StatsConn {
         codes::RPL_STATSCONN
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_STATSCONN")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -1524,6 +1573,10 @@ impl LuserClient {
 impl ReplyParts for LuserClient {
     fn code(&self) -> u16 {
         codes::RPL_LUSERCLIENT
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LUSERCLIENT")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1597,6 +1650,10 @@ impl LuserOp {
 impl ReplyParts for LuserOp {
     fn code(&self) -> u16 {
         codes::RPL_LUSEROP
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LUSEROP")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -1688,6 +1745,10 @@ impl ReplyParts for LuserUnknown {
         codes::RPL_LUSERUNKNOWN
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LUSERUNKNOWN")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -1777,6 +1838,10 @@ impl ReplyParts for LuserChannels {
         codes::RPL_LUSERCHANNELS
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LUSERCHANNELS")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -1861,6 +1926,10 @@ impl ReplyParts for LuserMe {
         codes::RPL_LUSERME
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LUSERME")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -1933,6 +2002,10 @@ impl ReplyParts for AdminMe {
         codes::RPL_ADMINME
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ADMINME")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -1999,6 +2072,10 @@ impl AdminLoc1 {
 impl ReplyParts for AdminLoc1 {
     fn code(&self) -> u16 {
         codes::RPL_ADMINLOC1
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ADMINLOC1")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2069,6 +2146,10 @@ impl ReplyParts for AdminLoc2 {
         codes::RPL_ADMINLOC2
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ADMINLOC2")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -2135,6 +2216,10 @@ impl AdminEmail {
 impl ReplyParts for AdminEmail {
     fn code(&self) -> u16 {
         codes::RPL_ADMINEMAIL
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ADMINEMAIL")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2208,6 +2293,10 @@ impl TryAgain {
 impl ReplyParts for TryAgain {
     fn code(&self) -> u16 {
         codes::RPL_TRYAGAIN
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_TRYAGAIN")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2294,6 +2383,10 @@ impl LocalUsers {
 impl ReplyParts for LocalUsers {
     fn code(&self) -> u16 {
         codes::RPL_LOCALUSERS
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LOCALUSERS")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2407,6 +2500,10 @@ impl ReplyParts for GlobalUsers {
         codes::RPL_GLOBALUSERS
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_GLOBALUSERS")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -2513,6 +2610,10 @@ impl ReplyParts for WhoIsCertFP {
         codes::RPL_WHOISCERTFP
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISCERTFP")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -2573,6 +2674,10 @@ pub struct None {
 impl ReplyParts for None {
     fn code(&self) -> u16 {
         codes::RPL_NONE
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_NONE")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2636,6 +2741,10 @@ impl Away {
 impl ReplyParts for Away {
     fn code(&self) -> u16 {
         codes::RPL_AWAY
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_AWAY")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2710,6 +2819,10 @@ impl UserHostRpl {
 impl ReplyParts for UserHostRpl {
     fn code(&self) -> u16 {
         codes::RPL_USERHOST
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_USERHOST")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2790,6 +2903,10 @@ impl ReplyParts for UnAway {
         codes::RPL_UNAWAY
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_UNAWAY")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -2856,6 +2973,10 @@ impl NowAway {
 impl ReplyParts for NowAway {
     fn code(&self) -> u16 {
         codes::RPL_NOWAWAY
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_NOWAWAY")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -2929,6 +3050,10 @@ impl WhoIsRegNick {
 impl ReplyParts for WhoIsRegNick {
     fn code(&self) -> u16 {
         codes::RPL_WHOISREGNICK
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISREGNICK")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3024,6 +3149,10 @@ impl ReplyParts for WhoIsUser {
         codes::RPL_WHOISUSER
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISUSER")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -3117,6 +3246,10 @@ impl ReplyParts for WhoIsServer {
         codes::RPL_WHOISSERVER
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISSERVER")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -3196,6 +3329,10 @@ impl WhoIsOperator {
 impl ReplyParts for WhoIsOperator {
     fn code(&self) -> u16 {
         codes::RPL_WHOISOPERATOR
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISOPERATOR")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3291,6 +3428,10 @@ impl ReplyParts for WhoWasUser {
         codes::RPL_WHOWASUSER
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOWASUSER")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -3379,6 +3520,10 @@ impl ReplyParts for EndOfWho {
         codes::RPL_ENDOFWHO
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFWHO")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -3460,6 +3605,10 @@ impl WhoIsIdle {
 impl ReplyParts for WhoIsIdle {
     fn code(&self) -> u16 {
         codes::RPL_WHOISIDLE
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISIDLE")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3569,6 +3718,10 @@ impl ReplyParts for EndOfWhoIs {
         codes::RPL_ENDOFWHOIS
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFWHOIS")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -3646,6 +3799,10 @@ impl WhoIsChannels {
 impl ReplyParts for WhoIsChannels {
     fn code(&self) -> u16 {
         codes::RPL_WHOISCHANNELS
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISCHANNELS")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3739,6 +3896,10 @@ impl ReplyParts for WhoIsSpecial {
         codes::RPL_WHOISSPECIAL
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISSPECIAL")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -3808,6 +3969,10 @@ impl ListStart {
 impl ReplyParts for ListStart {
     fn code(&self) -> u16 {
         codes::RPL_LISTSTART
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LISTSTART")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3882,6 +4047,10 @@ impl List {
 impl ReplyParts for List {
     fn code(&self) -> u16 {
         codes::RPL_LIST
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LIST")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -3968,6 +4137,10 @@ impl ReplyParts for ListEnd {
         codes::RPL_LISTEND
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LISTEND")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -4038,6 +4211,10 @@ impl ChannelModeIs {
 impl ReplyParts for ChannelModeIs {
     fn code(&self) -> u16 {
         codes::RPL_CHANNELMODEIS
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_CHANNELMODEIS")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4128,6 +4305,10 @@ impl CreationTime {
 impl ReplyParts for CreationTime {
     fn code(&self) -> u16 {
         codes::RPL_CREATIONTIME
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_CREATIONTIME")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4231,6 +4412,10 @@ impl ReplyParts for WhoIsAccount {
         codes::RPL_WHOISACCOUNT
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISACCOUNT")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -4312,6 +4497,10 @@ impl ReplyParts for NoTopic {
         codes::RPL_NOTOPIC
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_NOTOPIC")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -4391,6 +4580,10 @@ impl Topic {
 impl ReplyParts for Topic {
     fn code(&self) -> u16 {
         codes::RPL_TOPIC
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_TOPIC")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4477,6 +4670,10 @@ impl TopicWhoTime {
 impl ReplyParts for TopicWhoTime {
     fn code(&self) -> u16 {
         codes::RPL_TOPICWHOTIME
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_TOPICWHOTIME")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4573,6 +4770,10 @@ impl ReplyParts for InviteList {
         codes::RPL_INVITELIST
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_INVITELIST")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -4647,6 +4848,10 @@ impl EndOfInviteList {
 impl ReplyParts for EndOfInviteList {
     fn code(&self) -> u16 {
         codes::RPL_ENDOFINVITELIST
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFINVITELIST")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4735,6 +4940,10 @@ impl WhoIsActually {
 impl ReplyParts for WhoIsActually {
     fn code(&self) -> u16 {
         codes::RPL_WHOISACTUALLY
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISACTUALLY")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -4871,6 +5080,10 @@ impl ReplyParts for Inviting {
         codes::RPL_INVITING
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_INVITING")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -4957,6 +5170,10 @@ impl ReplyParts for InvExList {
         codes::RPL_INVEXLIST
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_INVEXLIST")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -5036,6 +5253,10 @@ impl EndOfInvExList {
 impl ReplyParts for EndOfInvExList {
     fn code(&self) -> u16 {
         codes::RPL_ENDOFINVEXLIST
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFINVEXLIST")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5119,6 +5340,10 @@ impl ReplyParts for ExceptList {
         codes::RPL_EXCEPTLIST
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_EXCEPTLIST")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -5198,6 +5423,10 @@ impl EndOfExceptList {
 impl ReplyParts for EndOfExceptList {
     fn code(&self) -> u16 {
         codes::RPL_ENDOFEXCEPTLIST
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFEXCEPTLIST")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5288,6 +5517,10 @@ impl Version {
 impl ReplyParts for Version {
     fn code(&self) -> u16 {
         codes::RPL_VERSION
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_VERSION")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5395,6 +5628,10 @@ impl WhoReply {
 impl ReplyParts for WhoReply {
     fn code(&self) -> u16 {
         codes::RPL_WHOREPLY
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOREPLY")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5510,6 +5747,10 @@ impl ReplyParts for NamReply {
         codes::RPL_NAMREPLY
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_NAMREPLY")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -5620,6 +5861,10 @@ impl ReplyParts for Links {
         codes::RPL_LINKS
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LINKS")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -5705,6 +5950,10 @@ impl ReplyParts for EndOfLinks {
         codes::RPL_ENDOFLINKS
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFLINKS")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -5776,6 +6025,10 @@ impl EndOfNames {
 impl ReplyParts for EndOfNames {
     fn code(&self) -> u16 {
         codes::RPL_ENDOFNAMES
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFNAMES")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5866,6 +6119,10 @@ impl BanList {
 impl ReplyParts for BanList {
     fn code(&self) -> u16 {
         codes::RPL_BANLIST
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_BANLIST")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -5960,6 +6217,10 @@ impl ReplyParts for EndOfBanList {
         codes::RPL_ENDOFBANLIST
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFBANLIST")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -6041,6 +6302,10 @@ impl ReplyParts for EndOfWhoWas {
         codes::RPL_ENDOFWHOWAS
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFWHOWAS")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -6117,6 +6382,10 @@ impl ReplyParts for Info {
         codes::RPL_INFO
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_INFO")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -6183,6 +6452,10 @@ impl Motd {
 impl ReplyParts for Motd {
     fn code(&self) -> u16 {
         codes::RPL_MOTD
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_MOTD")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6253,6 +6526,10 @@ impl ReplyParts for EndOfInfo {
         codes::RPL_ENDOFINFO
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFINFO")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -6321,6 +6598,10 @@ impl ReplyParts for MotdStart {
         codes::RPL_MOTDSTART
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_MOTDSTART")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -6387,6 +6668,10 @@ impl EndOfMotd {
 impl ReplyParts for EndOfMotd {
     fn code(&self) -> u16 {
         codes::RPL_ENDOFMOTD
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFMOTD")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6460,6 +6745,10 @@ impl WhoIsHost {
 impl ReplyParts for WhoIsHost {
     fn code(&self) -> u16 {
         codes::RPL_WHOISHOST
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISHOST")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6543,6 +6832,10 @@ impl ReplyParts for WhoIsModes {
         codes::RPL_WHOISMODES
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISMODES")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -6619,6 +6912,10 @@ impl ReplyParts for YoureOper {
         codes::RPL_YOUREOPER
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_YOUREOPER")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -6692,6 +6989,10 @@ impl Rehashing {
 impl ReplyParts for Rehashing {
     fn code(&self) -> u16 {
         codes::RPL_REHASHING
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_REHASHING")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6776,6 +7077,10 @@ impl Time {
 impl ReplyParts for Time {
     fn code(&self) -> u16 {
         codes::RPL_TIME
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_TIME")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -6874,6 +7179,10 @@ impl ReplyParts for UnknownError {
         codes::ERR_UNKNOWNERROR
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_UNKNOWNERROR")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -6962,6 +7271,10 @@ impl ReplyParts for NoSuchNick {
         codes::ERR_NOSUCHNICK
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOSUCHNICK")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -7045,6 +7358,10 @@ impl ReplyParts for NoSuchServer {
         codes::ERR_NOSUCHSERVER
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOSUCHSERVER")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -7116,6 +7433,10 @@ impl NoSuchChannel {
 impl ReplyParts for NoSuchChannel {
     fn code(&self) -> u16 {
         codes::ERR_NOSUCHCHANNEL
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOSUCHCHANNEL")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7199,6 +7520,10 @@ impl ReplyParts for CannotSendToChan {
         codes::ERR_CANNOTSENDTOCHAN
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_CANNOTSENDTOCHAN")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -7278,6 +7603,10 @@ impl TooManyChannels {
 impl ReplyParts for TooManyChannels {
     fn code(&self) -> u16 {
         codes::ERR_TOOMANYCHANNELS
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_TOOMANYCHANNELS")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7361,6 +7690,10 @@ impl ReplyParts for WasNoSuchNick {
         codes::ERR_WASNOSUCHNICK
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_WASNOSUCHNICK")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -7437,6 +7770,10 @@ impl ReplyParts for NoOrigin {
         codes::ERR_NOORIGIN
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOORIGIN")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -7507,6 +7844,10 @@ impl ReplyParts for InvalidCapCmd {
         codes::ERR_INVALIDCAPCMD
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_INVALIDCAPCMD")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -7573,6 +7914,10 @@ impl NoRecipient {
 impl ReplyParts for NoRecipient {
     fn code(&self) -> u16 {
         codes::ERR_NORECIPIENT
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NORECIPIENT")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7643,6 +7988,10 @@ impl ReplyParts for NoTextToSend {
         codes::ERR_NOTEXTTOSEND
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOTEXTTOSEND")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -7709,6 +8058,10 @@ impl InputTooLong {
 impl ReplyParts for InputTooLong {
     fn code(&self) -> u16 {
         codes::ERR_INPUTTOOLONG
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_INPUTTOOLONG")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7782,6 +8135,10 @@ impl UnknownCommand {
 impl ReplyParts for UnknownCommand {
     fn code(&self) -> u16 {
         codes::ERR_UNKNOWNCOMMAND
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_UNKNOWNCOMMAND")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -7860,6 +8217,10 @@ impl ReplyParts for NoMotd {
         codes::ERR_NOMOTD
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOMOTD")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -7926,6 +8287,10 @@ impl NoNicknameGiven {
 impl ReplyParts for NoNicknameGiven {
     fn code(&self) -> u16 {
         codes::ERR_NONICKNAMEGIVEN
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NONICKNAMEGIVEN")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8003,6 +8368,10 @@ impl ReplyParts for ErroneousNickname {
         codes::ERR_ERRONEUSNICKNAME
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_ERRONEUSNICKNAME")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -8074,6 +8443,10 @@ impl NicknameInUse {
 impl ReplyParts for NicknameInUse {
     fn code(&self) -> u16 {
         codes::ERR_NICKNAMEINUSE
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NICKNAMEINUSE")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8155,6 +8528,10 @@ impl NickCollision {
 impl ReplyParts for NickCollision {
     fn code(&self) -> u16 {
         codes::ERR_NICKCOLLISION
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NICKCOLLISION")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8243,6 +8620,10 @@ impl ReplyParts for UserNotInChannel {
         codes::ERR_USERNOTINCHANNEL
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_USERNOTINCHANNEL")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -8327,6 +8708,10 @@ impl NotOnChannel {
 impl ReplyParts for NotOnChannel {
     fn code(&self) -> u16 {
         codes::ERR_NOTONCHANNEL
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOTONCHANNEL")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8415,6 +8800,10 @@ impl ReplyParts for UserOnChannel {
         codes::ERR_USERONCHANNEL
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_USERONCHANNEL")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -8496,6 +8885,10 @@ impl ReplyParts for NotRegistered {
         codes::ERR_NOTREGISTERED
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOTREGISTERED")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -8567,6 +8960,10 @@ impl NeedMoreParams {
 impl ReplyParts for NeedMoreParams {
     fn code(&self) -> u16 {
         codes::ERR_NEEDMOREPARAMS
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NEEDMOREPARAMS")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8645,6 +9042,10 @@ impl ReplyParts for AlreadyRegistered {
         codes::ERR_ALREADYREGISTERED
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_ALREADYREGISTERED")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -8713,6 +9114,10 @@ impl ReplyParts for PasswdMismatch {
         codes::ERR_PASSWDMISMATCH
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_PASSWDMISMATCH")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -8779,6 +9184,10 @@ impl YoureBannedCreep {
 impl ReplyParts for YoureBannedCreep {
     fn code(&self) -> u16 {
         codes::ERR_YOUREBANNEDCREEP
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_YOUREBANNEDCREEP")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8852,6 +9261,10 @@ impl ChannelIsFull {
 impl ReplyParts for ChannelIsFull {
     fn code(&self) -> u16 {
         codes::ERR_CHANNELISFULL
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_CHANNELISFULL")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -8937,6 +9350,10 @@ impl ReplyParts for UnknownMode {
         codes::ERR_UNKNOWNMODE
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_UNKNOWNMODE")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -9008,6 +9425,10 @@ impl InviteOnlyChan {
 impl ReplyParts for InviteOnlyChan {
     fn code(&self) -> u16 {
         codes::ERR_INVITEONLYCHAN
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_INVITEONLYCHAN")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9091,6 +9512,10 @@ impl ReplyParts for BannedFromChan {
         codes::ERR_BANNEDFROMCHAN
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_BANNEDFROMCHAN")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -9170,6 +9595,10 @@ impl BadChannelKey {
 impl ReplyParts for BadChannelKey {
     fn code(&self) -> u16 {
         codes::ERR_BADCHANNELKEY
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_BADCHANNELKEY")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9255,6 +9684,10 @@ impl ReplyParts for BadChanMask {
         codes::ERR_BADCHANMASK
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_BADCHANMASK")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -9321,6 +9754,10 @@ impl NoPrivileges {
 impl ReplyParts for NoPrivileges {
     fn code(&self) -> u16 {
         codes::ERR_NOPRIVILEGES
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOPRIVILEGES")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9394,6 +9831,10 @@ impl ChanOPrivsNeeded {
 impl ReplyParts for ChanOPrivsNeeded {
     fn code(&self) -> u16 {
         codes::ERR_CHANOPRIVSNEEDED
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_CHANOPRIVSNEEDED")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9472,6 +9913,10 @@ impl ReplyParts for CantKillServer {
         codes::ERR_CANTKILLSERVER
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_CANTKILLSERVER")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -9538,6 +9983,10 @@ impl NoOperHost {
 impl ReplyParts for NoOperHost {
     fn code(&self) -> u16 {
         codes::ERR_NOOPERHOST
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOOPERHOST")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9608,6 +10057,10 @@ impl ReplyParts for UmodeUnknownFlag {
         codes::ERR_UMODEUNKNOWNFLAG
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_UMODEUNKNOWNFLAG")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -9674,6 +10127,10 @@ impl UsersDontMatch {
 impl ReplyParts for UsersDontMatch {
     fn code(&self) -> u16 {
         codes::ERR_USERSDONTMATCH
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_USERSDONTMATCH")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9751,6 +10208,10 @@ impl ReplyParts for HelpNotFound {
         codes::ERR_HELPNOTFOUND
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_HELPNOTFOUND")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -9822,6 +10283,10 @@ impl InvalidKey {
 impl ReplyParts for InvalidKey {
     fn code(&self) -> u16 {
         codes::ERR_INVALIDKEY
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_INVALIDKEY")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -9900,6 +10365,10 @@ impl ReplyParts for StartTLS {
         codes::RPL_STARTTLS
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_STARTTLS")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -9971,6 +10440,10 @@ impl WhoIsSecure {
 impl ReplyParts for WhoIsSecure {
     fn code(&self) -> u16 {
         codes::RPL_WHOISSECURE
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISSECURE")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10047,6 +10520,10 @@ impl StartTLSError {
 impl ReplyParts for StartTLSError {
     fn code(&self) -> u16 {
         codes::ERR_STARTTLSERROR
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_STARTTLSERROR")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10136,6 +10613,10 @@ impl ReplyParts for InvalidModeParam {
         codes::ERR_INVALIDMODEPARAM
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_INVALIDMODEPARAM")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -10219,6 +10700,10 @@ impl ReplyParts for HelpStart {
         codes::RPL_HELPSTART
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_HELPSTART")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -10292,6 +10777,10 @@ impl HelpTxt {
 impl ReplyParts for HelpTxt {
     fn code(&self) -> u16 {
         codes::RPL_HELPTXT
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_HELPTXT")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10369,6 +10858,10 @@ impl ReplyParts for EndOfHelp {
         codes::RPL_ENDOFHELP
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_ENDOFHELP")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -10442,6 +10935,10 @@ impl NoPrivs {
 impl ReplyParts for NoPrivs {
     fn code(&self) -> u16 {
         codes::ERR_NOPRIVS
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NOPRIVS")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10522,6 +11019,10 @@ impl LoggedIn {
 impl ReplyParts for LoggedIn {
     fn code(&self) -> u16 {
         codes::RPL_LOGGEDIN
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LOGGEDIN")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10605,6 +11106,10 @@ impl ReplyParts for LoggedOut {
         codes::RPL_LOGGEDOUT
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_LOGGEDOUT")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -10681,6 +11186,10 @@ impl ReplyParts for NickLocked {
         codes::ERR_NICKLOCKED
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_NICKLOCKED")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -10747,6 +11256,10 @@ impl SaslSuccess {
 impl ReplyParts for SaslSuccess {
     fn code(&self) -> u16 {
         codes::RPL_SASLSUCCESS
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_SASLSUCCESS")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10817,6 +11330,10 @@ impl ReplyParts for SaslFail {
         codes::ERR_SASLFAIL
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_SASLFAIL")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -10883,6 +11400,10 @@ impl SaslTooLong {
 impl ReplyParts for SaslTooLong {
     fn code(&self) -> u16 {
         codes::ERR_SASLTOOLONG
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_SASLTOOLONG")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -10953,6 +11474,10 @@ impl ReplyParts for SaslAborted {
         codes::ERR_SASLABORTED
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_SASLABORTED")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -11019,6 +11544,10 @@ impl SaslAlready {
 impl ReplyParts for SaslAlready {
     fn code(&self) -> u16 {
         codes::ERR_SASLALREADY
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("ERR_SASLALREADY")
     }
 
     fn parameters(&self) -> &ParameterList {
@@ -11096,6 +11625,10 @@ impl ReplyParts for SaslMechs {
         codes::RPL_SASLMECHS
     }
 
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_SASLMECHS")
+    }
+
     fn parameters(&self) -> &ParameterList {
         &self.parameters
     }
@@ -11155,6 +11688,10 @@ impl Unknown {
 impl ReplyParts for Unknown {
     fn code(&self) -> u16 {
         self.code
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        None
     }
 
     fn parameters(&self) -> &ParameterList {

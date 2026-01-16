@@ -373,6 +373,9 @@ impl AddFields for LoginOutput {
         let LoginOutput {
             capabilities,
             my_nick,
+            welcome_msg,
+            yourhost_msg,
+            created_msg,
             server_info,
             isupport,
             luser_stats,
@@ -389,6 +392,9 @@ impl AddFields for LoginOutput {
             map.insert(String::from("capabilities"), Value::Null);
         }
         map.insert(String::from("my_nick"), Value::from(String::from(my_nick)));
+        map.insert(String::from("welcome_msg"), Value::from(welcome_msg));
+        map.insert(String::from("yourhost_msg"), Value::from(yourhost_msg));
+        map.insert(String::from("created_msg"), Value::from(created_msg));
         let server = Map::from_iter([
             (String::from("name"), Value::from(server_info.name)),
             (String::from("version"), Value::from(server_info.version)),

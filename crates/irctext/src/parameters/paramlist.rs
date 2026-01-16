@@ -1,5 +1,5 @@
 use super::{
-    FinalParam, MedialParam, ParamRef, Parameter, ParseFinalParamError, ParseMedialParamError,
+    MiddleParam, ParamRef, Parameter, ParseMiddleParamError, ParseTrailingParamError, TrailingParam,
 };
 use crate::TryFromStringError;
 use crate::util::split_word;
@@ -9,8 +9,8 @@ use thiserror::Error;
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct ParameterList {
-    medial: Vec<MedialParam>,
-    finalp: Option<FinalParam>,
+    middle: Vec<MiddleParam>,
+    trailing: Option<TrailingParam>,
 }
 
 impl ParameterList {
@@ -19,36 +19,36 @@ impl ParameterList {
     }
 
     pub fn len(&self) -> usize {
-        self.medial
+        self.middle
             .len()
-            .saturating_add(usize::from(self.finalp.is_some()))
+            .saturating_add(usize::from(self.trailing.is_some()))
     }
 
     pub fn is_empty(&self) -> bool {
-        self.medial.is_empty() && self.finalp.is_none()
+        self.middle.is_empty() && self.trailing.is_none()
     }
 
     pub fn get(&self, index: usize) -> Option<ParamRef<'_>> {
-        match index.cmp(&self.medial.len()) {
-            Ordering::Less => self.medial.get(index).map(ParamRef::Medial),
-            Ordering::Equal => self.finalp.as_ref().map(ParamRef::Final),
+        match index.cmp(&self.middle.len()) {
+            Ordering::Less => self.middle.get(index).map(ParamRef::Middle),
+            Ordering::Equal => self.trailing.as_ref().map(ParamRef::Trailing),
             Ordering::Greater => None,
         }
     }
 
     pub fn last(&self) -> Option<ParamRef<'_>> {
-        if let Some(ref p) = self.finalp {
-            Some(ParamRef::Final(p))
+        if let Some(ref p) = self.trailing {
+            Some(ParamRef::Trailing(p))
         } else {
-            self.medial.last().map(ParamRef::Medial)
+            self.middle.last().map(ParamRef::Middle)
         }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = ParamRef<'_>> + '_ {
-        self.medial
+        self.middle
             .iter()
-            .map(ParamRef::Medial)
-            .chain(self.finalp.as_ref().map(ParamRef::Final))
+            .map(ParamRef::Middle)
+            .chain(self.trailing.as_ref().map(ParamRef::Trailing))
     }
 }
 
@@ -80,7 +80,7 @@ impl fmt::Display for ParameterList {
             if !std::mem::replace(&mut first, false) {
                 write!(f, " ")?;
             }
-            if p.is_medial() {
+            if p.is_middle() {
                 write!(f, "{p}")?;
             } else {
                 write!(f, ":{p}")?;
@@ -94,19 +94,19 @@ impl std::str::FromStr for ParameterList {
     type Err = ParseParameterListError;
 
     fn from_str(mut s: &str) -> Result<ParameterList, ParseParameterListError> {
-        let mut medial = Vec::new();
-        let mut finalp = None;
+        let mut middle = Vec::new();
+        let mut trailing = None;
         while !s.is_empty() {
             if let Some(trail) = s.strip_prefix(':') {
-                finalp = Some(trail.parse::<FinalParam>()?);
+                trailing = Some(trail.parse::<TrailingParam>()?);
                 s = "";
             } else {
                 let (param, rest) = split_word(s);
-                medial.push(param.parse::<MedialParam>()?);
+                middle.push(param.parse::<MiddleParam>()?);
                 s = rest;
             }
         }
-        Ok(ParameterList { medial, finalp })
+        Ok(ParameterList { middle, trailing })
     }
 }
 
@@ -138,16 +138,16 @@ impl TryFrom<ParameterList> for () {
     }
 }
 
-impl TryFrom<ParameterList> for (FinalParam,) {
+impl TryFrom<ParameterList> for (TrailingParam,) {
     type Error = ParameterListSizeError;
 
-    fn try_from(mut params: ParameterList) -> Result<(FinalParam,), ParameterListSizeError> {
+    fn try_from(mut params: ParameterList) -> Result<(TrailingParam,), ParameterListSizeError> {
         if params.len() == 1 {
             let p = params
-                .medial
+                .middle
                 .pop()
-                .map(FinalParam::from)
-                .or(params.finalp)
+                .map(TrailingParam::from)
+                .or(params.trailing)
                 .expect("There should be something to unwrap when len is 1");
             Ok((p,))
         } else {
@@ -159,13 +159,13 @@ impl TryFrom<ParameterList> for (FinalParam,) {
     }
 }
 
-impl TryFrom<ParameterList> for (Option<FinalParam>,) {
+impl TryFrom<ParameterList> for (Option<TrailingParam>,) {
     type Error = ParameterListSizeError;
 
-    fn try_from(params: ParameterList) -> Result<(Option<FinalParam>,), ParameterListSizeError> {
-        match (params.medial.len(), params.finalp.is_some()) {
-            (1, false) => Ok((params.medial.into_iter().next().map(FinalParam::from),)),
-            (0, _) => Ok((params.finalp,)),
+    fn try_from(params: ParameterList) -> Result<(Option<TrailingParam>,), ParameterListSizeError> {
+        match (params.middle.len(), params.trailing.is_some()) {
+            (1, false) => Ok((params.middle.into_iter().next().map(TrailingParam::from),)),
+            (0, _) => Ok((params.trailing,)),
             _ => Err(ParameterListSizeError::Range {
                 min_required: 0,
                 max_required: 1,
@@ -175,21 +175,21 @@ impl TryFrom<ParameterList> for (Option<FinalParam>,) {
     }
 }
 
-impl TryFrom<ParameterList> for (MedialParam, FinalParam) {
+impl TryFrom<ParameterList> for (MiddleParam, TrailingParam) {
     type Error = ParameterListSizeError;
 
     fn try_from(
         params: ParameterList,
-    ) -> Result<(MedialParam, FinalParam), ParameterListSizeError> {
+    ) -> Result<(MiddleParam, TrailingParam), ParameterListSizeError> {
         if params.len() == 2 {
-            let mut medials = params.medial.into_iter();
-            let p1 = medials
+            let mut middles = params.middle.into_iter();
+            let p1 = middles
                 .next()
                 .expect("First element should exist when len is 2");
-            let p2 = medials
+            let p2 = middles
                 .next()
-                .map(FinalParam::from)
-                .or(params.finalp)
+                .map(TrailingParam::from)
+                .or(params.trailing)
                 .expect("Second element should exist when len is 2");
             Ok((p1, p2))
         } else {
@@ -201,27 +201,27 @@ impl TryFrom<ParameterList> for (MedialParam, FinalParam) {
     }
 }
 
-impl TryFrom<ParameterList> for (MedialParam, Option<FinalParam>) {
+impl TryFrom<ParameterList> for (MiddleParam, Option<TrailingParam>) {
     type Error = ParameterListSizeError;
 
     fn try_from(
         params: ParameterList,
-    ) -> Result<(MedialParam, Option<FinalParam>), ParameterListSizeError> {
-        match (params.medial.len(), params.finalp.is_some()) {
+    ) -> Result<(MiddleParam, Option<TrailingParam>), ParameterListSizeError> {
+        match (params.middle.len(), params.trailing.is_some()) {
             (2, false) => {
-                let mut medials = params.medial.into_iter();
-                let p1 = medials
+                let mut middles = params.middle.into_iter();
+                let p1 = middles
                     .next()
                     .expect("First element should exist when len is 2");
-                let p2 = medials.next().map(FinalParam::from);
+                let p2 = middles.next().map(TrailingParam::from);
                 Ok((p1, p2))
             }
             (1, _) => {
-                let mut medials = params.medial.into_iter();
-                let p1 = medials
+                let mut middles = params.middle.into_iter();
+                let p1 = middles
                     .next()
                     .expect("First element should exist when len is 1");
-                let p2 = params.finalp;
+                let p2 = params.trailing;
                 Ok((p1, p2))
             }
             _ => Err(ParameterListSizeError::Range {
@@ -233,33 +233,33 @@ impl TryFrom<ParameterList> for (MedialParam, Option<FinalParam>) {
     }
 }
 
-impl TryFrom<ParameterList> for (MedialParam, MedialParam, Option<FinalParam>) {
+impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, Option<TrailingParam>) {
     type Error = ParameterListSizeError;
 
     fn try_from(
         params: ParameterList,
-    ) -> Result<(MedialParam, MedialParam, Option<FinalParam>), ParameterListSizeError> {
-        match (params.medial.len(), params.finalp.is_some()) {
+    ) -> Result<(MiddleParam, MiddleParam, Option<TrailingParam>), ParameterListSizeError> {
+        match (params.middle.len(), params.trailing.is_some()) {
             (3, false) => {
-                let mut medials = params.medial.into_iter();
-                let p1 = medials
+                let mut middles = params.middle.into_iter();
+                let p1 = middles
                     .next()
                     .expect("First element should exist when len is 3");
-                let p2 = medials
+                let p2 = middles
                     .next()
                     .expect("Second element should exist when len is 3");
-                let p3 = medials.next().map(FinalParam::from);
+                let p3 = middles.next().map(TrailingParam::from);
                 Ok((p1, p2, p3))
             }
             (2, _) => {
-                let mut medials = params.medial.into_iter();
-                let p1 = medials
+                let mut middles = params.middle.into_iter();
+                let p1 = middles
                     .next()
                     .expect("First element should exist when len is 2");
-                let p2 = medials
+                let p2 = middles
                     .next()
                     .expect("Second element should exist when len is 2");
-                let p3 = params.finalp;
+                let p3 = params.trailing;
                 Ok((p1, p2, p3))
             }
             _ => Err(ParameterListSizeError::Range {
@@ -271,24 +271,24 @@ impl TryFrom<ParameterList> for (MedialParam, MedialParam, Option<FinalParam>) {
     }
 }
 
-impl TryFrom<ParameterList> for (MedialParam, MedialParam, FinalParam) {
+impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, TrailingParam) {
     type Error = ParameterListSizeError;
 
     fn try_from(
         params: ParameterList,
-    ) -> Result<(MedialParam, MedialParam, FinalParam), ParameterListSizeError> {
+    ) -> Result<(MiddleParam, MiddleParam, TrailingParam), ParameterListSizeError> {
         if params.len() == 3 {
-            let mut medials = params.medial.into_iter();
-            let p1 = medials
+            let mut middles = params.middle.into_iter();
+            let p1 = middles
                 .next()
                 .expect("First element should exist when len is 3");
-            let p2 = medials
+            let p2 = middles
                 .next()
                 .expect("Second element should exist when len is 3");
-            let p3 = medials
+            let p3 = middles
                 .next()
-                .map(FinalParam::from)
-                .or(params.finalp)
+                .map(TrailingParam::from)
+                .or(params.trailing)
                 .expect("Third element should exist when len is 3");
             Ok((p1, p2, p3))
         } else {
@@ -300,27 +300,28 @@ impl TryFrom<ParameterList> for (MedialParam, MedialParam, FinalParam) {
     }
 }
 
-impl TryFrom<ParameterList> for (MedialParam, MedialParam, MedialParam, FinalParam) {
+impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, MiddleParam, TrailingParam) {
     type Error = ParameterListSizeError;
 
     fn try_from(
         params: ParameterList,
-    ) -> Result<(MedialParam, MedialParam, MedialParam, FinalParam), ParameterListSizeError> {
+    ) -> Result<(MiddleParam, MiddleParam, MiddleParam, TrailingParam), ParameterListSizeError>
+    {
         if params.len() == 4 {
-            let mut medials = params.medial.into_iter();
-            let p1 = medials
+            let mut middles = params.middle.into_iter();
+            let p1 = middles
                 .next()
                 .expect("First element should exist when len is 4");
-            let p2 = medials
+            let p2 = middles
                 .next()
                 .expect("Second element should exist when len is 4");
-            let p3 = medials
+            let p3 = middles
                 .next()
                 .expect("Third element should exist when len is 4");
-            let p4 = medials
+            let p4 = middles
                 .next()
-                .map(FinalParam::from)
-                .or(params.finalp)
+                .map(TrailingParam::from)
+                .or(params.trailing)
                 .expect("Fourth element should exist when len is 4");
             Ok((p1, p2, p3, p4))
         } else {
@@ -335,9 +336,9 @@ impl TryFrom<ParameterList> for (MedialParam, MedialParam, MedialParam, FinalPar
 #[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseParameterListError {
     #[error(transparent)]
-    Medial(#[from] ParseMedialParamError),
+    Middle(#[from] ParseMiddleParamError),
     #[error(transparent)]
-    Final(#[from] ParseFinalParamError),
+    Trailing(#[from] ParseTrailingParamError),
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
@@ -362,28 +363,31 @@ impl ParameterListBuilder {
         ParameterListBuilder::default()
     }
 
-    pub fn push_medial<P: Into<MedialParam>>(&mut self, param: P) {
-        self.0.medial.push(param.into());
+    pub fn push_middle<P: Into<MiddleParam>>(&mut self, param: P) {
+        self.0.middle.push(param.into());
     }
 
-    pub fn with_medial<P: Into<MedialParam>>(mut self, param: P) -> Self {
-        self.push_medial(param);
+    pub fn with_middle<P: Into<MiddleParam>>(mut self, param: P) -> Self {
+        self.push_middle(param);
         self
     }
 
-    pub fn maybe_with_final<P: Into<FinalParam>>(mut self, param: Option<P>) -> ParameterList {
-        self.0.finalp = param.map(Into::into);
+    pub fn maybe_with_trailing<P: Into<TrailingParam>>(
+        mut self,
+        param: Option<P>,
+    ) -> ParameterList {
+        self.0.trailing = param.map(Into::into);
         self.0
     }
 
-    pub fn with_final<P: Into<FinalParam>>(mut self, param: P) -> ParameterList {
-        self.0.finalp = Some(param.into());
+    pub fn with_trailing<P: Into<TrailingParam>>(mut self, param: P) -> ParameterList {
+        self.0.trailing = Some(param.into());
         self.0
     }
 
     pub fn with_list(mut self, params: ParameterList) -> ParameterList {
-        self.0.medial.extend(params.medial);
-        self.0.finalp = params.finalp;
+        self.0.middle.extend(params.middle);
+        self.0.trailing = params.trailing;
         self.0
     }
 
@@ -398,11 +402,11 @@ pub struct ParameterListIntoIter(std::vec::IntoIter<Parameter>);
 impl ParameterListIntoIter {
     fn new(params: ParameterList) -> Self {
         let mut paramvec = params
-            .medial
+            .middle
             .into_iter()
-            .map(Parameter::Medial)
+            .map(Parameter::Middle)
             .collect::<Vec<_>>();
-        paramvec.extend(params.finalp.map(Parameter::Final));
+        paramvec.extend(params.trailing.map(Parameter::Trailing));
         ParameterListIntoIter(paramvec.into_iter())
     }
 
@@ -411,12 +415,12 @@ impl ParameterListIntoIter {
         let mut builder = ParameterList::builder();
         for p in self.by_ref() {
             match p {
-                Parameter::Medial(p) => builder.push_medial(p),
-                Parameter::Final(p) => {
-                    let params = builder.with_final(p);
+                Parameter::Middle(p) => builder.push_middle(p),
+                Parameter::Trailing(p) => {
+                    let params = builder.with_trailing(p);
                     debug_assert!(
                         self.next().is_none(),
-                        "ParamterListIntoIter should be done after yielding a Final"
+                        "ParamterListIntoIter should be done after yielding a Trailing"
                     );
                     return params;
                 }

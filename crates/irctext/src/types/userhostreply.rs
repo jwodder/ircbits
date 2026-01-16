@@ -1,5 +1,5 @@
 use crate::types::{Nickname, ParseNicknameError};
-use crate::{FinalParam, MedialParam, TryFromStringError};
+use crate::{MiddleParam, TrailingParam, TryFromStringError};
 use std::fmt;
 use thiserror::Error;
 
@@ -72,16 +72,16 @@ impl TryFrom<String> for UserHostReply {
     }
 }
 
-impl From<UserHostReply> for MedialParam {
-    fn from(value: UserHostReply) -> MedialParam {
-        MedialParam::try_from(value.to_string())
-            .expect("USERHOST reply should be valid MedialParam")
+impl From<UserHostReply> for MiddleParam {
+    fn from(value: UserHostReply) -> MiddleParam {
+        MiddleParam::try_from(value.to_string())
+            .expect("USERHOST reply should be valid MiddleParam")
     }
 }
 
-impl From<UserHostReply> for FinalParam {
-    fn from(value: UserHostReply) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<UserHostReply> for TrailingParam {
+    fn from(value: UserHostReply) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 

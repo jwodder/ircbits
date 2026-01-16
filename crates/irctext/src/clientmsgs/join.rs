@@ -1,8 +1,8 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::{Channel, Key};
-use crate::util::{DisplayMaybeFinal, join_with_commas, split_param};
+use crate::util::{DisplayMaybeTrailing, join_with_commas, split_param};
 use crate::{
-    FinalParam, MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage, Verb,
+    Message, MiddleParam, ParameterList, ParameterListSizeError, RawMessage, TrailingParam, Verb,
 };
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -80,10 +80,10 @@ impl Join {
         }
     }
 
-    fn channels_param(&self) -> MedialParam {
+    fn channels_param(&self) -> MiddleParam {
         if self.is_zero() {
-            "0".parse::<MedialParam>()
-                .expect(r#""0" should be a valid MedialParam"#)
+            "0".parse::<MiddleParam>()
+                .expect(r#""0" should be a valid MiddleParam"#)
         } else {
             let channels = self.channels();
             assert!(
@@ -91,19 +91,20 @@ impl Join {
                 "Join.channels should always be nonempty"
             );
             let s = join_with_commas(channels).to_string();
-            MedialParam::try_from(s)
-                .expect("comma-separated channels should be a valid MedialParam")
+            MiddleParam::try_from(s)
+                .expect("comma-separated channels should be a valid MiddleParam")
         }
     }
 
-    fn keys_param(&self) -> Option<FinalParam> {
+    fn keys_param(&self) -> Option<TrailingParam> {
         let keys = self.keys();
         if keys.is_empty() {
             None
         } else {
             let s = join_with_commas(keys).to_string();
             Some(
-                FinalParam::try_from(s).expect("comma-separated keys should be a valid FinalParam"),
+                TrailingParam::try_from(s)
+                    .expect("comma-separated keys should be a valid TrailingParam"),
             )
         }
     }
@@ -112,8 +113,8 @@ impl Join {
 impl ClientMessageParts for Join {
     fn into_parts(self) -> (Verb, ParameterList) {
         let params = ParameterList::builder()
-            .with_medial(self.channels_param())
-            .maybe_with_final(self.keys_param());
+            .with_middle(self.channels_param())
+            .maybe_with_trailing(self.keys_param());
         (Verb::Join, params)
     }
 
@@ -121,7 +122,7 @@ impl ClientMessageParts for Join {
         format!(
             "JOIN {}{}",
             self.channels_param(),
-            DisplayMaybeFinal(self.keys_param())
+            DisplayMaybeTrailing(self.keys_param())
         )
     }
 }
@@ -142,7 +143,7 @@ impl TryFrom<ParameterList> for Join {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Join, ClientMessageError> {
-        let (p1, p2): (_, Option<FinalParam>) = params.try_into()?;
+        let (p1, p2): (_, Option<TrailingParam>) = params.try_into()?;
         if p1 == "0" {
             if p2.is_some() {
                 return Err(ClientMessageError::ParamQty(

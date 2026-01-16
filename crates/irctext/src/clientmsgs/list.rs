@@ -1,7 +1,7 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::{Channel, EListCond, channel::channel_prefixed};
 use crate::util::{join_with_commas, split_param};
-use crate::{MedialParam, Message, ParameterList, ParameterListSizeError, RawMessage, Verb};
+use crate::{Message, MiddleParam, ParameterList, ParameterListSizeError, RawMessage, Verb};
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct List {
@@ -50,26 +50,26 @@ impl List {
         &self.elistconds
     }
 
-    fn channels_param(&self) -> Option<MedialParam> {
+    fn channels_param(&self) -> Option<MiddleParam> {
         if self.channels.is_empty() {
             None
         } else {
             let s = join_with_commas(&self.channels).to_string();
             Some(
-                MedialParam::try_from(s)
-                    .expect("comma-separated channels should be a valid MedialParam"),
+                MiddleParam::try_from(s)
+                    .expect("comma-separated channels should be a valid MiddleParam"),
             )
         }
     }
 
-    fn elistconds_param(&self) -> Option<MedialParam> {
+    fn elistconds_param(&self) -> Option<MiddleParam> {
         if self.elistconds.is_empty() {
             None
         } else {
             let s = join_with_commas(&self.elistconds).to_string();
             Some(
-                MedialParam::try_from(s)
-                    .expect("comma-separated elistconds should be a valid MedialParam"),
+                MiddleParam::try_from(s)
+                    .expect("comma-separated elistconds should be a valid MiddleParam"),
             )
         }
     }
@@ -79,10 +79,10 @@ impl ClientMessageParts for List {
     fn into_parts(self) -> (Verb, ParameterList) {
         let mut builder = ParameterList::builder();
         if let Some(channels) = self.channels_param() {
-            builder.push_medial(channels);
+            builder.push_middle(channels);
         }
         if let Some(elistconds) = self.elistconds_param() {
-            builder.push_medial(elistconds);
+            builder.push_middle(elistconds);
         }
         (Verb::List, builder.finish())
     }

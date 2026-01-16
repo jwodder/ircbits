@@ -1,6 +1,6 @@
 // See <https://github.com/ircdocs/modern-irc/issues/226> for notes on username
 // format.
-use crate::{FinalParam, MedialParam};
+use crate::{MiddleParam, TrailingParam};
 use thiserror::Error;
 
 #[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -21,15 +21,15 @@ fn validate(s: &str) -> Result<(), ParseUsernameError> {
     }
 }
 
-impl From<Username> for MedialParam {
-    fn from(value: Username) -> MedialParam {
-        MedialParam::try_from(value.into_inner()).expect("Username should be valid MedialParam")
+impl From<Username> for MiddleParam {
+    fn from(value: Username) -> MiddleParam {
+        MiddleParam::try_from(value.into_inner()).expect("Username should be valid MiddleParam")
     }
 }
 
-impl From<Username> for FinalParam {
-    fn from(value: Username) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<Username> for TrailingParam {
+    fn from(value: Username) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 

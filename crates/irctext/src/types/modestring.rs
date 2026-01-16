@@ -1,4 +1,4 @@
-use crate::{FinalParam, MedialParam};
+use crate::{MiddleParam, TrailingParam};
 use thiserror::Error;
 
 #[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -16,15 +16,15 @@ fn validate(s: &str) -> Result<(), ParseModeStringError> {
     }
 }
 
-impl From<ModeString> for MedialParam {
-    fn from(value: ModeString) -> MedialParam {
-        MedialParam::try_from(value.into_inner()).expect("Mode string should be valid MedialParam")
+impl From<ModeString> for MiddleParam {
+    fn from(value: ModeString) -> MiddleParam {
+        MiddleParam::try_from(value.into_inner()).expect("Mode string should be valid MiddleParam")
     }
 }
 
-impl From<ModeString> for FinalParam {
-    fn from(value: ModeString) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<ModeString> for TrailingParam {
+    fn from(value: ModeString) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 

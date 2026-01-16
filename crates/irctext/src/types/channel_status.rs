@@ -1,4 +1,4 @@
-use crate::{FinalParam, MedialParam, TryFromStringError};
+use crate::{MiddleParam, TrailingParam, TryFromStringError};
 use std::fmt;
 use thiserror::Error;
 
@@ -66,18 +66,18 @@ impl TryFrom<String> for ChannelStatus {
     }
 }
 
-impl From<ChannelStatus> for MedialParam {
-    fn from(value: ChannelStatus) -> MedialParam {
+impl From<ChannelStatus> for MiddleParam {
+    fn from(value: ChannelStatus) -> MiddleParam {
         value
             .as_str()
-            .parse::<MedialParam>()
-            .expect("ChannelStatus should be a valid MedialParam")
+            .parse::<MiddleParam>()
+            .expect("ChannelStatus should be a valid MiddleParam")
     }
 }
 
-impl From<ChannelStatus> for FinalParam {
-    fn from(value: ChannelStatus) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<ChannelStatus> for TrailingParam {
+    fn from(value: ChannelStatus) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 

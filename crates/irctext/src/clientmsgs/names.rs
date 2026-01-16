@@ -1,7 +1,7 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::Channel;
 use crate::util::{join_with_commas, split_param};
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Names {
@@ -32,9 +32,9 @@ impl Names {
         self.channels
     }
 
-    fn channels_param(&self) -> FinalParam {
+    fn channels_param(&self) -> TrailingParam {
         let s = join_with_commas(&self.channels).to_string();
-        FinalParam::try_from(s).expect("comma-separated channels should be a valid MedialParam")
+        TrailingParam::try_from(s).expect("comma-separated channels should be a valid MiddleParam")
     }
 }
 
@@ -42,7 +42,7 @@ impl ClientMessageParts for Names {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Names,
-            ParameterList::builder().with_final(self.channels_param()),
+            ParameterList::builder().with_trailing(self.channels_param()),
         )
     }
 
@@ -67,7 +67,7 @@ impl TryFrom<ParameterList> for Names {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Names, ClientMessageError> {
-        let (p,): (FinalParam,) = params.try_into()?;
+        let (p,): (TrailingParam,) = params.try_into()?;
         let channels = split_param::<Channel>(p.as_str())?;
         // TODO: Error if `channels` is empty?
         Ok(Names { channels })

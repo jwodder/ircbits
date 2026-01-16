@@ -1,14 +1,14 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 use base64::{Engine, engine::general_purpose::STANDARD};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Authenticate {
-    parameter: FinalParam,
+    parameter: TrailingParam,
 }
 
 impl Authenticate {
-    pub fn new(parameter: FinalParam) -> Authenticate {
+    pub fn new(parameter: TrailingParam) -> Authenticate {
         Authenticate { parameter }
     }
 
@@ -17,15 +17,16 @@ impl Authenticate {
         let mut msgs = Vec::with_capacity(b64.len() / 400 + 1);
         loop {
             if b64.is_empty() {
-                let Ok(param) = "+".parse::<FinalParam>() else {
-                    unreachable!(r#""+" should be valid final param"#);
+                let Ok(param) = "+".parse::<TrailingParam>() else {
+                    unreachable!(r#""+" should be valid trailing param"#);
                 };
                 msgs.push(Authenticate::new(param));
                 return msgs;
             } else {
                 let end = b64.len().min(400);
-                let Ok(param) = FinalParam::try_from(b64.drain(..end).collect::<String>()) else {
-                    unreachable!("base64 text should be valid final param");
+                let Ok(param) = TrailingParam::try_from(b64.drain(..end).collect::<String>())
+                else {
+                    unreachable!("base64 text should be valid trailing param");
                 };
                 msgs.push(Authenticate::new(param));
                 if end < 400 && b64.is_empty() {
@@ -45,17 +46,17 @@ impl Authenticate {
     }
 
     pub fn new_abort() -> Authenticate {
-        let Ok(param) = "*".parse::<FinalParam>() else {
-            unreachable!(r#""*" should be valid final param"#);
+        let Ok(param) = "*".parse::<TrailingParam>() else {
+            unreachable!(r#""*" should be valid trailing param"#);
         };
         Authenticate::new(param)
     }
 
-    pub fn parameter(&self) -> &FinalParam {
+    pub fn parameter(&self) -> &TrailingParam {
         &self.parameter
     }
 
-    pub fn into_parameter(self) -> FinalParam {
+    pub fn into_parameter(self) -> TrailingParam {
         self.parameter
     }
 }
@@ -64,7 +65,7 @@ impl ClientMessageParts for Authenticate {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Authenticate,
-            ParameterList::builder().with_final(self.parameter),
+            ParameterList::builder().with_trailing(self.parameter),
         )
     }
 

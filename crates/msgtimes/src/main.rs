@@ -7,7 +7,7 @@ use ircnet::client::{
     commands::JoinCommand,
 };
 use irctext::{
-    CaseMapping, ClientMessage, FinalParam, Message, Payload,
+    CaseMapping, ClientMessage, Message, Payload, TrailingParam,
     clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
     types::{Channel, ISupportParam, MsgTarget},
@@ -61,7 +61,7 @@ struct Profile {
 #[derive(Clone, Debug, Default, serde::Deserialize, Eq, PartialEq)]
 struct ProgramParams {
     channels: Vec<Channel>,
-    away: Option<FinalParam>,
+    away: Option<TrailingParam>,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -217,7 +217,7 @@ async fn main() -> anyhow::Result<()> {
             }
             () = recv_stop_signal() => {
                 tracing::info!("Signal received; quitting");
-                client.send(Quit::new_with_reason("Terminated".parse::<FinalParam>().expect(r#""Terminated" should be valid FinalParam"#)).into()).await?;
+                client.send(Quit::new_with_reason("Terminated".parse::<TrailingParam>().expect(r#""Terminated" should be valid TrailingParam"#)).into()).await?;
             }
         }
     }

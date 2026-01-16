@@ -1,4 +1,4 @@
-use crate::{FinalParam, MedialParam, TryFromStringError};
+use crate::{MiddleParam, TrailingParam, TryFromStringError};
 use std::fmt;
 use thiserror::Error;
 
@@ -79,15 +79,15 @@ impl TryFrom<String> for ISupportParam {
     }
 }
 
-impl From<ISupportParam> for MedialParam {
-    fn from(value: ISupportParam) -> MedialParam {
-        MedialParam::try_from(value.to_string()).expect("ISupportParam should be valid MedialParam")
+impl From<ISupportParam> for MiddleParam {
+    fn from(value: ISupportParam) -> MiddleParam {
+        MiddleParam::try_from(value.to_string()).expect("ISupportParam should be valid MiddleParam")
     }
 }
 
-impl From<ISupportParam> for FinalParam {
-    fn from(value: ISupportParam) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<ISupportParam> for TrailingParam {
+    fn from(value: ISupportParam) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 

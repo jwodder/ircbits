@@ -1,10 +1,10 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::util::DisplayMaybeFinal;
-use crate::{FinalParam, Message, ParameterList, RawMessage, Verb};
+use crate::util::DisplayMaybeTrailing;
+use crate::{Message, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Help {
-    subject: Option<FinalParam>,
+    subject: Option<TrailingParam>,
 }
 
 impl Help {
@@ -12,17 +12,17 @@ impl Help {
         Help { subject: None }
     }
 
-    pub fn new_with_subject(subject: FinalParam) -> Help {
+    pub fn new_with_subject(subject: TrailingParam) -> Help {
         Help {
             subject: Some(subject),
         }
     }
 
-    pub fn subject(&self) -> Option<&FinalParam> {
+    pub fn subject(&self) -> Option<&TrailingParam> {
         self.subject.as_ref()
     }
 
-    pub fn into_subject(self) -> Option<FinalParam> {
+    pub fn into_subject(self) -> Option<TrailingParam> {
         self.subject
     }
 }
@@ -31,12 +31,12 @@ impl ClientMessageParts for Help {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Help,
-            ParameterList::builder().maybe_with_final(self.subject),
+            ParameterList::builder().maybe_with_trailing(self.subject),
         )
     }
 
     fn to_irc_line(&self) -> String {
-        format!("HELP{}", DisplayMaybeFinal(self.subject.as_ref()))
+        format!("HELP{}", DisplayMaybeTrailing(self.subject.as_ref()))
     }
 }
 

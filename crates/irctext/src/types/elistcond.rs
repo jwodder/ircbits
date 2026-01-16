@@ -1,7 +1,7 @@
-use crate::{FinalParam, MedialParam};
+use crate::{MiddleParam, TrailingParam};
 use thiserror::Error;
 
-// Like a `MedialParam`, but not allowing commas
+// Like a `MiddleParam`, but not allowing commas
 #[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct EListCond(String);
 
@@ -19,15 +19,15 @@ fn validate(s: &str) -> Result<(), ParseEListCondError> {
     }
 }
 
-impl From<EListCond> for MedialParam {
-    fn from(value: EListCond) -> MedialParam {
-        MedialParam::try_from(value.into_inner()).expect("EListCond should be valid MedialParam")
+impl From<EListCond> for MiddleParam {
+    fn from(value: EListCond) -> MiddleParam {
+        MiddleParam::try_from(value.into_inner()).expect("EListCond should be valid MiddleParam")
     }
 }
 
-impl From<EListCond> for FinalParam {
-    fn from(value: EListCond) -> FinalParam {
-        FinalParam::from(MedialParam::from(value))
+impl From<EListCond> for TrailingParam {
+    fn from(value: EListCond) -> TrailingParam {
+        TrailingParam::from(MiddleParam::from(value))
     }
 }
 

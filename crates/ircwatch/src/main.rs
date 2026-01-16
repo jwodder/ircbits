@@ -8,7 +8,7 @@ use ircnet::client::{
     commands::JoinCommand,
 };
 use irctext::{
-    ClientMessage, FinalParam, Message, Payload, Source,
+    ClientMessage, Message, Payload, Source, TrailingParam,
     clientmsgs::Quit,
     ctcp::{CtcpMessage, CtcpParams},
     formatting::StyledLine,
@@ -215,7 +215,7 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
             () = recv_stop_signal() => {
-                client.send(Quit::new_with_reason("Terminated".parse::<FinalParam>().expect(r#""Terminated" should be valid FinalParam"#)).into()).await?;
+                client.send(Quit::new_with_reason("Terminated".parse::<TrailingParam>().expect(r#""Terminated" should be valid TrailingParam"#)).into()).await?;
             }
         }
     }
@@ -372,7 +372,7 @@ fn format_msg(msg: Message) -> String {
     }
 }
 
-fn format_msgtext(sender: &str, text: FinalParam) -> String {
+fn format_msgtext(sender: &str, text: TrailingParam) -> String {
     match CtcpMessage::from(text) {
         CtcpMessage::Plain(p) => format!("{sender}: {}", ircfmt_to_ansi(p.as_str())),
         CtcpMessage::Action(None) => format!("* {sender}"),

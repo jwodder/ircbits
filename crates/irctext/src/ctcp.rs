@@ -1,6 +1,6 @@
 /// Parsing of CTCP messages, as specified at
 /// <https://datatracker.ietf.org/doc/html/draft-oakley-irc-ctcp-02>
-use super::FinalParam;
+use super::TrailingParam;
 use std::borrow::Cow;
 use thiserror::Error;
 
@@ -20,7 +20,7 @@ pub enum CtcpMessage {
         params: Option<CtcpParams>,
     },
     /// Not a valid CTCP message, just normal text
-    Plain(FinalParam),
+    Plain(TrailingParam),
 }
 
 impl CtcpMessage {
@@ -69,8 +69,8 @@ impl CtcpMessage {
     }
 }
 
-impl From<FinalParam> for CtcpMessage {
-    fn from(p: FinalParam) -> CtcpMessage {
+impl From<TrailingParam> for CtcpMessage {
+    fn from(p: TrailingParam) -> CtcpMessage {
         let Some(txt) = p.as_str().strip_prefix('\x01') else {
             return CtcpMessage::Plain(p);
         };
@@ -113,8 +113,8 @@ impl From<FinalParam> for CtcpMessage {
     }
 }
 
-impl From<CtcpMessage> for FinalParam {
-    fn from(msg: CtcpMessage) -> FinalParam {
+impl From<CtcpMessage> for TrailingParam {
+    fn from(msg: CtcpMessage) -> TrailingParam {
         let (cmd, params) = match msg {
             CtcpMessage::Action(params) => (Cow::from("ACTION"), params),
             CtcpMessage::ClientInfo(params) => (Cow::from("CLIENTINFO"), params),
@@ -133,7 +133,7 @@ impl From<CtcpMessage> for FinalParam {
         } else {
             format!("\x01{cmd}\x01")
         };
-        FinalParam::try_from(s).expect("Formatted CTCP message should be valid FinalParam")
+        TrailingParam::try_from(s).expect("Formatted CTCP message should be valid TrailingParam")
     }
 }
 
@@ -142,9 +142,10 @@ pub struct CtcpCommand(String);
 
 validstr!(CtcpCommand, ParseCtcpCommandError, validate_cmd);
 
-impl From<CtcpCommand> for FinalParam {
-    fn from(value: CtcpCommand) -> FinalParam {
-        FinalParam::try_from(value.into_inner()).expect("CTCP commands should be valid FinalParam")
+impl From<CtcpCommand> for TrailingParam {
+    fn from(value: CtcpCommand) -> TrailingParam {
+        TrailingParam::try_from(value.into_inner())
+            .expect("CTCP commands should be valid TrailingParam")
     }
 }
 
@@ -171,9 +172,10 @@ pub struct CtcpParams(String);
 
 validstr!(CtcpParams, ParseCtcpParamsError, validate_params);
 
-impl From<CtcpParams> for FinalParam {
-    fn from(value: CtcpParams) -> FinalParam {
-        FinalParam::try_from(value.into_inner()).expect("CTCP params should be valid FinalParam")
+impl From<CtcpParams> for TrailingParam {
+    fn from(value: CtcpParams) -> TrailingParam {
+        TrailingParam::try_from(value.into_inner())
+            .expect("CTCP params should be valid TrailingParam")
     }
 }
 
@@ -203,7 +205,7 @@ mod tests {
 
     #[test]
     fn version_no_params() {
-        let p = "\x01VERSION\x01".parse::<FinalParam>().unwrap();
+        let p = "\x01VERSION\x01".parse::<TrailingParam>().unwrap();
         let ctcp = CtcpMessage::from(p);
         assert_eq!(ctcp, CtcpMessage::Version(None));
     }
@@ -211,7 +213,7 @@ mod tests {
     #[test]
     fn version_params() {
         let p = "\x01VERSION Snak for Mac 4.13\x01"
-            .parse::<FinalParam>()
+            .parse::<TrailingParam>()
             .unwrap();
         let ctcp = CtcpMessage::from(p);
         assert_matches!(ctcp, CtcpMessage::Version(Some(ps)) => {
@@ -222,7 +224,7 @@ mod tests {
     #[test]
     fn ping() {
         let p = "\x01PING 1473523796 918320\x01"
-            .parse::<FinalParam>()
+            .parse::<TrailingParam>()
             .unwrap();
         let ctcp = CtcpMessage::from(p);
         assert_matches!(ctcp, CtcpMessage::Ping(Some(ps)) => {
@@ -233,7 +235,7 @@ mod tests {
     #[test]
     fn action() {
         let p = "\x01ACTION writes some specs!\x01"
-            .parse::<FinalParam>()
+            .parse::<TrailingParam>()
             .unwrap();
         let ctcp = CtcpMessage::from(p);
         assert_matches!(ctcp, CtcpMessage::Action(Some(ps)) => {
@@ -246,7 +248,7 @@ mod tests {
     #[case("\x01ACTION\x01")]
     #[case("\x01ACTION")]
     fn action_no_param(#[case] s: &str) {
-        let p = s.parse::<FinalParam>().unwrap();
+        let p = s.parse::<TrailingParam>().unwrap();
         let ctcp = CtcpMessage::from(p);
         assert_eq!(ctcp, CtcpMessage::Action(None));
     }

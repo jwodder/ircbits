@@ -1,21 +1,21 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{FinalParam, MedialParam, Message, ParameterList, RawMessage, Verb};
+use crate::{Message, MiddleParam, ParameterList, RawMessage, TrailingParam, Verb};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Who {
-    mask: MedialParam,
+    mask: MiddleParam,
 }
 
 impl Who {
-    pub fn new<P: Into<MedialParam>>(mask: P) -> Who {
+    pub fn new<P: Into<MiddleParam>>(mask: P) -> Who {
         Who { mask: mask.into() }
     }
 
-    pub fn mask(&self) -> &MedialParam {
+    pub fn mask(&self) -> &MiddleParam {
         &self.mask
     }
 
-    pub fn into_mask(self) -> MedialParam {
+    pub fn into_mask(self) -> MiddleParam {
         self.mask
     }
 }
@@ -24,7 +24,7 @@ impl ClientMessageParts for Who {
     fn into_parts(self) -> (Verb, ParameterList) {
         (
             Verb::Who,
-            ParameterList::builder().with_medial(self.mask).finish(),
+            ParameterList::builder().with_middle(self.mask).finish(),
         )
     }
 
@@ -49,8 +49,8 @@ impl TryFrom<ParameterList> for Who {
     type Error = ClientMessageError;
 
     fn try_from(params: ParameterList) -> Result<Who, ClientMessageError> {
-        let (p,): (FinalParam,) = params.try_into()?;
-        let mask = MedialParam::try_from(p.into_inner())?;
+        let (p,): (TrailingParam,) = params.try_into()?;
+        let mask = MiddleParam::try_from(p.into_inner())?;
         Ok(Who { mask })
     }
 }

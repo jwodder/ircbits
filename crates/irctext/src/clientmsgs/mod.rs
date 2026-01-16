@@ -84,7 +84,7 @@ use crate::types::{
     ParseUsernameError,
 };
 use crate::{
-    Message, ParameterList, ParameterListSizeError, ParseMedialParamError, Payload, RawMessage,
+    Message, ParameterList, ParameterListSizeError, ParseMiddleParamError, Payload, RawMessage,
     TryFromStringError, Verb,
 };
 use enum_dispatch::enum_dispatch;
@@ -235,8 +235,8 @@ pub enum ClientMessageError {
     #[error("failed to parse key string")]
     Key(#[from] TryFromStringError<ParseKeyError>),
 
-    #[error("failed to parse parameter as medial")]
-    MedialParam(#[from] TryFromStringError<ParseMedialParamError>),
+    #[error("failed to parse parameter as middle parameter")]
+    MiddleParam(#[from] TryFromStringError<ParseMiddleParamError>),
 
     #[error("failed to parse mode string")]
     ModeString(#[from] TryFromStringError<ParseModeStringError>),

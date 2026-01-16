@@ -1,6 +1,6 @@
 use super::Command;
 use irctext::{
-    ClientMessage, ClientMessageParts, FinalParam, Message, Payload, Reply, ReplyParts,
+    ClientMessage, ClientMessageParts, Message, Payload, Reply, ReplyParts, TrailingParam,
     clientmsgs::{
         Authenticate, Cap, CapEnd, CapLsRequest, CapReq, Capability, CapabilityRequest,
         CapabilityValue, Mode, Nick, Pass, User,
@@ -19,10 +19,10 @@ const MODE_TIMEOUT: Duration = Duration::from_secs(1);
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct LoginParams {
-    pub password: FinalParam,
+    pub password: TrailingParam,
     pub nickname: Nickname,
     pub username: Username,
-    pub realname: FinalParam,
+    pub realname: TrailingParam,
     #[cfg_attr(feature = "serde", serde(default = "default_sasl"))]
     pub sasl: bool,
 }
@@ -579,8 +579,8 @@ impl State {
                     {
                         let auth_plain = ClientMessage::from(Authenticate::new(
                             "PLAIN"
-                                .parse::<FinalParam>()
-                                .expect(r#""PLAIN" should be valid final param"#),
+                                .parse::<TrailingParam>()
+                                .expect(r#""PLAIN" should be valid trailing param"#),
                         ));
                         (Some(auth_plain), State::SentMechanism { capabilities })
                     } else {
@@ -833,10 +833,10 @@ mod tests {
     #[test]
     fn plain_login() {
         let params = LoginParams {
-            password: "hunter2".parse::<FinalParam>().unwrap(),
+            password: "hunter2".parse::<TrailingParam>().unwrap(),
             nickname: "jwodder".parse::<Nickname>().unwrap(),
             username: "jwuser".parse::<Username>().unwrap(),
-            realname: "Just this guy, you know?".parse::<FinalParam>().unwrap(),
+            realname: "Just this guy, you know?".parse::<TrailingParam>().unwrap(),
             sasl: false,
         };
         let mut cmd = Login::new(params);
@@ -1043,10 +1043,10 @@ mod tests {
     #[test]
     fn sasl_plain_login() {
         let params = LoginParams {
-            password: "hunter2".parse::<FinalParam>().unwrap(),
+            password: "hunter2".parse::<TrailingParam>().unwrap(),
             nickname: "jwodder".parse::<Nickname>().unwrap(),
             username: "jwuser".parse::<Username>().unwrap(),
-            realname: "Just this guy, you know?".parse::<FinalParam>().unwrap(),
+            realname: "Just this guy, you know?".parse::<TrailingParam>().unwrap(),
             sasl: true,
         };
         let mut cmd = Login::new(params);
@@ -1330,10 +1330,10 @@ mod tests {
     #[test]
     fn sasl_client_non_sasl_server() {
         let params = LoginParams {
-            password: "hunter2".parse::<FinalParam>().unwrap(),
+            password: "hunter2".parse::<TrailingParam>().unwrap(),
             nickname: "jwodder".parse::<Nickname>().unwrap(),
             username: "jwuser".parse::<Username>().unwrap(),
-            realname: "Just this guy, you know?".parse::<FinalParam>().unwrap(),
+            realname: "Just this guy, you know?".parse::<TrailingParam>().unwrap(),
             sasl: true,
         };
         let mut cmd = Login::new(params);

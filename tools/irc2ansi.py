@@ -1,8 +1,9 @@
 # TODO:
-# - Add a main() function that applies `irc2ansi()` to each line of input and
-#   outputs the result
 # - Don't append SGR0 if the current style is null/default
+from __future__ import annotations
+import argparse
 import re
+import sys
 from unicodedata import category
 import unittest
 
@@ -246,3 +247,28 @@ class TestExamples(unittest.TestCase):
         irc = "Rules: Don't spam 5\x0313,8,6\x03,7,8, and especially not \x029\x02\x1d!"
         ansi = "Rules: Don't spam 5\x1b[38:5:13;48:5:11m,6\x1b[39;49m,7,8, and especially not \x1b[1m9\x1b[22m\x1b[3m!\x1b[m"
         self.assertEqual(irc2ansi(irc), ansi)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--outfile", default="-")
+    parser.add_argument("infile", nargs="*", default=["-"])
+    args = parser.parse_args()
+    if args.outfile == "-":
+        outfp = sys.stdout
+    else:
+        outfp = open(args.outfile, "w", encoding="utf-8")
+    with outfp:
+        for fname in args.infile:
+            if fname == "-":
+                infp = sys.stdin
+            else:
+                infp = open(fname, "r", encoding="utf-8")
+            with infp:
+                for line in infp:
+                    line = line.strip("\r\n")
+                    print(irc2ansi(line), file=outfp)
+
+
+if __name__ == "__main__":
+    main()

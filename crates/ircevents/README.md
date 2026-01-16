@@ -148,10 +148,16 @@ JSON objects for this event type have the following additional fields:
   given); otherwise, this field is `null`
 
 - `"my_nick"` (string) — The nickname with which the program logged into IRC as
-  given in the `RPL_WELCOME` message
+  given in the `RPL_WELCOME` reply
+
+- `"welcome_msg"` (string) — The message given in the `RPL_WELCOME` reply
+
+- `"yourhost_msg"` (string) — The message given in the `RPL_YOURHOST` reply
+
+- `"created_msg"` (string) — The message given in the `RPL_CREATED` reply
 
 - `"server"` (object) — Details about the IRC server as given in the
-  `RPL_MYINFO` message.  This object contains the following fields:
+  `RPL_MYINFO` reply.  This object contains the following fields:
 
     - `"name"` (string) — the name of the server
     - `"version"` (string) — the server's software version
@@ -162,7 +168,7 @@ JSON objects for this event type have the following additional fields:
       that take parameters, or `null` if there are none
 
 - `"isupport"` (object) — Features advertised by the server via the parameters
-  of the `RPL_ISUPPORT` message.  Each key of the object is a feature parameter
+  of the `RPL_ISUPPORT` reply.  Each key of the object is a feature parameter
   name, and the corresponding value is the given parameter value (if any),
   `true` (if no value was given), or `false` (if no value was given and the
   parameter was negated).

@@ -276,14 +276,20 @@ enum State {
     },
     Got001 {
         my_nick: Nickname,
+        welcome_msg: String,
         capabilities: Option<Vec<(Capability, Option<CapabilityValue>)>>,
     },
     Got002 {
         my_nick: Nickname,
+        welcome_msg: String,
+        yourhost_msg: String,
         capabilities: Option<Vec<(Capability, Option<CapabilityValue>)>>,
     },
     Got003 {
         my_nick: Nickname,
+        welcome_msg: String,
+        yourhost_msg: String,
+        created_msg: String,
         capabilities: Option<Vec<(Capability, Option<CapabilityValue>)>>,
     },
     Got004(LoginOutput),
@@ -315,6 +321,7 @@ impl State {
                             (true, None),
                             State::Got001 {
                                 my_nick,
+                                welcome_msg: r.message().to_owned(),
                                 capabilities: None,
                             },
                         )
@@ -338,6 +345,7 @@ impl State {
                             (true, None),
                             State::Got001 {
                                 my_nick,
+                                welcome_msg: r.message().to_owned(),
                                 capabilities,
                             },
                         )
@@ -348,32 +356,43 @@ impl State {
                 (
                     State::Got001 {
                         my_nick,
+                        welcome_msg,
                         capabilities,
                     },
-                    Reply::YourHost(_),
+                    Reply::YourHost(r),
                 ) => (
                     (true, None),
                     State::Got002 {
                         my_nick,
+                        welcome_msg,
+                        yourhost_msg: r.message().to_owned(),
                         capabilities,
                     },
                 ),
                 (
                     State::Got002 {
                         my_nick,
+                        welcome_msg,
+                        yourhost_msg,
                         capabilities,
                     },
-                    Reply::Created(_),
+                    Reply::Created(r),
                 ) => (
                     (true, None),
                     State::Got003 {
                         my_nick,
+                        welcome_msg,
+                        yourhost_msg,
+                        created_msg: r.message().to_owned(),
                         capabilities,
                     },
                 ),
                 (
                     State::Got003 {
                         my_nick,
+                        welcome_msg,
+                        yourhost_msg,
+                        created_msg,
                         capabilities,
                     },
                     Reply::MyInfo(r),
@@ -388,6 +407,9 @@ impl State {
                     let output = LoginOutput {
                         capabilities,
                         my_nick,
+                        welcome_msg,
+                        yourhost_msg,
+                        created_msg,
                         server_info,
                         isupport: Vec::new(),
                         luser_stats: LuserStats::default(),
@@ -689,14 +711,23 @@ pub struct LoginOutput {
     pub capabilities: Option<Vec<(Capability, Option<CapabilityValue>)>>,
 
     /// The nickname with which the command logged into IRC as given in the
-    /// `RPL_WELCOME` message
+    /// `RPL_WELCOME` reply
     pub my_nick: Nickname,
 
-    /// Details about the IRC server as given in the `RPL_MYINFO` message
+    /// The message given in the `RPL_WELCOME` reply
+    pub welcome_msg: String,
+
+    /// The message given in the `RPL_YOURHOST` reply
+    pub yourhost_msg: String,
+
+    /// The message given in the `RPL_CREATED` reply
+    pub created_msg: String,
+
+    /// Details about the IRC server as given in the `RPL_MYINFO` reply
     pub server_info: ServerInfo,
 
     /// Features advertised by the server via the parameters of the
-    /// `RPL_ISUPPORT` message
+    /// `RPL_ISUPPORT` reply
     pub isupport: Vec<ISupportParam>,
 
     /// Server statistics about users as supplied in the response to an
@@ -711,7 +742,7 @@ pub struct LoginOutput {
     pub mode: Option<ModeString>,
 }
 
-/// Details about the IRC server as given in the `RPL_MYINFO` message
+/// Details about the IRC server as given in the `RPL_MYINFO` reply
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ServerInfo {
     /// The name of the server
@@ -942,6 +973,9 @@ mod tests {
             LoginOutput {
                 capabilities: None,
                 my_nick: "jwodder".parse::<Nickname>().unwrap(),
+                welcome_msg: "Welcome to the Libera.Chat Internet Relay Chat Network jwodder".into(),
+                yourhost_msg: "Your host is molybdenum.libera.chat[2607:5300:205:300::ae0/6697], running version solanum-1.0-dev".into(),
+                created_msg: "This server was created Thu Jul 18 2024 at 16:57:02 UTC".into(),
                 server_info: ServerInfo {
                     name: "molybdenum.libera.chat".into(),
                     version: "solanum-1.0-dev".into(),
@@ -1229,6 +1263,9 @@ mod tests {
                     ("solanum.chat/realhost".parse::<Capability>().unwrap(), None),
                 ]),
                 my_nick: "jwodder".parse::<Nickname>().unwrap(),
+                welcome_msg: "Welcome to the Libera.Chat Internet Relay Chat Network jwodder".into(),
+                yourhost_msg: "Your host is molybdenum.libera.chat[2607:5300:205:300::ae0/6697], running version solanum-1.0-dev".into(),
+                created_msg: "This server was created Thu Jul 18 2024 at 16:57:02 UTC".into(),
                 server_info: ServerInfo {
                     name: "molybdenum.libera.chat".into(),
                     version: "solanum-1.0-dev".into(),
@@ -1447,6 +1484,9 @@ mod tests {
             LoginOutput {
                 capabilities: None,
                 my_nick: "jwodder".parse::<Nickname>().unwrap(),
+                welcome_msg: "Welcome to the Libera.Chat Internet Relay Chat Network jwodder".into(),
+                yourhost_msg: "Your host is molybdenum.libera.chat[2607:5300:205:300::ae0/6697], running version solanum-1.0-dev".into(),
+                created_msg: "This server was created Thu Jul 18 2024 at 16:57:02 UTC".into(),
                 server_info: ServerInfo {
                     name: "molybdenum.libera.chat".into(),
                     version: "solanum-1.0-dev".into(),

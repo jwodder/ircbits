@@ -1,125 +1,209 @@
-# TODO:
-# - Don't append SGR0 if the current style is null/default
 from __future__ import annotations
 import argparse
+from dataclasses import dataclass, field
 import re
 import sys
 from unicodedata import category
 import unittest
 
+__all__ = ["irc2ansi"]
+
+REGEX = re.compile(
+    r"""
+    (?P<bold>\x02)
+    |(?P<color>\x03(?:(?P<fg>[0-9]{1,2})(?:,(?P<bg>[0-9]{1,2}))?)?)
+    |(?P<hexcolor>\x04(?:(?P<fgx>[A-Fa-f0-9]{6})(?:,(?P<bgx>[A-Fa-f0-9]{6}))?)?)
+    |(?P<reset>\x0f)
+    |(?P<reverse>\x16)
+    |(?P<italic>\x1d)
+    |(?P<strikethrough>\x1e)
+    |(?P<underline>\x1f)
+    |(?P<char>.)
+""",
+    flags=re.X,
+)
+
+
+@dataclass(frozen=True)
+class Color100:
+    index: int
+
+    def to_ansi(self, fg: bool) -> str:
+        match (self.index, fg):
+            case (99, True):
+                return "39"
+            case (99, False):
+                return "49"
+            case (index, True):
+                return "38:5:" + str(IRC_INDEX_TO_ANSI_INDEX[index])
+            case (index, False):
+                return "48:5:" + str(IRC_INDEX_TO_ANSI_INDEX[index])
+            case _:
+                raise AssertionError("Unreachable")
+
+
+@dataclass(frozen=True)
+class RgbColor:
+    r: int
+    g: int
+    b: int
+
+    @classmethod
+    def from_hex(cls, s: str) -> RgbColor:
+        r = int(s[:2], base=16)
+        g = int(s[2:4], base=16)
+        b = int(s[4:], base=16)
+        return RgbColor(r, g, b)
+
+    def to_ansi(self, fg: bool) -> str:
+        if fg:
+            return f"38:2:{self.r}:{self.g}:{self.b}"
+        else:
+            return f"48:2:{self.r}:{self.g}:{self.b}"
+
+
+DEFAULT_COLOR = Color100(99)
+
+
+@dataclass
+class Style:
+    bold: bool = field(init=False, default=False)
+    italic: bool = field(init=False, default=False)
+    underline: bool = field(init=False, default=False)
+    strikethrough: bool = field(init=False, default=False)
+    reverse: bool = field(init=False, default=False)
+    fg: Color100 | RgbColor = field(init=False, default=DEFAULT_COLOR)
+    bg: Color100 | RgbColor = field(init=False, default=DEFAULT_COLOR)
+
+    def __bool__(self) -> bool:
+        return (
+            self.bold
+            or self.italic
+            or self.underline
+            or self.strikethrough
+            or self.reverse
+            or self.fg != DEFAULT_COLOR
+            or self.bg != DEFAULT_COLOR
+        )
+
+    def toggle_bold(self) -> str:
+        if self.bold:
+            self.bold = False
+            return "\x1b[22m"
+        else:
+            self.bold = True
+            return "\x1b[1m"
+
+    def toggle_italic(self) -> str:
+        if self.italic:
+            self.italic = False
+            return "\x1b[23m"
+        else:
+            self.italic = True
+            return "\x1b[3m"
+
+    def toggle_underline(self) -> str:
+        if self.underline:
+            self.underline = False
+            return "\x1b[24m"
+        else:
+            self.underline = True
+            return "\x1b[4m"
+
+    def toggle_strikethrough(self) -> str:
+        if self.strikethrough:
+            self.strikethrough = False
+            return "\x1b[29m"
+        else:
+            self.strikethrough = True
+            return "\x1b[9m"
+
+    def toggle_reverse(self) -> str:
+        if self.reverse:
+            self.reverse = False
+            return "\x1b[27m"
+        else:
+            self.reverse = True
+            return "\x1b[7m"
+
+    def reset(self) -> str:
+        self.bold = False
+        self.italic = False
+        self.underline = False
+        self.strikethrough = False
+        self.reverse = False
+        self.fg = DEFAULT_COLOR
+        self.bg = DEFAULT_COLOR
+        return "\x1b[m"
+
+    def set_color(
+        self, fg: Color100 | RgbColor | None, bg: Color100 | RgbColor | None
+    ) -> str:
+        if fg is None:
+            fg = DEFAULT_COLOR
+            bg = DEFAULT_COLOR
+        self.fg = fg
+        s = "\x1b[" + fg.to_ansi(True)
+        if bg is not None:
+            self.bg = bg
+            s += ";" + bg.to_ansi(False)
+        s += "m"
+        return s
+
 
 def irc2ansi(s: str) -> str:
     # Also escapes non-IRC-formatting control characters
     # Not supported: \x11 - Monospace
-    s = s.replace("\x1b", "<1B>")
-    s = re.sub(
-        r"\x03(?:(?P<fg>[0-9]{1,2})(?:,(?P<bg>[0-9]{1,2}))?)?",
-        lambda m: set_color(m["fg"], m["bg"]),
-        s,
-    )
-    s = re.sub(
-        r"\x03(?:(?P<fg>[A-Fa-f0-9]{6})(?:,(?P<bg>[A-Fa-f0-9]{6}))?)?",
-        lambda m: set_hex_color(m["fg"], m["bg"]),
-        s,
-    )
     out = ""
-    bold = False
-    italic = False
-    underline = False
-    strikethrough = False
-    reverse = False
-    for c in s:
-        match c:
-            case "\x02":
-                if bold:
-                    out += "\x1b[22m"
-                    bold = False
-                else:
-                    out += "\x1b[1m"
-                    bold = True
-            case "\x1d":
-                if italic:
-                    out += "\x1b[23m"
-                    italic = False
-                else:
-                    out += "\x1b[3m"
-                    italic = True
-            case "\x1f":
-                if underline:
-                    out += "\x1b[24m"
-                    underline = False
-                else:
-                    out += "\x1b[4m"
-                    underline = True
-            case "\x1e":
-                if strikethrough:
-                    out += "\x1b[29m"
-                    strikethrough = False
-                else:
-                    out += "\x1b[9m"
-                    strikethrough = True
-            case "\x16":
-                if reverse:
-                    out += "\x1b[27m"
-                    reverse = False
-                else:
-                    out += "\x1b[7m"
-                    reverse = True
-            case "\x0f":
-                bold = False
-                italic = False
-                underline = False
-                strikethrough = False
-                reverse = False
-                out += "\x1b[m"
-            case c if category(c).startswith("C") and c != "\x1b":
-                out += f"<{ord(c):02X}>"
-            case c:
-                out += c
-    out += "\x1b[m"
-    return out
-
-
-def set_color(fg: str | None, bg: str | None) -> str:
-    if fg is None:
-        return "\x1b[39;49m"
-    else:
-        s = "\x1b["
-        fgindex = int(fg)
-        if fgindex == 99:
-            s += "39"
-        else:
-            s += "38:5:" + str(IRC_INDEX_TO_ANSI_INDEX[fgindex])
-        if bg is not None:
-            s += ";"
-            bgindex = int(bg)
-            if bgindex == 99:
-                s += "49"
+    pos = 0
+    style = Style()
+    while pos < len(s):
+        m = REGEX.match(s, pos)
+        assert m
+        pos += m.end() - m.start()
+        if m["bold"] is not None:
+            out += style.toggle_bold()
+        elif m["italic"] is not None:
+            out += style.toggle_italic()
+        elif m["underline"] is not None:
+            out += style.toggle_underline()
+        elif m["strikethrough"] is not None:
+            out += style.toggle_strikethrough()
+        elif m["reverse"] is not None:
+            out += style.toggle_reverse()
+        elif m["reset"] is not None:
+            out += style.reset()
+        elif m["color"] is not None:
+            if (fgs := m["fg"]) is not None:
+                fg = Color100(int(fgs))
             else:
-                s += "48:5:" + str(IRC_INDEX_TO_ANSI_INDEX[bgindex])
-        s += "m"
-        return s
-
-
-def set_hex_color(fg: str | None, bg: str | None) -> str:
-    if fg is None:
-        return "\x1b[39;49m"
-    else:
-        s = "\x1b["
-        r, g, b = parse_hex_rgb(fg)
-        s += f"38:2:{r}:{g}:{b}"
-        if bg is not None:
-            r, g, b = parse_hex_rgb(bg)
-            s += f";48:2:{r}:{g}:{b}"
-        s += "m"
-        return s
-
-
-def parse_hex_rgb(s: str) -> tuple[int, int, int]:
-    r = int(s[:2], base=16)
-    g = int(s[2:4], base=16)
-    b = int(s[4:], base=16)
-    return (r, g, b)
+                fg = None
+            if (bgs := m["bg"]) is not None:
+                bg = Color100(int(bgs))
+            else:
+                bg = None
+            out += style.set_color(fg, bg)
+        elif m["hexcolor"] is not None:
+            if (fgs := m["fgx"]) is not None:
+                fgx = RgbColor.from_hex(fgs)
+            else:
+                fgx = None
+            if (bgs := m["bgx"]) is not None:
+                bgx = RgbColor.from_hex(bgs)
+            else:
+                bgx = None
+            out += style.set_color(fgx, bgx)
+        elif m["char"] is not None:
+            c = m["char"]
+            if category(c).startswith("C"):
+                out += f"<{ord(c):02X}>"
+            else:
+                out += c
+        else:
+            raise AssertionError("Unhandled construct")
+    if style:
+        out += style.reset()
+    return out
 
 
 IRC_INDEX_TO_ANSI_INDEX = [
@@ -240,7 +324,7 @@ class TestExamples(unittest.TestCase):
 
     def test_example3(self) -> None:
         irc = "IRC \x02is \x034,12so \x03great\x0f!"
-        ansi = "IRC \x1b[1mis \x1b[38:5:9;48:5:12mso \x1b[39;49mgreat\x1b[m!\x1b[m"
+        ansi = "IRC \x1b[1mis \x1b[38:5:9;48:5:12mso \x1b[39;49mgreat\x1b[m!"
         self.assertEqual(irc2ansi(irc), ansi)
 
     def test_example4(self) -> None:

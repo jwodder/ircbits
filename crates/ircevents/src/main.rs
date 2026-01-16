@@ -917,8 +917,10 @@ impl AddFields for ClientMessage {
 
 impl AddFields for Reply {
     fn add_fields(self, map: &mut Map<String, Value>) {
+        let name = self.name();
         let (code, params) = self.into_parts();
         map.insert(String::from("code"), Value::from(code));
+        map.insert(String::from("name"), Value::from(name));
         map.insert(
             String::from("parameters"),
             Value::from(params.into_iter().map(String::from).collect::<Vec<_>>()),

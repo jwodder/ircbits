@@ -382,13 +382,8 @@ impl AddFields for LoginOutput {
         if let Some(caps) = capabilities {
             let caplist = caps
                 .into_iter()
-                .map(|(name, value)| {
-                    Map::from_iter([
-                        (String::from("name"), Value::from(String::from(name))),
-                        (String::from("value"), Value::from(value.map(String::from))),
-                    ])
-                })
-                .collect::<Vec<_>>();
+                .map(|(name, value)| (String::from(name), Value::from(value.map(String::from))))
+                .collect::<Map<_, _>>();
             map.insert(String::from("capabilities"), caplist.into());
         } else {
             map.insert(String::from("capabilities"), Value::Null);

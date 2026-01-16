@@ -142,10 +142,10 @@ IRC network.
 
 JSON objects for this event type have the following additional fields:
 
-- `"capabilities"` — If the server supports capability negotiation, this field
-  contains its supported capabilities as a list of objects with `"name"`
-  (string) and `"value"` (string or `null`) fields; otherwise, this field is
-  `null`
+- `"capabilities"` (object or `null`) — If the server supports capability
+  negotiation, this field contains its supported capabilities as an object
+  mapping capability names to capability values (or to `null` if no value is
+  given); otherwise, this field is `null`
 
 - `"my_nick"` (string) — The nickname with which the program logged into IRC as
   given in the `RPL_WELCOME` message

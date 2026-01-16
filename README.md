@@ -27,7 +27,7 @@ strictly, including the following points:
             - `ERR_INVALIDCAPCMD` (410), specified by the [Capability
               Negotation specification][cap]
         - The `<nick>` parameter of `RPL_TOPICWHOTIME` (333) is allowed to be
-          of the form `<nick>!<user>@<host>` rather than just a nickname
+          either just a nickname or a string of the form `<nick>!<user>@<host>`
 
 - The only supported channel type prefixes are `#` and `&`.
 

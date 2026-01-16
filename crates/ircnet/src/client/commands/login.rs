@@ -379,7 +379,7 @@ impl State {
                     Reply::MyInfo(r),
                 ) => {
                     let server_info = ServerInfo {
-                        server_name: r.servername().to_owned(),
+                        name: r.servername().to_owned(),
                         version: r.version().to_owned(),
                         user_modes: r.available_user_modes().to_owned(),
                         channel_modes: r.available_channel_modes().to_owned(),
@@ -684,32 +684,83 @@ impl State {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LoginOutput {
+    /// If the server supports capability negotiation, this field contains its
+    /// supported capabilities and their optional values
     pub capabilities: Option<Vec<(Capability, Option<CapabilityValue>)>>,
+
+    /// The nickname with which the command logged into IRC as given in the
+    /// `RPL_WELCOME` message
     pub my_nick: Nickname,
+
+    /// Details about the IRC server as given in the `RPL_MYINFO` message
     pub server_info: ServerInfo,
+
+    /// Features advertised by the server via the parameters of the
+    /// `RPL_ISUPPORT` message
     pub isupport: Vec<ISupportParam>,
+
+    /// Server statistics about users as supplied in the response to an
+    /// optional implicit `LUSERS` command upon connection
     pub luser_stats: LuserStats,
-    pub motd: Option<String>, // None if the server reports no MOTD was set
+
+    /// The server's message of the day, or `None` if no MOTD is set
+    pub motd: Option<String>,
+
+    /// The user's client modes, or `None` if the server did not report the
+    /// mode upon login
     pub mode: Option<ModeString>,
 }
 
+/// Details about the IRC server as given in the `RPL_MYINFO` message
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ServerInfo {
-    pub server_name: String,
+    /// The name of the server
+    pub name: String,
+
+    /// The server's software version
     pub version: String,
+
+    /// The available user modes
     pub user_modes: String,
+
+    /// The available channel modes that do not take parameters
     pub channel_modes: String,
+
+    /// The available channel modes that take parameters, or `None` if there
+    /// are none
     pub param_channel_modes: Option<String>,
 }
 
+/// Server statistics about users as supplied in the response to an optional
+/// implicit `LUSERS` command upon connection
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct LuserStats {
+    /// The number of IRC operators connected to the server, or `None` if not
+    /// given
     pub operators: Option<u64>,
+
+    /// The number of connections to the server that are currently in an
+    /// unknown state, or `None` if not given
     pub unknown_connections: Option<u64>,
+
+    /// The number of channels that currently exist on the server, or `None` if
+    /// not given
     pub channels: Option<u64>,
+
+    /// The number of clients currently directly connected to this server, or
+    /// `None` if not given
     pub local_clients: Option<u64>,
+
+    /// The maximum number of clients ever directly connected to this server at
+    /// one time, or `None` if not given
     pub max_local_clients: Option<u64>,
+
+    /// The number of clients currently globally connected to this server, or
+    /// `None` if not given
     pub global_clients: Option<u64>,
+
+    /// The maximum number of clients ever globally connected to this server at
+    /// one time, or `None` if not given
     pub max_global_clients: Option<u64>,
 }
 
@@ -892,7 +943,7 @@ mod tests {
                 capabilities: None,
                 my_nick: "jwodder".parse::<Nickname>().unwrap(),
                 server_info: ServerInfo {
-                    server_name: "molybdenum.libera.chat".into(),
+                    name: "molybdenum.libera.chat".into(),
                     version: "solanum-1.0-dev".into(),
                     user_modes: "DGIMQRSZaghilopsuwz".into(),
                     channel_modes: "CFILMPQRSTbcefgijklmnopqrstuvz".into(),
@@ -1179,7 +1230,7 @@ mod tests {
                 ]),
                 my_nick: "jwodder".parse::<Nickname>().unwrap(),
                 server_info: ServerInfo {
-                    server_name: "molybdenum.libera.chat".into(),
+                    name: "molybdenum.libera.chat".into(),
                     version: "solanum-1.0-dev".into(),
                     user_modes: "DGIMQRSZaghilopsuwz".into(),
                     channel_modes: "CFILMPQRSTbcefgijklmnopqrstuvz".into(),
@@ -1397,7 +1448,7 @@ mod tests {
                 capabilities: None,
                 my_nick: "jwodder".parse::<Nickname>().unwrap(),
                 server_info: ServerInfo {
-                    server_name: "molybdenum.libera.chat".into(),
+                    name: "molybdenum.libera.chat".into(),
                     version: "solanum-1.0-dev".into(),
                     user_modes: "DGIMQRSZaghilopsuwz".into(),
                     channel_modes: "CFILMPQRSTbcefgijklmnopqrstuvz".into(),

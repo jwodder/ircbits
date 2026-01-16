@@ -29,20 +29,30 @@ use tracing_subscriber::{
 
 const MESSAGE_CHANNEL_SIZE: usize = 65535;
 
+/// Log into an IRC network, join a given set of channels, and then run
+/// indefinitely, outputting a JSON object for each message & event that
+/// occurs.
+///
+/// Visit <https://github.com/jwodder/ircbits> for more information.
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
 struct Arguments {
+    /// Read IRC network connection details from the given configuration file
     #[arg(short = 'c', long, default_value = "ircbits.toml")]
     config: PathBuf,
 
+    /// Append output to the given path
     #[arg(short = 'o', long, default_value = "ircevents.jsonl")]
     outfile: PathBuf,
 
+    /// Select the profile in the configuration file to use
     #[arg(short = 'P', long, default_value = "irc")]
     profile: String,
 
-    #[arg(short = 'R', long)]
+    /// Rotate the output file if it would exceed the given size
+    #[arg(short = 'R', long, value_name = "BYTESIZE")]
     rotate_size: Option<bytesize::ByteSize>,
 
+    /// Emit log events for every message sent & received
     #[arg(long)]
     trace: bool,
 }
@@ -385,7 +395,7 @@ impl AddFields for LoginOutput {
         }
         map.insert(String::from("my_nick"), Value::from(String::from(my_nick)));
         let server = Map::from_iter([
-            (String::from("name"), Value::from(server_info.server_name)),
+            (String::from("name"), Value::from(server_info.name)),
             (String::from("version"), Value::from(server_info.version)),
             (
                 String::from("user_modes"),

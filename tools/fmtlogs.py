@@ -68,7 +68,13 @@ class AutoFileDict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=(
+            "This script takes a series of logfiles created by `ircevents` and"
+            " creates a directory of human-readable message logs, one file per"
+            " channel."
+        )
+    )
     parser.add_argument("-o", "--outdir", type=Path, default="fmtlogs")
     parser.add_argument("infile", type=Path, nargs="*")
     args = parser.parse_args()

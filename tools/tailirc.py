@@ -23,9 +23,21 @@ from irc2ansi import irc2ansi
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-n", "--lines", type=int, default=10)
-    parser.add_argument("-N", "--nickname")
+    parser = argparse.ArgumentParser(
+        description=(
+            "This script tails an active `ircevents` logfile and pretty-prints"
+            " message events as they come in"
+        )
+    )
+    parser.add_argument(
+        "-n",
+        "--lines",
+        type=int,
+        default=10,
+        help="Start by outputting the most recent N message events from the logfile",
+        metavar="N",
+    )
+    parser.add_argument("-N", "--nickname", help="Specify our nickname")
     parser.add_argument(
         "-t",
         "--timezone",

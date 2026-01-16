@@ -179,20 +179,27 @@ JSON objects for this event type have the following additional fields:
 
     - `"operators"` (integer or `null`) — the number of IRC operators connected
       to the server, or `null` if not given
-    - `"unknown_connections"` (integer or `null`) the number of connections to
-      the server that are currently in an unknown state, or `null` if not given
-    - `"channels"` (integer or `null`) the number of channels that currently
+    - `"unknown_connections"` (integer or `null`) — the number of connections
+      to the server that are currently in an unknown state, or `null` if not
+      given
+    - `"channels"` (integer or `null`) — the number of channels that currently
       exist on the server, or `null` if not given
-    - `"local_clients"` (integer or `null`) the number of clients currently
+    - `"local_clients"` (integer or `null`) — the number of clients currently
       directly connected to this server, or `null` if not given
-    - `"max_local_clients"` (integer or `null`) the maximum number of clients
+    - `"max_local_clients"` (integer or `null`) — the maximum number of clients
       ever directly connected to this server at one time, or `null` if not
       given
-    - `"global_clients"` (integer or `null`) the number of clients currently
+    - `"global_clients"` (integer or `null`) — the number of clients currently
       globally connected to this server, or `null` if not given
-    - `"max_global_clients"` (integer or `null`) the maximum number of clients
-      ever globally connected to this server at one time, or `null` if not
-      given
+    - `"max_global_clients"` (integer or `null`) — the maximum number of
+      clients ever globally connected to this server at one time, or `null` if
+      not given
+    - `"luserclient_msg"` (string or `null`) — the message given in the
+      `RPL_LUSERCLIENT` reply, or `None` if the reply was not sent
+    - `"luserme_msg"` (string or `null`) — the message given in the
+      `RPL_LUSERME` reply, or `None` if the reply was not sent
+    - `"statsconn_msg"` (string or `null`) — the message given in the
+      `RPL_STATSCONN` reply, or `None` if the reply was not sent
 
 - `"motd"` (string or `null`) — the server's message of the day, or `null` if
   no MOTD is set

@@ -276,6 +276,7 @@ impl EventLogger {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Event {
     Connected {
@@ -448,6 +449,18 @@ impl AddFields for LoginOutput {
             (
                 String::from("max_global_clients"),
                 Value::from(luser_stats.max_global_clients),
+            ),
+            (
+                String::from("luserclient_msg"),
+                Value::from(luser_stats.luserclient_msg),
+            ),
+            (
+                String::from("luserme_msg"),
+                Value::from(luser_stats.luserme_msg),
+            ),
+            (
+                String::from("statsconn_msg"),
+                Value::from(luser_stats.statsconn_msg),
             ),
         ]);
         map.insert(String::from("lusers"), lusers.into());

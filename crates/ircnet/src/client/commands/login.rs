@@ -422,10 +422,12 @@ impl State {
                     output.isupport.extend(r.tokens().iter().cloned());
                     ((true, None), State::Got005(output))
                 }
-                (State::Got005(output) | State::Lusers(output), Reply::StatsConn(_)) => {
+                (State::Got005(mut output) | State::Lusers(mut output), Reply::StatsConn(r)) => {
+                    output.luser_stats.statsconn_msg = Some(r.message().to_owned());
                     ((true, None), State::Lusers(output))
                 }
-                (State::Got005(output) | State::Lusers(output), Reply::LuserClient(_)) => {
+                (State::Got005(mut output) | State::Lusers(mut output), Reply::LuserClient(r)) => {
+                    output.luser_stats.luserclient_msg = Some(r.message().to_owned());
                     ((true, None), State::Lusers(output))
                 }
                 (State::Got005(mut output) | State::Lusers(mut output), Reply::LuserOp(r)) => {
@@ -443,7 +445,8 @@ impl State {
                     output.luser_stats.channels = Some(r.channels());
                     ((true, None), State::Lusers(output))
                 }
-                (State::Got005(output) | State::Lusers(output), Reply::LuserMe(_)) => {
+                (State::Got005(mut output) | State::Lusers(mut output), Reply::LuserMe(r)) => {
+                    output.luser_stats.luserme_msg = Some(r.message().to_owned());
                     ((true, None), State::Lusers(output))
                 }
                 (State::Got005(mut output) | State::Lusers(mut output), Reply::LocalUsers(r)) => {
@@ -793,6 +796,18 @@ pub struct LuserStats {
     /// The maximum number of clients ever globally connected to this server at
     /// one time, or `None` if not given
     pub max_global_clients: Option<u64>,
+
+    /// The message given in the `RPL_LUSERCLIENT` reply, or `None` if the
+    /// reply was not sent
+    pub luserclient_msg: Option<String>,
+
+    /// The message given in the `RPL_LUSERME` reply, or `None` if the reply
+    /// was not sent
+    pub luserme_msg: Option<String>,
+
+    /// The message given in the `RPL_STATSCONN` reply, or `None` if the reply
+    /// was not sent
+    pub statsconn_msg: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, Error, PartialEq)]
@@ -1024,6 +1039,9 @@ mod tests {
                     max_local_clients: Some(3071),
                     global_clients: Some(31564),
                     max_global_clients: Some(34153),
+                    luserclient_msg: Some("There are 62 users and 31502 invisible on 28 servers".to_owned()),
+                    luserme_msg: Some("I have 2700 clients and 1 servers".to_owned()),
+                    statsconn_msg: Some("Highest connection count: 3072 (3071 clients) (781421 connections received)".to_owned()),
                 },
                 motd: Some(
                     concat!(
@@ -1314,6 +1332,9 @@ mod tests {
                     max_local_clients: Some(3071),
                     global_clients: Some(31564),
                     max_global_clients: Some(34153),
+                    luserclient_msg: Some("There are 62 users and 31502 invisible on 28 servers".to_owned()),
+                    luserme_msg: Some("I have 2700 clients and 1 servers".to_owned()),
+                    statsconn_msg: Some("Highest connection count: 3072 (3071 clients) (781421 connections received)".to_owned()),
                 },
                 motd: Some(
                     concat!(
@@ -1535,6 +1556,9 @@ mod tests {
                     max_local_clients: Some(3071),
                     global_clients: Some(31564),
                     max_global_clients: Some(34153),
+                    luserclient_msg: Some("There are 62 users and 31502 invisible on 28 servers".to_owned()),
+                    luserme_msg: Some("I have 2700 clients and 1 servers".to_owned()),
+                    statsconn_msg: Some("Highest connection count: 3072 (3071 clients) (781421 connections received)".to_owned()),
                 },
                 motd: Some(
                     concat!(

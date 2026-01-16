@@ -71,7 +71,9 @@ following fields:
 
 - `"event"` — the type of event that occurred; see below
 
-Further fields depend on the type of event as detailed below.
+Further fields depend on the type of event as detailed below.  For client
+message events, the additional fields are the (possibly parsed) parameters of
+the message; see <https://modern.ircdocs.horse> for their semantics.
 
 `"admin"` Event
 ----------------
@@ -83,7 +85,7 @@ completeness.
 
 JSON objects for this event type have the following additional field:
 
-- `"target"` (string or `null`) — the target of the command, if any
+- `"target"` (string or `null`)
 
 `"authenticate"` Event
 ----------------
@@ -95,7 +97,7 @@ the login procedure) and is included only for completeness.
 
 JSON objects for this event type have the following additional field:
 
-- `"parameter"` (string) — the message's parameter
+- `"parameter"` (string)
 
 `"away"` Event
 ----------------
@@ -107,7 +109,7 @@ completeness.
 
 JSON objects for this event type have the following additional field:
 
-- `"text"` (string or `null`) — the text of the message, if any
+- `"text"` (string or `null`)
 
 `"cap"` Event
 ----------------
@@ -116,7 +118,7 @@ Emitted when a `CAP` message is received outside of the login procedure.
 
 JSON objects for this event type have the following additional field:
 
-- `"parameters"` (list of strings) — the message's parameters
+- `"parameters"` (list of strings)
 
 `"connect"` Event
 ----------------
@@ -127,8 +129,6 @@ This event should not occur during normal operation and is included only for
 completeness.
 
 JSON objects for this event type have the following additional fields:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"target_server"` (string)
 - `"port"` (integer or `null`)
@@ -208,8 +208,6 @@ Emitted when a `ERROR` message is received.
 
 JSON objects for this event type have the following additional field:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"reason"` (string)
 
 `"help"` Event
@@ -221,8 +219,6 @@ This event should not occur during normal operation and is included only for
 completeness.
 
 JSON objects for this event type have the following additional field:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"subject"` (string or `null`)
 
@@ -243,8 +239,6 @@ Emitted when a `INVITE` message is received.
 
 JSON objects for this event type have the following additional fields:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"nickname"` (string)
 - `"channel"` (string)
 
@@ -254,8 +248,6 @@ JSON objects for this event type have the following additional fields:
 Emitted when a `JOIN` message is received.
 
 JSON objects for this event type have the following additional field:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"channels"` (list of strings)
 
@@ -301,8 +293,6 @@ Emitted when an `KICK` message is received.
 
 JSON objects for this event type have the following additional fields:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"channel"` (string)
 - `"users"` (list of strings)
 - `"comment"` (string or `null`)
@@ -316,8 +306,6 @@ This event should not occur during normal operation and is included only for
 completeness.
 
 JSON objects for this event type have the following additional fields:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"nickname"` (string)
 - `"comment"` (string)
@@ -364,8 +352,6 @@ Emitted when a `MODE` message is received.
 
 JSON objects for this event type have the following additional fields:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"target"` (string)
 - `"modestring"` (string or `null`)
 - `"arguments"` (list of strings)
@@ -380,8 +366,6 @@ completeness.
 
 JSON objects for this event type have the following additional field:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"target"` (string or `null`)
 
 `"names"` Event
@@ -394,8 +378,6 @@ completeness.
 
 JSON objects for this event type have the following additional field:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"channels"` (list of strings)
 
 `"nick"` Event
@@ -405,8 +387,6 @@ Emitted when a `NICK` message is received.
 
 JSON objects for this event type have the following additional field:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"nickname"` (string)
 
 `"notice"` Event
@@ -415,8 +395,6 @@ JSON objects for this event type have the following additional field:
 Emitted when a `NOTICE` message is received.
 
 JSON objects for this event type have the following additional fields:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"targets"` (list of strings)
 - `"text"` (string)
@@ -430,8 +408,6 @@ This event should not occur during normal operation and is included only for
 completeness.
 
 JSON objects for this event type have the following additional fields:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"name"` (string)
 - `"password"` (string)
@@ -455,8 +431,6 @@ Emitted when a `PART` message is received.
 
 JSON objects for this event type have the following additional fields:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"channels"` (list of strings)
 - `"reason"` (string or `null`)
 
@@ -470,8 +444,6 @@ completeness.
 
 JSON objects for this event type have the following additional field:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"password"` (string)
 
 `"pong"` Event
@@ -483,8 +455,6 @@ This event should not be emitted during normal operation and is included only
 for completeness.
 
 JSON objects for this event type have the following additional field:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"token"` (string)
 
@@ -498,8 +468,6 @@ completeness.
 
 JSON objects for this event type have the following additional field:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"token"` (string)
 
 `"privmsg"` Event
@@ -508,8 +476,6 @@ JSON objects for this event type have the following additional field:
 Emitted when a `PRIVMSG` message is received.
 
 JSON objects for this event type have the following additional fields:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"targets"` (list of strings)
 - `"text"` (string)
@@ -520,8 +486,6 @@ JSON objects for this event type have the following additional fields:
 Emitted when a `QUIT` message is received.
 
 JSON objects for this event type have the following additional field:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"reason"` (string or `null`)
 
@@ -566,8 +530,6 @@ completeness.
 
 JSON objects for this event type have the following additional fields:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"server"` (string)
 - `"comment"` (string)
 
@@ -580,8 +542,6 @@ This event should not occur during normal operation and is included only for
 completeness.
 
 JSON objects for this event type have the following additional fields:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"query"` (string)
 - `"server"` (string or `null`)
@@ -596,8 +556,6 @@ completeness.
 
 JSON objects for this event type have the following additional field:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"server"` (string or `null`)
 
 `"topic"` Event
@@ -606,8 +564,6 @@ JSON objects for this event type have the following additional field:
 Emitted when an `TOPIC` message is received.
 
 JSON objects for this event type have the following additional fields:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"channel"` (string)
 - `"topic"` (string or `null`)
@@ -622,8 +578,6 @@ completeness.
 
 JSON objects for this event type have the following additional fields:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"username"` (string)
 - `"realname"` (string)
 
@@ -637,8 +591,6 @@ completeness.
 
 JSON objects for this event type have the following additional field:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"nicknames"` (list of strings)
 
 `"version"` Event
@@ -651,8 +603,6 @@ completeness.
 
 JSON objects for this event type have the following additional field:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"target"` (string or `null`)
 
 `"wallops"` Event
@@ -661,8 +611,6 @@ JSON objects for this event type have the following additional field:
 Emitted when a `WALLOPS` message is received.
 
 JSON objects for this event type have the following additional field:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"text"` (string)
 
@@ -676,8 +624,6 @@ completeness.
 
 JSON objects for this event type have the following additional field:
 
-<!-- TODO: Fill in field descriptions: -->
-
 - `"mask"` (string)
 
 `"whois"` Event
@@ -689,8 +635,6 @@ This event should not occur during normal operation and is included only for
 completeness.
 
 JSON objects for this event type have the following additional fields:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"target"` (string or `null`)
 - `"nickname"` (string)
@@ -704,8 +648,6 @@ This event should not occur during normal operation and is included only for
 completeness.
 
 JSON objects for this event type have the following additional fields:
-
-<!-- TODO: Fill in field descriptions: -->
 
 - `"nickname"` (string)
 - `"count"` (integer or `null`)

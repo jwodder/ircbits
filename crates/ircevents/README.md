@@ -507,6 +507,8 @@ Emitted when a numeric reply message is received.
 JSON objects for this event type have the following additional fields:
 
 - `"code"` (integer) — the value of the reply's numeric code
+- `"name"` (string or `null`) — the name of the reply (e.g., `"RPL_WELCOME"` or
+  `"ERR_NOMOTD"`) or `null` if it is not known
 - `"parameters"` (list of strings) — the parameters of the reply after the
   numeric code
 

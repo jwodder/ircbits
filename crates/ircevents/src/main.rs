@@ -6,8 +6,8 @@ use ircnet::client::{
     commands::{JoinCommand, JoinOutput, LoginOutput},
 };
 use irctext::{
-    ClientMessage, ClientMessageParts, ClientSource, Message, ParseMessageError, Payload, Reply,
-    ReplyParts, Source, TrailingParam, TryFromStringError,
+    CaseMapping, ClientMessage, ClientMessageParts, ClientSource, Message, ParseMessageError,
+    Payload, Reply, ReplyParts, Source, TrailingParam, TryFromStringError,
     clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
     types::{Channel, ISupportParam},
@@ -131,6 +131,21 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
         )
         .build()
         .await?;
+    let casemapping = login_output
+        .isupport
+        .iter()
+        .find_map(|param| {
+            if let ISupportParam::Eq(key, value) = param
+                && key == "CASEMAPPING"
+                && let Ok(cm) = value.as_str().parse::<CaseMapping>()
+            {
+                Some(cm)
+            } else {
+                None
+            }
+        })
+        .unwrap_or_default();
+    let me = login_output.my_nick.clone();
     sender
         .send(Event::Connected {
             timestamp: Zoned::now(),
@@ -140,9 +155,11 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
     if let Some(p) = profile.ircevents.away {
         client.send(Away::new(p).into()).await?;
     }
+    let mut canon_channels = ChannelCanonicalizer::new(casemapping);
     for chan in profile.ircevents.channels {
         tracing::info!("Joining {chan} …");
         let output = client.run(JoinCommand::new(chan.clone())).await?;
+        canon_channels.add(output.channel.clone());
         sender
             .send(Event::Joined {
                 timestamp: Zoned::now(),
@@ -155,7 +172,22 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
             r = client.recv() => {
                 match r {
                     Ok(Some(Message {source, payload: Payload::ClientMessage(msg)})) => {
+                        let kicked_chan = if let ClientMessage::Kick(m) = &msg
+                            && let Some(chan) = canon_channels.get(m.channel())
+                            && m.users().iter().any(|nick| casemapping.eq_ignore_case(nick, &me)) {
+                            tracing::info!(comment = m.comment().map(ToString::to_string), "Kicked from {chan}");
+                            Some(chan.to_owned())
+                        } else {
+                            None
+                        };
                         sender.send(Event::Message {timestamp: Zoned::now(), source, msg}).await?;
+                        if let Some(chan) = kicked_chan {
+                            canon_channels.remove(&chan);
+                            if canon_channels.is_empty() {
+                                tracing::info!("No channels left; quitting");
+                                client.send(Quit::new().into()).await?;
+                            }
+                        }
                     }
                     Ok(Some(Message {source, payload: Payload::Reply(reply)})) => {
                         sender.send(Event::Reply {timestamp: Zoned::now(), source, reply}).await?;
@@ -944,6 +976,40 @@ impl AddFields for Reply {
             String::from("parameters"),
             Value::from(params.into_iter().map(String::from).collect::<Vec<_>>()),
         );
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct ChannelCanonicalizer {
+    casemapping: CaseMapping,
+    lower2canon: HashMap<Channel, Channel>,
+}
+
+impl ChannelCanonicalizer {
+    fn new(casemapping: CaseMapping) -> Self {
+        Self {
+            casemapping,
+            lower2canon: HashMap::new(),
+        }
+    }
+
+    fn add(&mut self, channel: Channel) {
+        let lower = channel.to_lowercase(self.casemapping);
+        self.lower2canon.insert(lower, channel);
+    }
+
+    fn get(&self, channel: &Channel) -> Option<&Channel> {
+        let lower = channel.to_lowercase(self.casemapping);
+        self.lower2canon.get(&lower)
+    }
+
+    fn remove(&mut self, channel: &Channel) {
+        let lower = channel.to_lowercase(self.casemapping);
+        self.lower2canon.remove(&lower);
+    }
+
+    fn is_empty(&self) -> bool {
+        self.lower2canon.is_empty()
     }
 }
 

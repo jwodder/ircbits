@@ -8,7 +8,8 @@ occurs.
 
 A running `ircevents` instance can be shut down gracefully by sending it SIGINT
 (Ctrl-C) or SIGTERM, which will cause it to send a `QUIT` message to the server
-and then exit once the server closes the connection.
+and then exit once the server closes the connection.  `ircevents` will also
+shut down if it is kicked from every channel it has joined.
 
 Options
 =======

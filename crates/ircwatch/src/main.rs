@@ -200,22 +200,27 @@ async fn main() -> anyhow::Result<()> {
         report(&s);
     }
     loop {
-        select! {
-            r = client.recv() => {
-                match r {
-                    Ok(Some(msg)) => report(&format_msg(msg)),
-                    Ok(None) => {
-                        report("* Disconnected");
-                        break;
-                    }
-                    Err(ClientError::Parse(e)) => {
-                        report(&format!("[PARSE FAILURE] {:?}", anyhow::Error::new(e)));
-                    }
-                    Err(e) => return Err(e.into()),
-                }
+        match run_until_stopped(client.recv()).await {
+            Some(Ok(Some(msg))) => report(&format_msg(msg)),
+            Some(Ok(None)) => {
+                report("* Disconnected");
+                break;
             }
-            () = recv_stop_signal() => {
-                client.send(Quit::new_with_reason("Terminated".parse::<TrailingParam>().expect(r#""Terminated" should be valid TrailingParam"#)).into()).await?;
+            Some(Err(ClientError::Parse(e))) => {
+                report(&format!("[PARSE FAILURE] {:?}", anyhow::Error::new(e)));
+            }
+            Some(Err(e)) => return Err(e.into()),
+            None => {
+                client
+                    .send(
+                        Quit::new_with_reason(
+                            "Terminated"
+                                .parse::<TrailingParam>()
+                                .expect(r#""Terminated" should be valid TrailingParam"#),
+                        )
+                        .into(),
+                    )
+                    .await?;
             }
         }
     }
@@ -231,6 +236,13 @@ impl FormatTime for JiffTimer {
         let ts = now.timestamp();
         let offset = now.offset();
         write!(w, "{}", ts.display_with_offset(offset))
+    }
+}
+
+async fn run_until_stopped<Fut: Future>(fut: Fut) -> Option<Fut::Output> {
+    select! {
+        r = fut => Some(r),
+        () = recv_stop_signal() => None,
     }
 }
 

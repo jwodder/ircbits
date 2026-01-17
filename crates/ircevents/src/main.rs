@@ -168,49 +168,91 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
             .await?;
     }
     loop {
-        select! {
-            r = client.recv() => {
-                match r {
-                    Ok(Some(Message {source, payload: Payload::ClientMessage(msg)})) => {
-                        let kicked_chan = if let ClientMessage::Kick(m) = &msg
-                            && let Some(chan) = canon_channels.get(m.channel())
-                            && m.users().iter().any(|nick| casemapping.eq_ignore_case(nick, &me)) {
-                            tracing::info!(comment = m.comment().map(ToString::to_string), "Kicked from {chan}");
-                            Some(chan.to_owned())
-                        } else {
-                            None
-                        };
-                        sender.send(Event::Message {timestamp: Zoned::now(), source, msg}).await?;
-                        if let Some(chan) = kicked_chan {
-                            canon_channels.remove(&chan);
-                            if canon_channels.is_empty() {
-                                tracing::info!("No channels left; quitting");
-                                client.send(Quit::new().into()).await?;
-                            }
-                        }
-                    }
-                    Ok(Some(Message {source, payload: Payload::Reply(reply)})) => {
-                        sender.send(Event::Reply {timestamp: Zoned::now(), source, reply}).await?;
-                    }
-                    Ok(None) => {
-                        tracing::info!("Connection closed");
-                        sender.send(Event::Disconnected {timestamp: Zoned::now()}).await?;
-                        break;
-                    }
-                    Err(ClientError::Parse(error)) => {
-                        sender.send(Event::ParseError {timestamp: Zoned::now(), error}).await?;
-                    }
-                    Err(e) => {
-                        let e = anyhow::Error::new(e);
-                        tracing::error!(?e, "Error communicating with server; disconnecting");
-                        sender.send(Event::Disconnected {timestamp: Zoned::now()}).await?;
-                        return Err(e);
+        match run_until_stopped(client.recv()).await {
+            Some(Ok(Some(Message {
+                source,
+                payload: Payload::ClientMessage(msg),
+            }))) => {
+                let kicked_chan = if let ClientMessage::Kick(m) = &msg
+                    && let Some(chan) = canon_channels.get(m.channel())
+                    && m.users()
+                        .iter()
+                        .any(|nick| casemapping.eq_ignore_case(nick, &me))
+                {
+                    tracing::info!(
+                        comment = m.comment().map(ToString::to_string),
+                        "Kicked from {chan}"
+                    );
+                    Some(chan.to_owned())
+                } else {
+                    None
+                };
+                sender
+                    .send(Event::Message {
+                        timestamp: Zoned::now(),
+                        source,
+                        msg,
+                    })
+                    .await?;
+                if let Some(chan) = kicked_chan {
+                    canon_channels.remove(&chan);
+                    if canon_channels.is_empty() {
+                        tracing::info!("No channels left; quitting");
+                        client.send(Quit::new().into()).await?;
                     }
                 }
             }
-            () = recv_stop_signal() => {
+            Some(Ok(Some(Message {
+                source,
+                payload: Payload::Reply(reply),
+            }))) => {
+                sender
+                    .send(Event::Reply {
+                        timestamp: Zoned::now(),
+                        source,
+                        reply,
+                    })
+                    .await?;
+            }
+            Some(Ok(None)) => {
+                tracing::info!("Connection closed");
+                sender
+                    .send(Event::Disconnected {
+                        timestamp: Zoned::now(),
+                    })
+                    .await?;
+                break;
+            }
+            Some(Err(ClientError::Parse(error))) => {
+                sender
+                    .send(Event::ParseError {
+                        timestamp: Zoned::now(),
+                        error,
+                    })
+                    .await?;
+            }
+            Some(Err(e)) => {
+                let e = anyhow::Error::new(e);
+                tracing::error!(?e, "Error communicating with server; disconnecting");
+                sender
+                    .send(Event::Disconnected {
+                        timestamp: Zoned::now(),
+                    })
+                    .await?;
+                return Err(e);
+            }
+            None => {
                 tracing::info!("Signal received; quitting");
-                client.send(Quit::new_with_reason("Terminated".parse::<TrailingParam>().expect(r#""Terminated" should be valid TrailingParam"#)).into()).await?;
+                client
+                    .send(
+                        Quit::new_with_reason(
+                            "Terminated"
+                                .parse::<TrailingParam>()
+                                .expect(r#""Terminated" should be valid TrailingParam"#),
+                        )
+                        .into(),
+                    )
+                    .await?;
             }
         }
     }
@@ -226,6 +268,13 @@ impl FormatTime for JiffTimer {
         let ts = now.timestamp();
         let offset = now.offset();
         write!(w, "{}", ts.display_with_offset(offset))
+    }
+}
+
+async fn run_until_stopped<Fut: Future>(fut: Fut) -> Option<Fut::Output> {
+    select! {
+        r = fut => Some(r),
+        () = recv_stop_signal() => None,
     }
 }
 

@@ -164,60 +164,86 @@ async fn main() -> anyhow::Result<()> {
     }
 
     loop {
-        select! {
-            r = client.recv() => {
-                match r {
-                    Ok(Some(Message {payload: Payload::ClientMessage(climsg), ..})) => {
-                        match climsg {
-                            ClientMessage::PrivMsg(m) => {
-                                for t in m.targets() {
-                                    if let MsgTarget::Channel(c0) = t && let Some(c) = canon_channels.get(c0).cloned() {
-                                        log.log(Event::new(&network, Some(c.into_inner()), "message"))?;
-                                    }
-                                }
+        match run_until_stopped(client.recv()).await {
+            Some(Ok(Some(Message {
+                payload: Payload::ClientMessage(climsg),
+                ..
+            }))) => {
+                match climsg {
+                    ClientMessage::PrivMsg(m) => {
+                        for t in m.targets() {
+                            if let MsgTarget::Channel(c0) = t
+                                && let Some(c) = canon_channels.get(c0).cloned()
+                            {
+                                log.log(Event::new(&network, Some(c.into_inner()), "message"))?;
                             }
-                            ClientMessage::Notice(m) => {
-                                for t in m.targets() {
-                                    if let MsgTarget::Channel(c0) = t && let Some(c) = canon_channels.get(c0).cloned() {
-                                        log.log(Event::new(&network, Some(c.into_inner()), "message"))?;
-                                    }
-                                }
-                            }
-                            ClientMessage::Kick(m) => {
-                                if let Some(chan) = canon_channels.get(m.channel()) && m.users().iter().any(|nick| casemapping.eq_ignore_case(nick, &me)) {
-                                    tracing::info!(comment = m.comment().map(ToString::to_string), "Kicked from {chan}");
-                                    log.log(Event::new(&network, Some(chan.as_str().to_owned()), "kicked"))?;
-                                    let chan = chan.to_owned(); // Stop borrowing from canon_channels so we can mutate it
-                                    canon_channels.remove(&chan);
-                                    if canon_channels.is_empty() {
-                                        tracing::info!("No channels left; quitting");
-                                        client.send(Quit::new().into()).await?;
-                                    }
-                                }
-                            }
-                            ClientMessage::Error(m) => {
-                                tracing::info!(reason = String::from(m.into_reason()), "Server sent ERROR message");
-                            }
-                            _ => (),
                         }
                     }
-                    Ok(Some(_)) => (),
-                    Ok(None) => {
-                        tracing::info!("Connection closed");
-                        log.log(Event::new(&network, None, "disconnected"))?;
-                        break;
+                    ClientMessage::Notice(m) => {
+                        for t in m.targets() {
+                            if let MsgTarget::Channel(c0) = t
+                                && let Some(c) = canon_channels.get(c0).cloned()
+                            {
+                                log.log(Event::new(&network, Some(c.into_inner()), "message"))?;
+                            }
+                        }
                     }
-                    Err(e) => {
-                        let e = anyhow::Error::new(e);
-                        tracing::error!(?e, "Error communicating with server");
-                        log.log(Event::new(&network, None, "error"))?;
-                        return Err(e);
+                    ClientMessage::Kick(m) => {
+                        if let Some(chan) = canon_channels.get(m.channel())
+                            && m.users()
+                                .iter()
+                                .any(|nick| casemapping.eq_ignore_case(nick, &me))
+                        {
+                            tracing::info!(
+                                comment = m.comment().map(ToString::to_string),
+                                "Kicked from {chan}"
+                            );
+                            log.log(Event::new(
+                                &network,
+                                Some(chan.as_str().to_owned()),
+                                "kicked",
+                            ))?;
+                            let chan = chan.to_owned(); // Stop borrowing from canon_channels so we can mutate it
+                            canon_channels.remove(&chan);
+                            if canon_channels.is_empty() {
+                                tracing::info!("No channels left; quitting");
+                                client.send(Quit::new().into()).await?;
+                            }
+                        }
                     }
+                    ClientMessage::Error(m) => {
+                        tracing::info!(
+                            reason = String::from(m.into_reason()),
+                            "Server sent ERROR message"
+                        );
+                    }
+                    _ => (),
                 }
             }
-            () = recv_stop_signal() => {
+            Some(Ok(Some(_))) => (),
+            Some(Ok(None)) => {
+                tracing::info!("Connection closed");
+                log.log(Event::new(&network, None, "disconnected"))?;
+                break;
+            }
+            Some(Err(e)) => {
+                let e = anyhow::Error::new(e);
+                tracing::error!(?e, "Error communicating with server");
+                log.log(Event::new(&network, None, "error"))?;
+                return Err(e);
+            }
+            None => {
                 tracing::info!("Signal received; quitting");
-                client.send(Quit::new_with_reason("Terminated".parse::<TrailingParam>().expect(r#""Terminated" should be valid TrailingParam"#)).into()).await?;
+                client
+                    .send(
+                        Quit::new_with_reason(
+                            "Terminated"
+                                .parse::<TrailingParam>()
+                                .expect(r#""Terminated" should be valid TrailingParam"#),
+                        )
+                        .into(),
+                    )
+                    .await?;
             }
         }
     }
@@ -233,6 +259,13 @@ impl FormatTime for JiffTimer {
         let ts = now.timestamp();
         let offset = now.offset();
         write!(w, "{}", ts.display_with_offset(offset))
+    }
+}
+
+async fn run_until_stopped<Fut: Future>(fut: Fut) -> Option<Fut::Output> {
+    select! {
+        r = fut => Some(r),
+        () = recv_stop_signal() => None,
     }
 }
 

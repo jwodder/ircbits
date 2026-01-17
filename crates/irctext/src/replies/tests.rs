@@ -110,4 +110,33 @@ mod whoisactually {
             assert_eq!(r.parameters, ["*", "*", "jwodder", "You are now logged in as jwodder"]);
         });
     }
+
+    #[test]
+    fn isupport_draft() {
+        // <https://ircv3.net/specs/extensions/network-icon>
+        let msg = ":irc.example.org 005 * NETWORK=Example draft/ICON=https://example.org/icon.svg :are supported by this server";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            tags,
+            source: Some(Source::Server(host)),
+            payload: Payload::Reply(Reply::ISupport(r)),
+        } => {
+            assert!(tags.is_empty());
+            assert_eq!(host, Host::Domain("irc.example.org"));
+            assert_eq!(r.code(), 5);
+            assert_eq!(r.client(), "*");
+            assert_matches!(r.tokens(), [p1, p2] => {
+                assert_matches!(p1, ISupportParam::Eq(k, v) => {
+                    assert_eq!(k, "NETWORK");
+                    assert_eq!(v, "Example");
+                });
+                assert_matches!(p2, ISupportParam::Eq(k, v) => {
+                    assert_eq!(k, "draft/ICON");
+                    assert_eq!(v, "https://example.org/icon.svg");
+                });
+            });
+            assert_eq!(r.message(), "are supported by this server");
+            assert_eq!(r.parameters, ["*", "NETWORK=Example", "draft/ICON=https://example.org/icon.svg", "are supported by this server"]);
+        });
+    }
 }

@@ -112,7 +112,7 @@ validstr!(ISupportKey, ParseISupportKeyError, validate_key);
 fn validate_key(s: &str) -> Result<(), ParseISupportKeyError> {
     if s.is_empty() {
         Err(ParseISupportKeyError::Empty)
-    } else if s.contains(|ch: char| !ch.is_ascii_alphanumeric()) {
+    } else if s.contains(|ch: char| !ch.is_ascii_alphanumeric() && ch != '.' && ch != '/') {
         Err(ParseISupportKeyError::BadCharacter)
     } else {
         Ok(())
@@ -123,7 +123,7 @@ fn validate_key(s: &str) -> Result<(), ParseISupportKeyError> {
 pub enum ParseISupportKeyError {
     #[error("ISUPPORT keys cannot be empty")]
     Empty,
-    #[error("ISUPPORT keys must only contain ASCII letters & digits")]
+    #[error("ISUPPORT keys must only contain ASCII letters, ASCII digits, period, and slash")]
     BadCharacter,
 }
 

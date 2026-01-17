@@ -10990,7 +10990,7 @@ impl TryFrom<ParameterList> for NoPrivs {
 pub struct LoggedIn {
     parameters: ParameterList,
     client: ReplyTarget,
-    your_source: ClientSource,
+    your_source: Option<ClientSource>,
 }
 
 impl LoggedIn {
@@ -10998,8 +10998,9 @@ impl LoggedIn {
         &self.client
     }
 
-    pub fn your_source(&self) -> &ClientSource {
-        &self.your_source
+    // This is None when the parameter in the original message was "*"
+    pub fn your_source(&self) -> Option<&ClientSource> {
+        self.your_source.as_ref()
     }
 
     pub fn account(&self) -> &str {
@@ -11069,7 +11070,11 @@ impl TryFrom<ParameterList> for LoggedIn {
         let p = parameters
             .get(1)
             .expect("Parameter 1 should exist when list length is at least 4");
-        let your_source = ClientSource::try_from(String::from(p))?;
+        let your_source = if p == "*" {
+            None
+        } else {
+            Some(ClientSource::try_from(String::from(p))?)
+        };
         Ok(LoggedIn {
             parameters,
             client,
@@ -11082,7 +11087,7 @@ impl TryFrom<ParameterList> for LoggedIn {
 pub struct LoggedOut {
     parameters: ParameterList,
     client: ReplyTarget,
-    your_source: ClientSource,
+    your_source: Option<ClientSource>,
 }
 
 impl LoggedOut {
@@ -11090,8 +11095,9 @@ impl LoggedOut {
         &self.client
     }
 
-    pub fn your_source(&self) -> &ClientSource {
-        &self.your_source
+    // This is None when the parameter in the original message was "*"
+    pub fn your_source(&self) -> Option<&ClientSource> {
+        self.your_source.as_ref()
     }
 
     pub fn message(&self) -> &str {
@@ -11154,7 +11160,11 @@ impl TryFrom<ParameterList> for LoggedOut {
         let p = parameters
             .get(1)
             .expect("Parameter 1 should exist when list length is at least 3");
-        let your_source = ClientSource::try_from(String::from(p))?;
+        let your_source = if p == "*" {
+            None
+        } else {
+            Some(ClientSource::try_from(String::from(p))?)
+        };
         Ok(LoggedOut {
             parameters,
             client,

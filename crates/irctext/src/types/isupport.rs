@@ -38,6 +38,7 @@ impl ISupportParam {
     }
 }
 
+// Displays values escaped
 impl fmt::Display for ISupportParam {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -48,13 +49,14 @@ impl fmt::Display for ISupportParam {
     }
 }
 
+// Parses escaped values
 impl std::str::FromStr for ISupportParam {
     type Err = ParseISupportParamError;
 
     fn from_str(s: &str) -> Result<ISupportParam, ParseISupportParamError> {
         if let Some((key, value)) = s.split_once('=') {
             let key = key.parse::<ISupportKey>()?;
-            let value = value.parse::<ISupportValue>()?;
+            let value = ISupportValue::from_escaped(value)?;
             Ok(ISupportParam::Eq(key, value))
         } else if let Some(key) = s.strip_prefix('-') {
             let key = key.parse::<ISupportKey>()?;
@@ -105,9 +107,9 @@ pub enum ParseISupportParamError {
 #[derive(Clone, Eq, Hash, PartialEq, PartialOrd)]
 pub struct ISupportKey(String);
 
-validstr!(ISupportKey, ParseISupportKeyError, validate);
+validstr!(ISupportKey, ParseISupportKeyError, validate_key);
 
-fn validate(s: &str) -> Result<(), ParseISupportKeyError> {
+fn validate_key(s: &str) -> Result<(), ParseISupportKeyError> {
     if s.is_empty() {
         Err(ParseISupportKeyError::Empty)
     } else if s.contains(|ch: char| !ch.is_ascii_alphanumeric()) {
@@ -128,55 +130,24 @@ pub enum ParseISupportKeyError {
 #[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ISupportValue(String);
 
+// Display does not show escapes.  FromStr does not parse escapes.
+validstr!(ISupportValue, ParseISupportValueError, validate_value);
+
+fn validate_value(s: &str) -> Result<(), ParseISupportValueError> {
+    if s.chars().any(|ch| !(' '..='~').contains(&ch)) {
+        Err(ParseISupportValueError::BadCharacter)
+    } else {
+        Ok(())
+    }
+}
+
 impl ISupportValue {
-    pub fn escaped(&self) -> EscapedISupportValue<'_> {
-        EscapedISupportValue(self)
-    }
-
-    pub fn into_inner(self) -> String {
-        self.0
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl From<ISupportValue> for String {
-    fn from(value: ISupportValue) -> String {
-        value.0
-    }
-}
-
-impl From<&ISupportValue> for String {
-    fn from(value: &ISupportValue) -> String {
-        value.0.clone()
-    }
-}
-
-impl fmt::Debug for ISupportValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.0)
-    }
-}
-
-// Displays WITHOUT escapes
-impl fmt::Display for ISupportValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-// Parses escapes
-impl std::str::FromStr for ISupportValue {
-    type Err = ParseISupportValueError;
-
-    fn from_str(s: &str) -> Result<ISupportValue, ParseISupportValueError> {
+    fn from_escaped(s: &str) -> Result<ISupportValue, ParseISupportValueError> {
         let mut value = String::with_capacity(s.len());
         let mut chars = s.chars();
         let iter = chars.by_ref();
         while let Some(ch) = iter.next() {
-            if !ch.is_ascii_graphic() {
+            if !(' '..='~').contains(&ch) {
                 return Err(ParseISupportValueError::BadCharacter);
             }
             if ch == '\\' {
@@ -195,56 +166,15 @@ impl std::str::FromStr for ISupportValue {
         }
         Ok(ISupportValue(value))
     }
-}
 
-impl TryFrom<String> for ISupportValue {
-    type Error = TryFromStringError<ParseISupportValueError>;
-
-    fn try_from(
-        string: String,
-    ) -> Result<ISupportValue, TryFromStringError<ParseISupportValueError>> {
-        match string.parse() {
-            Ok(src) => Ok(src),
-            Err(inner) => Err(TryFromStringError { inner, string }),
-        }
-    }
-}
-
-impl AsRef<str> for ISupportValue {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
-    }
-}
-
-impl std::ops::Deref for ISupportValue {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl PartialEq<String> for ISupportValue {
-    fn eq(&self, other: &String) -> bool {
-        &self.0 == other
-    }
-}
-
-impl PartialEq<str> for ISupportValue {
-    fn eq(&self, other: &str) -> bool {
-        self.0 == other
-    }
-}
-
-impl<'a> PartialEq<&'a str> for ISupportValue {
-    fn eq(&self, other: &&'a str) -> bool {
-        &self.0 == other
+    pub fn escaped(&self) -> EscapedISupportValue<'_> {
+        EscapedISupportValue(self)
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseISupportValueError {
-    #[error("ISUPPORT values must only contain printable non-space ASCII characters")]
+    #[error("ISUPPORT values must only contain printable ASCII characters")]
     BadCharacter,
     #[error("invalid/unrecognized escape sequence")]
     BadEscape,
@@ -305,7 +235,7 @@ mod tests {
     #[test]
     fn escaped_value() {
         let s = r"foo\x3Dbar\x5Cbaz\x20quux";
-        let value = s.parse::<ISupportValue>().unwrap();
+        let value = ISupportValue::from_escaped(s).unwrap();
         assert_eq!(value.as_ref(), "foo=bar\\baz quux");
         assert_eq!(value.to_string(), "foo=bar\\baz quux");
         assert_eq!(value.escaped().to_string(), s);
@@ -314,7 +244,7 @@ mod tests {
     #[test]
     fn lower_escaped_value() {
         let s = r"foo\x3dbar\x5cbaz\x20quux";
-        let value = s.parse::<ISupportValue>().unwrap();
+        let value = ISupportValue::from_escaped(s).unwrap();
         assert_eq!(value.as_ref(), "foo=bar\\baz quux");
         assert_eq!(value.to_string(), "foo=bar\\baz quux");
         assert_eq!(value.escaped().to_string(), r"foo\x3Dbar\x5Cbaz\x20quux");

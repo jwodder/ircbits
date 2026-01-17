@@ -184,7 +184,7 @@ async fn main() -> anyhow::Result<()> {
                                 }
                             }
                             ClientMessage::Kick(m) => {
-                                if let Some(chan) = canon_channels.get(m.channel()) && m.users().iter().any(|nick| nick == &me) {
+                                if let Some(chan) = canon_channels.get(m.channel()) && m.users().iter().any(|nick| casemapping.eq_ignore_case(nick, &me)) {
                                     tracing::info!(comment = m.comment().map(ToString::to_string), "Kicked from {chan}");
                                     log.log(Event::new(&network, Some(chan.as_str().to_owned()), "kicked"))?;
                                     let chan = chan.to_owned(); // Stop borrowing from canon_channels so we can mutate it
@@ -196,7 +196,7 @@ async fn main() -> anyhow::Result<()> {
                                 }
                             }
                             ClientMessage::Error(m) => {
-                                tracing::info!("Server sent ERROR message: {}", m.reason());
+                                tracing::info!(reason = String::from(m.into_reason()), "Server sent ERROR message");
                             }
                             _ => (),
                         }

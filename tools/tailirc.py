@@ -6,6 +6,7 @@
 
 # TODO:
 # - Specially mark messages from servers?
+# - Show TAGMSG events?
 
 from __future__ import annotations
 import argparse

@@ -898,6 +898,18 @@ impl AddFields for ClientMessage {
                     Value::from(msg.server().map(ToString::to_string)),
                 );
             }
+            ClientMessage::TagMsg(msg) => {
+                map.insert(String::from("event"), Value::from("tagmsg"));
+                map.insert(
+                    String::from("targets"),
+                    Value::from(
+                        msg.targets()
+                            .iter()
+                            .map(ToString::to_string)
+                            .collect::<Vec<_>>(),
+                    ),
+                );
+            }
             ClientMessage::Time(msg) => {
                 map.insert(String::from("event"), Value::from("time"));
                 map.insert(

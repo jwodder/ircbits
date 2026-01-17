@@ -8,6 +8,7 @@
 # - Specially mark messages from servers?
 # - Convert IRC formatting to ANSI escapes?
 # - Add an option for setting the server file
+# - Show TAGMSG events?
 
 from __future__ import annotations
 import argparse

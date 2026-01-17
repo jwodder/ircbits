@@ -244,6 +244,22 @@ fn format_msg(msg: Message) -> String {
                 )
             }
         }
+        Payload::ClientMessage(ClientMessage::TagMsg(m)) => {
+            let targets = m.targets();
+            let tagtext = msg
+                .tags
+                .into_iter()
+                .map(|(key, value)| format!("{key}={value}"))
+                .join(" ");
+            if targets.len() == 1 && targets[0].is_nick() {
+                format!("[TAGMSG] {sender}: {tagtext}")
+            } else {
+                format!(
+                    "[{}] [TAGMSG] {sender}: {tagtext}",
+                    m.targets().iter().map(|t| highlight(t.as_str())).join(","),
+                )
+            }
+        }
         Payload::ClientMessage(ClientMessage::Join(m)) => {
             format!(
                 "* {sender} joins {}",

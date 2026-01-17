@@ -570,6 +570,15 @@ JSON objects for this event type have the following additional fields:
 - `"query"` (string)
 - `"server"` (string or `null`)
 
+`"tagmsg"` Event
+----------------
+
+Emitted when a `TAGMSG` message is received.
+
+JSON objects for this event type have the following additional field:
+
+- `"targets"` (list of strings)
+
 `"time"` Event
 ----------------
 

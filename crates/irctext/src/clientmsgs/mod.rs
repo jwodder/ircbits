@@ -29,6 +29,7 @@ mod rehash;
 mod restart;
 mod squit;
 mod stats;
+mod tagmsg;
 mod time;
 mod topic;
 mod user;
@@ -69,6 +70,7 @@ pub use self::rehash::*;
 pub use self::restart::*;
 pub use self::squit::*;
 pub use self::stats::*;
+pub use self::tagmsg::*;
 pub use self::time::*;
 pub use self::topic::*;
 pub use self::user::*;
@@ -132,6 +134,7 @@ pub enum ClientMessage {
     Restart,
     Squit,
     Stats,
+    TagMsg,
     Time,
     Topic,
     User,
@@ -180,6 +183,7 @@ impl ClientMessage {
             Verb::Restart => Restart::try_from(params).map(ClientMessage::Restart),
             Verb::Squit => Squit::try_from(params).map(ClientMessage::Squit),
             Verb::Stats => Stats::try_from(params).map(ClientMessage::Stats),
+            Verb::TagMsg => TagMsg::try_from(params).map(ClientMessage::TagMsg),
             Verb::Time => Time::try_from(params).map(ClientMessage::Time),
             Verb::Topic => Topic::try_from(params).map(ClientMessage::Topic),
             Verb::User => User::try_from(params).map(ClientMessage::User),

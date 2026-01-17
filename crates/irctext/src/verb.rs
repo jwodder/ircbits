@@ -34,6 +34,7 @@ pub enum Verb {
     Restart,
     Squit,
     Stats,
+    TagMsg,
     Time,
     Topic,
     User,

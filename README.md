@@ -12,27 +12,3 @@ crates.io.
 [Rust]: https://www.rust-lang.org
 [workspace]: https://doc.rust-lang.org/cargo/reference/workspaces.html
 [IRC]: https://en.wikipedia.org/wiki/IRC
-
-The code endeavors to follow the spec at <https://modern.ircdocs.horse>
-strictly, including the following points:
-
-- Only the commands and replies documented in the spec are supported, and only
-  when their parameters follow the documented formats (though numeric replies
-  are allowed to have more parameters than documented).
-    - Exceptions to the above, largely to achieve basic compatibility with some
-      actual servers:
-        - Replies with unknown numeric codes are converted to a catch-all type
-        - The following nonstandard numeric replies are supported:
-            - `RPL_STATSCONN` (250)
-            - `ERR_INVALIDCAPCMD` (410), specified by the [Capability
-              Negotiation specification][cap]
-        - The `<nick>` parameter of `RPL_TOPICWHOTIME` (333) is allowed to be
-          either just a nickname or a string of the form `<nick>!<user>@<host>`
-
-- The only supported channel type prefixes are `#` and `&`.
-
-- The only support channel membership prefixes are `~`, `&`, `@`, `%`, and `+`.
-
-- Tags are currently not yet implemented (jwodder/ircbits#4).
-
-[cap]: https://ircv3.net/specs/extensions/capability-negotiation.html

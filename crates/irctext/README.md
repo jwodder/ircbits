@@ -7,6 +7,27 @@ constructing, rendering, etc.) in which every type of message (both client
 messages and replies) is represented by a dedicated type that only permits
 values that conform to the specification at <https://modern.ircdocs.horse>.
 
+In particular:
+
+- Only the commands and replies documented in the spec are supported, and only
+  when their parameters follow the documented formats (though numeric replies
+  are allowed to have more parameters than documented).
+    - Exceptions to the above, largely to achieve basic compatibility with some
+      actual servers:
+        - Replies with unknown numeric codes are converted to a catch-all type
+        - The following nonstandard numeric replies are supported:
+            - `RPL_STATSCONN` (250)
+            - `ERR_INVALIDCAPCMD` (410), specified by the [Capability
+              Negotiation specification][cap]
+        - The `<nick>` parameter of `RPL_TOPICWHOTIME` (333) is allowed to be
+          either just a nickname or a string of the form `<nick>!<user>@<host>`
+
+- The only supported channel type prefixes are `#` and `&`.
+
+- The only support channel membership prefixes are `~`, `&`, `@`, `%`, and `+`.
+
+[cap]: https://ircv3.net/specs/extensions/capability-negotiation.html
+
 Features
 ========
 

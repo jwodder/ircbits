@@ -90,4 +90,24 @@ mod whoisactually {
             assert_eq!(r.parameters, ["jwodder", "9J5AACK4S", "your unique ID"]);
         });
     }
+
+    #[test]
+    fn loggedin_with_star_source() {
+        let msg = ":irc.ergo.chat 900 * * jwodder :You are now logged in as jwodder";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            tags,
+            source: Some(Source::Server(host)),
+            payload: Payload::Reply(Reply::LoggedIn(r)),
+        } => {
+            assert!(tags.is_empty());
+            assert_eq!(host, Host::Domain("irc.ergo.chat"));
+            assert_eq!(r.code(), 900);
+            assert_eq!(r.client(), "*");
+            assert!(r.your_source().is_none());
+            assert_eq!(r.account(), "jwodder");
+            assert_eq!(r.message(), "You are now logged in as jwodder");
+            assert_eq!(r.parameters, ["*", "*", "jwodder", "You are now logged in as jwodder"]);
+        });
+    }
 }

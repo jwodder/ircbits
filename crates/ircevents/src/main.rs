@@ -10,7 +10,7 @@ use irctext::{
     Payload, Reply, ReplyParts, Source, TrailingParam, TryFromStringError,
     clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
-    types::{Channel, ISupportParam},
+    types::{Channel, ISupportParam, TagKey, TagValue},
 };
 use jiff::{Timestamp, Zoned};
 use mainutil::{init_logging, run_until_stopped};
@@ -153,6 +153,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
     loop {
         match run_until_stopped(client.recv()).await {
             Some(Ok(Some(Message {
+                tags,
                 source,
                 payload: Payload::ClientMessage(msg),
             }))) => {
@@ -173,6 +174,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                 sender
                     .send(Event::Message {
                         timestamp: Zoned::now(),
+                        tags,
                         source,
                         msg,
                     })
@@ -186,12 +188,14 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                 }
             }
             Some(Ok(Some(Message {
+                tags,
                 source,
                 payload: Payload::Reply(reply),
             }))) => {
                 sender
                     .send(Event::Reply {
                         timestamp: Zoned::now(),
+                        tags,
                         source,
                         reply,
                     })
@@ -316,11 +320,13 @@ enum Event {
     },
     Message {
         timestamp: Zoned,
+        tags: Vec<(TagKey, TagValue)>,
         source: Option<Source>,
         msg: ClientMessage,
     },
     Reply {
         timestamp: Zoned,
+        tags: Vec<(TagKey, TagValue)>,
         source: Option<Source>,
         reply: Reply,
     },
@@ -349,10 +355,21 @@ impl Event {
             }
             Event::Message {
                 timestamp,
+                tags,
                 source,
                 msg,
             } => {
                 map.insert(String::from("timestamp"), Value::from(fmt_zoned(timestamp)));
+                map.insert(
+                    String::from("tags"),
+                    Value::from(
+                        tags.into_iter()
+                            .map(|(key, value)| {
+                                (String::from(key), Value::from(String::from(value)))
+                            })
+                            .collect::<Map<_, _>>(),
+                    ),
+                );
                 if let Some(s) = source {
                     s.add_fields(&mut map);
                 } else {
@@ -362,11 +379,22 @@ impl Event {
             }
             Event::Reply {
                 timestamp,
+                tags,
                 source,
                 reply,
             } => {
                 map.insert(String::from("timestamp"), Value::from(fmt_zoned(timestamp)));
                 map.insert(String::from("event"), Value::from("reply"));
+                map.insert(
+                    String::from("tags"),
+                    Value::from(
+                        tags.into_iter()
+                            .map(|(key, value)| {
+                                (String::from(key), Value::from(String::from(value)))
+                            })
+                            .collect::<Map<_, _>>(),
+                    ),
+                );
                 if let Some(s) = source {
                     s.add_fields(&mut map);
                 } else {

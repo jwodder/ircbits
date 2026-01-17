@@ -512,6 +512,11 @@ impl State {
                     output.mode = Some(modestring);
                     ((true, None), State::Done(Some(Ok(output))))
                 }
+                (State::AwaitingMode { output, .. }, _) => {
+                    // If we get an unexpected reply while waiting for
+                    // MODE/RPL_UMODEIS, consider login done.
+                    ((false, None), State::Done(Some(Ok(output))))
+                }
                 (st @ State::Done(_), _) => ((false, None), st),
                 (State::Void, _) => panic!("handle_reply() called on Void login state"),
                 (st, other) => {

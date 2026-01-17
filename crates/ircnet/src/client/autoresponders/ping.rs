@@ -13,8 +13,8 @@ impl PingResponder {
 }
 
 impl AutoResponder for PingResponder {
-    fn get_client_messages(&mut self) -> Vec<ClientMessage> {
-        Vec::from_iter(self.pong.take().map(ClientMessage::from))
+    fn get_outgoing_messages(&mut self) -> Vec<Message> {
+        Vec::from_iter(self.pong.take().map(Message::from))
     }
 
     fn handle_message(&mut self, msg: &Message) -> bool {

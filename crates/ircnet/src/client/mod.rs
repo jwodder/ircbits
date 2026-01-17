@@ -10,10 +10,10 @@ use crate::connect::{
     ConnectionError, LinesChannel,
     codecs::{LinesCodec, LinesCodecError},
     connect,
-    consts::{MAX_LINE_LENGTH, PLAIN_PORT, TLS_PORT},
+    consts::{MAX_LINE_LENGTH_WITH_TAGS, PLAIN_PORT, TLS_PORT},
 };
 use futures_util::{SinkExt, TryStreamExt};
-use irctext::{ClientMessage, ClientMessageParts, Message, ParseMessageError, TryFromStringError};
+use irctext::{Message, ParseMessageError, TryFromStringError};
 use std::collections::VecDeque;
 use thiserror::Error;
 use tokio::time::{Instant, timeout_at};
@@ -56,7 +56,7 @@ pub struct Client {
 
     /// Outgoing client messages emitted by `autoresponders` that have not yet
     /// been sent to the server
-    queued: VecDeque<ClientMessage>,
+    queued: VecDeque<Message>,
 
     /// A message received from the server that has not yet been returned to
     /// the caller, likely because the `recv()` method was cancelled while
@@ -73,7 +73,7 @@ impl Client {
     /// is true, the connection will use SSL/TLS.
     pub async fn connect(params: ConnectionParams) -> Result<Client, ClientError> {
         let conn = connect(&params.host, params.port(), params.tls).await?;
-        let codec = LinesCodec::new_with_max_length(MAX_LINE_LENGTH);
+        let codec = LinesCodec::new_with_max_length(MAX_LINE_LENGTH_WITH_TAGS);
         let channel = Framed::new(conn, codec);
         let autoresponders = AutoResponderSet::new();
         Ok(Client {
@@ -101,8 +101,8 @@ impl Client {
     ///
     /// If this method is cancelled, it is guaranteed that the message was not
     /// sent, but the message itself is lost.
-    pub async fn send(&mut self, msg: ClientMessage) -> Result<(), ClientError> {
-        let line = msg.to_irc_line();
+    pub async fn send<M: Into<Message>>(&mut self, msg: M) -> Result<(), ClientError> {
+        let line = msg.into().to_string();
         tracing::trace!(host = self.host, line, "Sending message to remote server");
         self.channel.send(line).await.map_err(ClientError::Send)
     }
@@ -165,7 +165,7 @@ impl Client {
                 // self in order to not lose data on cancellation
                 let handled = self.autoresponders.handle_message(&msg);
                 self.queued
-                    .extend(self.autoresponders.get_client_messages());
+                    .extend(self.autoresponders.get_outgoing_messages());
                 if !handled {
                     self.recved = Some(msg);
                 }
@@ -184,7 +184,7 @@ impl Client {
     /// This method is cancellation-safe.
     async fn flush_queue(&mut self) -> Result<(), ClientError> {
         while let Some(msg) = self.queued.front() {
-            let line = msg.to_irc_line();
+            let line = msg.to_string();
             tracing::trace!(
                 host = self.host,
                 line,

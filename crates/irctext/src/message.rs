@@ -1,3 +1,5 @@
+use crate::types::{TagKey, TagValue};
+use crate::util::fmt_tags;
 use crate::{
     ClientMessage, ClientMessageError, ClientMessageParts, Command, ParameterList,
     ParseRawMessageError, RawMessage, Reply, ReplyError, ReplyParts, Source, TryFromStringError,
@@ -7,12 +9,14 @@ use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Message {
+    pub tags: Vec<(TagKey, TagValue)>,
     pub source: Option<Source>,
     pub payload: Payload,
 }
 
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt_tags(f, &self.tags)?;
         if let Some(source) = self.source.as_ref() {
             write!(f, ":{source} ")?;
         }
@@ -46,6 +50,7 @@ impl TryFrom<String> for Message {
 impl From<Payload> for Message {
     fn from(payload: Payload) -> Message {
         Message {
+            tags: Vec::new(),
             source: None,
             payload,
         }
@@ -56,17 +61,24 @@ impl TryFrom<RawMessage> for Message {
     type Error = MessageError;
 
     fn try_from(msg: RawMessage) -> Result<Message, MessageError> {
+        let tags = msg.tags;
         let source = msg.source;
         let payload = Payload::from_parts(msg.command, msg.parameters)?;
-        Ok(Message { source, payload })
+        Ok(Message {
+            tags,
+            source,
+            payload,
+        })
     }
 }
 
 impl From<Message> for RawMessage {
     fn from(msg: Message) -> RawMessage {
+        let tags = msg.tags;
         let source = msg.source;
         let (command, parameters) = msg.payload.into_parts();
         RawMessage {
+            tags,
             source,
             command,
             parameters,

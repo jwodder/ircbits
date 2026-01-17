@@ -8,7 +8,7 @@ use jiff::{Timestamp, Zoned, tz::TimeZone};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CtcpQueryResponder {
-    outgoing: Vec<ClientMessage>,
+    outgoing: Vec<Message>,
     finger: Option<CtcpParams>,
     source: Option<CtcpParams>,
     userinfo: Option<CtcpParams>,
@@ -48,7 +48,7 @@ impl CtcpQueryResponder {
 }
 
 impl AutoResponder for CtcpQueryResponder {
-    fn get_client_messages(&mut self) -> Vec<ClientMessage> {
+    fn get_outgoing_messages(&mut self) -> Vec<Message> {
         std::mem::take(&mut self.outgoing)
     }
 

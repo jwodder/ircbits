@@ -128,7 +128,7 @@ async fn main() -> anyhow::Result<()> {
     let me = login_output.my_nick;
 
     if let Some(p) = profile.msgtimes.away {
-        client.send(Away::new(p).into()).await?;
+        client.send(Away::new(p)).await?;
     }
 
     let mut canon_channels = ChannelCanonicalizer::new(casemapping);
@@ -188,7 +188,7 @@ async fn main() -> anyhow::Result<()> {
                             canon_channels.remove(&chan);
                             if canon_channels.is_empty() {
                                 tracing::info!("No channels left; quitting");
-                                client.send(Quit::new().into()).await?;
+                                client.send(Quit::new()).await?;
                             }
                         }
                     }
@@ -216,14 +216,11 @@ async fn main() -> anyhow::Result<()> {
             None => {
                 tracing::info!("Signal received; quitting");
                 client
-                    .send(
-                        Quit::new_with_reason(
-                            "Terminated"
-                                .parse::<TrailingParam>()
-                                .expect(r#""Terminated" should be valid TrailingParam"#),
-                        )
-                        .into(),
-                    )
+                    .send(Quit::new_with_reason(
+                        "Terminated"
+                            .parse::<TrailingParam>()
+                            .expect(r#""Terminated" should be valid TrailingParam"#),
+                    ))
                     .await?;
             }
         }

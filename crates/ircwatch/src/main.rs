@@ -193,14 +193,11 @@ async fn main() -> anyhow::Result<()> {
             Some(Err(e)) => return Err(e.into()),
             None => {
                 client
-                    .send(
-                        Quit::new_with_reason(
-                            "Terminated"
-                                .parse::<TrailingParam>()
-                                .expect(r#""Terminated" should be valid TrailingParam"#),
-                        )
-                        .into(),
-                    )
+                    .send(Quit::new_with_reason(
+                        "Terminated"
+                            .parse::<TrailingParam>()
+                            .expect(r#""Terminated" should be valid TrailingParam"#),
+                    ))
                     .await?;
             }
         }

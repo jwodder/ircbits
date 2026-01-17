@@ -75,7 +75,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Listing channels …");
     let output = client.run(ListCommand::new(List::new())).await?;
     tracing::info!("Quitting …");
-    client.send(Quit::new().into()).await?;
+    client.send(Quit::new()).await?;
     while client.recv_new().await?.is_some() {}
     let mut out = BufWriter::new(
         args.outfile

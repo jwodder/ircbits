@@ -1,5 +1,5 @@
 use super::AutoResponder;
-use irctext::{ClientMessage, Message};
+use irctext::Message;
 
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
@@ -20,11 +20,11 @@ impl AutoResponderSet {
 }
 
 impl AutoResponder for AutoResponderSet {
-    fn get_client_messages(&mut self) -> Vec<ClientMessage> {
+    fn get_outgoing_messages(&mut self) -> Vec<Message> {
         let msgs = self
             .0
             .iter_mut()
-            .flat_map(AutoResponder::get_client_messages)
+            .flat_map(AutoResponder::get_outgoing_messages)
             .collect();
         self.cleanup();
         msgs

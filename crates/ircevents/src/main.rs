@@ -10,7 +10,7 @@ use irctext::{
     Payload, Reply, ReplyParts, Source, TrailingParam, TryFromStringError,
     clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
-    types::{Channel, ISupportParam},
+    types::{Channel, ISupportParam, TagKey, TagValue},
 };
 use jiff::{Timestamp, Zoned};
 use mainutil::{init_logging, run_until_stopped};
@@ -136,7 +136,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
         })
         .await?;
     if let Some(p) = profile.ircevents.away {
-        client.send(Away::new(p).into()).await?;
+        client.send(Away::new(p)).await?;
     }
     let mut canon_channels = ChannelCanonicalizer::new(casemapping);
     for chan in profile.ircevents.channels {
@@ -153,6 +153,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
     loop {
         match run_until_stopped(client.recv()).await {
             Some(Ok(Some(Message {
+                tags,
                 source,
                 payload: Payload::ClientMessage(msg),
             }))) => {
@@ -173,6 +174,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                 sender
                     .send(Event::Message {
                         timestamp: Zoned::now(),
+                        tags,
                         source,
                         msg,
                     })
@@ -181,17 +183,19 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                     canon_channels.remove(&chan);
                     if canon_channels.is_empty() {
                         tracing::info!("No channels left; quitting");
-                        client.send(Quit::new().into()).await?;
+                        client.send(Quit::new()).await?;
                     }
                 }
             }
             Some(Ok(Some(Message {
+                tags,
                 source,
                 payload: Payload::Reply(reply),
             }))) => {
                 sender
                     .send(Event::Reply {
                         timestamp: Zoned::now(),
+                        tags,
                         source,
                         reply,
                     })
@@ -227,14 +231,11 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
             None => {
                 tracing::info!("Signal received; quitting");
                 client
-                    .send(
-                        Quit::new_with_reason(
-                            "Terminated"
-                                .parse::<TrailingParam>()
-                                .expect(r#""Terminated" should be valid TrailingParam"#),
-                        )
-                        .into(),
-                    )
+                    .send(Quit::new_with_reason(
+                        "Terminated"
+                            .parse::<TrailingParam>()
+                            .expect(r#""Terminated" should be valid TrailingParam"#),
+                    ))
                     .await?;
             }
         }
@@ -316,11 +317,13 @@ enum Event {
     },
     Message {
         timestamp: Zoned,
+        tags: Vec<(TagKey, TagValue)>,
         source: Option<Source>,
         msg: ClientMessage,
     },
     Reply {
         timestamp: Zoned,
+        tags: Vec<(TagKey, TagValue)>,
         source: Option<Source>,
         reply: Reply,
     },
@@ -349,10 +352,21 @@ impl Event {
             }
             Event::Message {
                 timestamp,
+                tags,
                 source,
                 msg,
             } => {
                 map.insert(String::from("timestamp"), Value::from(fmt_zoned(timestamp)));
+                map.insert(
+                    String::from("tags"),
+                    Value::from(
+                        tags.into_iter()
+                            .map(|(key, value)| {
+                                (String::from(key), Value::from(String::from(value)))
+                            })
+                            .collect::<Map<_, _>>(),
+                    ),
+                );
                 if let Some(s) = source {
                     s.add_fields(&mut map);
                 } else {
@@ -362,11 +376,22 @@ impl Event {
             }
             Event::Reply {
                 timestamp,
+                tags,
                 source,
                 reply,
             } => {
                 map.insert(String::from("timestamp"), Value::from(fmt_zoned(timestamp)));
                 map.insert(String::from("event"), Value::from("reply"));
+                map.insert(
+                    String::from("tags"),
+                    Value::from(
+                        tags.into_iter()
+                            .map(|(key, value)| {
+                                (String::from(key), Value::from(String::from(value)))
+                            })
+                            .collect::<Map<_, _>>(),
+                    ),
+                );
                 if let Some(s) = source {
                     s.add_fields(&mut map);
                 } else {

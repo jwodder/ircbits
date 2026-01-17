@@ -4,7 +4,7 @@ mod responderset;
 pub use self::ctcp::*;
 pub use self::ping::*;
 pub use self::responderset::*;
-use irctext::{ClientMessage, Message};
+use irctext::Message;
 
 /// A handler/observer for automatically responding to messages received over IRC
 ///
@@ -13,7 +13,7 @@ use irctext::{ClientMessage, Message};
 ///
 /// - Pass the message to `handle_message()`.
 ///
-/// - Call `get_client_messages()` and send any returned messages back to the
+/// - Call `get_outgoing_messages()` and send any returned messages back to the
 ///   server.
 ///
 /// - If `is_done()` returns `true`, discard the autoresponder.
@@ -27,13 +27,13 @@ pub trait AutoResponder {
     ///
     /// If `is_done()` is true or `handle_message()` has not yet been called,
     /// this method SHOULD return an empty `Vec`.
-    fn get_client_messages(&mut self) -> Vec<ClientMessage>;
+    fn get_outgoing_messages(&mut self) -> Vec<Message>;
 
     /// Handle an incoming message received from the server.  Returns `true` if
     /// the message should be considered "handled" by the autoresponder and not to be
     /// processed by any non-autoresponders.
     ///
-    /// After calling this method, users SHOULD call `get_client_messages()`
+    /// After calling this method, users SHOULD call `get_outgoing_messages()`
     /// to receive any new outgoing messages from the autoresponder.
     ///
     /// If `is_done()` is true, this method SHOULD be a no-op.
@@ -45,8 +45,8 @@ pub trait AutoResponder {
 }
 
 impl<T: AutoResponder + ?Sized> AutoResponder for Box<T> {
-    fn get_client_messages(&mut self) -> Vec<ClientMessage> {
-        (**self).get_client_messages()
+    fn get_outgoing_messages(&mut self) -> Vec<Message> {
+        (**self).get_outgoing_messages()
     }
 
     fn handle_message(&mut self, msg: &Message) -> bool {

@@ -1,5 +1,5 @@
 use crate::ClientMessageError;
-use crate::types::ChannelMembership;
+use crate::types::{ChannelMembership, TagKey, TagValue};
 use std::fmt::{self, Write};
 
 pub(crate) fn split_word(s: &str) -> (&str, &str) {
@@ -97,6 +97,24 @@ impl<'a> Iterator for SplitSpaces<'a> {
 }
 
 impl std::iter::FusedIterator for SplitSpaces<'_> {}
+
+pub(crate) fn fmt_tags(f: &mut fmt::Formatter<'_>, tags: &[(TagKey, TagValue)]) -> fmt::Result {
+    if !tags.is_empty() {
+        write!(f, "@")?;
+        let mut first = true;
+        for (key, value) in tags {
+            if !std::mem::replace(&mut first, false) {
+                write!(f, ";")?;
+            }
+            write!(f, "{key}")?;
+            if !value.is_empty() {
+                write!(f, "={}", value.escaped())?;
+            }
+        }
+        write!(f, " ")?;
+    }
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {

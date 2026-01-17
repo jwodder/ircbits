@@ -58,19 +58,27 @@ Output Format
 IRC message or event as a JSON object.  Every such object contains at least the
 following fields:
 
-- `"timestamp"` — the time at which the event occurred as an RFC 3339 timestamp
+- `"timestamp"` (string) — the time at which the event occurred as an RFC 3339 timestamp
 
-- `"source"` — The source of a received message, or `null` if the message was
-  received without a source.  When non-`null`, `"source"` is an either an
-  object that contains a single `"host"` string field (when the source is a
-  host or server) or an object containing `"nickname"` (string), `"user"`
-  (string or `null`), and `"host"` (string or `null`) fields (when the source
-  is a user on the network).
+- `"tags"` (object) — The [message tags][] on a received message, if any, as an
+  object mapping tag key names to their corresponding values.
 
   This field is not present for the `"connected"`, `"joined"`, `"parse_error"`,
   and `"disconnected"` events.
 
-- `"event"` — the type of event that occurred; see below
+- `"source"` (object or `null`) — The source of a received message, or `null`
+  if the message was received without a source.  When non-`null`, `"source"` is
+  an either an object that contains a single `"host"` string field (when the
+  source is a host or server) or an object containing `"nickname"` (string),
+  `"user"` (string or `null`), and `"host"` (string or `null`) fields (when the
+  source is a user on the network).
+
+  This field is not present for the `"connected"`, `"joined"`, `"parse_error"`,
+  and `"disconnected"` events.
+
+- `"event"` (string) — the type of event that occurred; see below
+
+[message tags]: https://ircv3.net/specs/extensions/message-tags.html
 
 Further fields depend on the type of event as detailed below.  For client
 message events, the additional fields are the (possibly parsed) parameters of

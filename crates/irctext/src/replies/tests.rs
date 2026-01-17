@@ -12,9 +12,11 @@ mod whoisactually {
         let msg = ":molybdenum.libera.chat 338 jwodder somenick 127.0.0.1 :actually using host";
         let msg = msg.parse::<Message>().unwrap();
         assert_matches!(msg, Message {
+            tags,
             source: Some(Source::Server(host)),
             payload: Payload::Reply(Reply::WhoIsActually(r)),
         } => {
+            assert!(tags.is_empty());
             assert_eq!(host, Host::Domain("molybdenum.libera.chat"));
             assert_eq!(r.client(), "jwodder");
             assert_eq!(r.nickname(), "somenick");
@@ -31,9 +33,11 @@ mod whoisactually {
             ":calcium.libera.chat 333 jwodder #python nedbat!~nedbat@python/psf/nedbat 1698253660";
         let msg = msg.parse::<Message>().unwrap();
         assert_matches!(msg, Message {
+            tags,
             source: Some(Source::Server(host)),
             payload: Payload::Reply(Reply::TopicWhoTime(r)),
         } => {
+            assert!(tags.is_empty());
             assert_eq!(host, Host::Domain("calcium.libera.chat"));
             assert_eq!(r.client(), "jwodder");
             assert_eq!(r.channel(), "#python");
@@ -49,9 +53,11 @@ mod whoisactually {
         let msg = ":silver.libera.chat 353 jwodder = #python :dostoyevsky2 tk @litharge snowolf DarthOreo enyc_ `Nothing4You fizi[DWBouncers]";
         let msg = msg.parse::<Message>().unwrap();
         assert_matches!(msg, Message {
+            tags,
             source: Some(Source::Server(host)),
             payload: Payload::Reply(Reply::NamReply(r)),
         } => {
+            assert!(tags.is_empty());
             assert_eq!(host, Host::Domain("silver.libera.chat"));
             assert_eq!(r.client(), "jwodder");
             assert_eq!(r.channel_status(), ChannelStatus::Public);
@@ -74,9 +80,11 @@ mod whoisactually {
         let msg = ":weber.oftc.net 042 jwodder 9J5AACK4S :your unique ID";
         let msg = msg.parse::<Message>().unwrap();
         assert_matches!(msg, Message {
+            tags,
             source: Some(Source::Server(host)),
             payload: Payload::Reply(Reply::Unknown(r)),
         } => {
+            assert!(tags.is_empty());
             assert_eq!(host, Host::Domain("weber.oftc.net"));
             assert_eq!(r.code, 42);
             assert_eq!(r.parameters, ["jwodder", "9J5AACK4S", "your unique ID"]);

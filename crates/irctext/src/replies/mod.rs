@@ -317,6 +317,7 @@ impl Reply {
 impl From<Reply> for Message {
     fn from(value: Reply) -> Message {
         Message {
+            tags: Vec::new(),
             source: None,
             payload: Payload::Reply(value),
         }

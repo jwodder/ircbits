@@ -5,7 +5,8 @@
 `irctext` is a Rust library for working with IRC messages (parsing,
 constructing, rendering, etc.) in which every type of message (both client
 messages and replies) is represented by a dedicated type that only permits
-values that conform to the specification at <https://modern.ircdocs.horse>.
+values that conform to the specification at <https://modern.ircdocs.horse> plus
+supported IRCv3 extensions.
 
 In particular:
 
@@ -25,6 +26,20 @@ In particular:
 - The only supported channel type prefixes are `#` and `&`.
 
 - The only support channel membership prefixes are `~`, `&`, `@`, `%`, and `+`.
+
+- The following IRCv3 extensions are supported by or compatible with this
+  library:
+    - [`account-tag`](https://ircv3.net/specs/extensions/account-tag)
+    - [`away-notify`](https://ircv3.net/specs/extensions/away-notify)
+    - [`echo-message`](https://ircv3.net/specs/extensions/echo-message)
+    - [Capability Negotiation][cap], version 302
+    - [`invite-notify`](https://ircv3.net/specs/extensions/invite-notify)
+    - [Message Tags](https://ircv3.net/specs/extensions/message-tags) and other
+      extensions that only define new tags
+    - [`pre-away`](https://ircv3.net/specs/extensions/pre-away)
+    - SASL Authentication, versions
+      [3.1](https://ircv3.net/specs/extensions/sasl-3.1) and
+      [3.2](https://ircv3.net/specs/extensions/sasl-3.2)
 
 [cap]: https://ircv3.net/specs/extensions/capability-negotiation.html
 

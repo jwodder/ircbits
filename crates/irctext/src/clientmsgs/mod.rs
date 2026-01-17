@@ -197,6 +197,7 @@ impl ClientMessage {
 impl From<ClientMessage> for Message {
     fn from(value: ClientMessage) -> Message {
         Message {
+            tags: Vec::new(),
             source: None,
             payload: Payload::ClientMessage(value),
         }

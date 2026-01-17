@@ -43,6 +43,10 @@ impl TagValue {
     pub fn escaped(&self) -> EscapedTagValue<'_> {
         EscapedTagValue(self)
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]

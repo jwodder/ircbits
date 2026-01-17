@@ -72,9 +72,11 @@ mod tests {
         let msg = ":Spawns_Carpeting!~mobile@user/spawns-carpeting/x-6969421 QUIT :Quit: ZNC 1.8.2+deb3.1+deb12u1 - https://znc.in";
         let msg = msg.parse::<Message>().unwrap();
         assert_matches!(msg, Message {
+            tags,
             source: Some(Source::Client(clisrc)),
             payload: Payload::ClientMessage(ClientMessage::Quit(quit)),
         } => {
+            assert!(tags.is_empty());
             assert_eq!(clisrc.nickname, "Spawns_Carpeting");
             assert_eq!(clisrc.user.as_ref().unwrap(), "~mobile");
             assert_eq!(clisrc.host.as_ref().unwrap(), "user/spawns-carpeting/x-6969421");
@@ -87,9 +89,11 @@ mod tests {
         let msg = ":Spawns_Carpeting!~mobile@user/spawns-carpeting/x-6969421 QUIT";
         let msg = msg.parse::<Message>().unwrap();
         assert_matches!(msg, Message {
+            tags,
             source: Some(Source::Client(clisrc)),
             payload: Payload::ClientMessage(ClientMessage::Quit(quit)),
         } => {
+            assert!(tags.is_empty());
             assert_eq!(clisrc.nickname, "Spawns_Carpeting");
             assert_eq!(clisrc.user.as_ref().unwrap(), "~mobile");
             assert_eq!(clisrc.host.as_ref().unwrap(), "user/spawns-carpeting/x-6969421");

@@ -14,12 +14,12 @@ clap.workspace = true
 ircnet = { path = "../ircnet", features = ["serde"] }
 irctext = { path = "../irctext" }
 jiff.workspace = true
+mainutil = { path = "../mainutil" }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
-tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "signal"] }
+tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
 toml.workspace = true
 tracing.workspace = true
-tracing-subscriber.workspace = true
 
 [lints]
 workspace = true

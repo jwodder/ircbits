@@ -12,13 +12,12 @@ anyhow.workspace = true
 clap.workspace = true
 ircnet = { path = "../ircnet", features = ["serde"] }
 irctext = { path = "../irctext", features = ["anstyle"] }
-jiff.workspace = true
+mainutil = { path = "../mainutil" }
 patharg.workspace = true
 serde_json.workspace = true
 tokio = { workspace = true, features = ["macros", "rt"] }
 toml.workspace = true
 tracing.workspace = true
-tracing-subscriber.workspace = true
 
 [lints]
 workspace = true

@@ -9,16 +9,12 @@ use irctext::{
     clientmsgs::{List, Quit},
     ctcp::CtcpParams,
 };
+use mainutil::init_logging;
 use patharg::OutputArg;
 use std::collections::HashMap;
-use std::io::{self, BufWriter, IsTerminal, Write};
+use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use tracing::Level;
-use tracing_subscriber::{
-    filter::Targets,
-    fmt::{format::Writer, time::FormatTime},
-    prelude::*,
-};
 
 /// Log into an IRC network, send a `LIST` command, output the response as
 /// JSON, and disconnect.
@@ -51,20 +47,7 @@ async fn main() -> anyhow::Result<()> {
     } else {
         Level::INFO
     };
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::fmt::layer()
-                .with_timer(JiffTimer)
-                .with_ansi(io::stderr().is_terminal())
-                .with_writer(io::stderr),
-        )
-        .with(
-            Targets::new()
-                .with_target(env!("CARGO_CRATE_NAME"), loglevel)
-                .with_target("ircnet", loglevel)
-                .with_default(Level::INFO),
-        )
-        .init();
+    init_logging(env!("CARGO_CRATE_NAME"), loglevel);
     let cfgdata = std::fs::read(&args.config).context("failed to read configuration file")?;
     let mut cfg = toml::from_slice::<HashMap<String, SessionParams>>(&cfgdata)
         .context("failed to parse configuration file")?;
@@ -103,16 +86,4 @@ async fn main() -> anyhow::Result<()> {
     out.write_all(b"\n")?;
     out.flush()?;
     Ok(())
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct JiffTimer;
-
-impl FormatTime for JiffTimer {
-    fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
-        let now = jiff::Zoned::now();
-        let ts = now.timestamp();
-        let offset = now.offset();
-        write!(w, "{}", ts.display_with_offset(offset))
-    }
 }

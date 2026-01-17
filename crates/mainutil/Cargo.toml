@@ -1,0 +1,17 @@
+[package]
+name = "mainutil"
+edition.workspace = true
+rust-version.workspace = true
+description = "Utilities for command-line programs"
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+jiff.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tokio = { workspace = true, features = ["macros", "signal"] }
+
+[lints]
+workspace = true

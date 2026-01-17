@@ -481,12 +481,12 @@ dependencies = [
  "ircnet",
  "irctext",
  "jiff",
+ "mainutil",
  "serde",
  "serde_json",
  "tokio",
  "toml",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -537,11 +537,11 @@ dependencies = [
  "irctext",
  "itertools",
  "jiff",
+ "mainutil",
  "serde",
  "tokio",
  "toml",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -642,13 +642,12 @@ dependencies = [
  "clap",
  "ircnet",
  "irctext",
- "jiff",
+ "mainutil",
  "patharg",
  "serde_json",
  "tokio",
  "toml",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -662,6 +661,16 @@ name = "log"
 version = "0.4.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
+
+[[package]]
+name = "mainutil"
+version = "0.0.0"
+dependencies = [
+ "jiff",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "memchr"
@@ -690,13 +699,13 @@ dependencies = [
  "ircnet",
  "irctext",
  "jiff",
+ "mainutil",
  "patharg",
  "serde",
  "serde-jsonlines",
  "tokio",
  "toml",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]

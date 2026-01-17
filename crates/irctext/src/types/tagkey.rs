@@ -22,6 +22,12 @@ fn validate(s: &str) -> Result<(), ParseTagKeyError> {
     }
 }
 
+impl TagKey {
+    pub fn is_client_only(&self) -> bool {
+        self.0.starts_with('+')
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 pub enum ParseTagKeyError {
     #[error("tag key names cannot be empty")]

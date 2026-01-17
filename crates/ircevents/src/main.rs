@@ -13,19 +13,15 @@ use irctext::{
     types::{Channel, ISupportParam},
 };
 use jiff::{Timestamp, Zoned};
+use mainutil::{init_logging, run_until_stopped};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufWriter, IsTerminal, Write, stderr};
+use std::io::{BufWriter, Write};
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
-use tokio::{select, sync::mpsc};
+use tokio::sync::mpsc;
 use tracing::Level;
-use tracing_subscriber::{
-    filter::Targets,
-    fmt::{format::Writer, time::FormatTime},
-    prelude::*,
-};
 
 const MESSAGE_CHANNEL_SIZE: usize = 65535;
 
@@ -80,20 +76,7 @@ async fn main() -> anyhow::Result<()> {
     } else {
         Level::INFO
     };
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::fmt::layer()
-                .with_timer(JiffTimer)
-                .with_ansi(stderr().is_terminal())
-                .with_writer(stderr),
-        )
-        .with(
-            Targets::new()
-                .with_target(env!("CARGO_CRATE_NAME"), loglevel)
-                .with_target("ircnet", loglevel)
-                .with_default(Level::INFO),
-        )
-        .init();
+    init_logging(env!("CARGO_CRATE_NAME"), loglevel);
     let cfgdata = std::fs::read(&args.config).context("failed to read configuration file")?;
     let mut cfg = toml::from_slice::<HashMap<String, Profile>>(&cfgdata)
         .context("failed to parse configuration file")?;
@@ -168,83 +151,95 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
             .await?;
     }
     loop {
-        select! {
-            r = client.recv() => {
-                match r {
-                    Ok(Some(Message {source, payload: Payload::ClientMessage(msg)})) => {
-                        let kicked_chan = if let ClientMessage::Kick(m) = &msg
-                            && let Some(chan) = canon_channels.get(m.channel())
-                            && m.users().iter().any(|nick| casemapping.eq_ignore_case(nick, &me)) {
-                            tracing::info!(comment = m.comment().map(ToString::to_string), "Kicked from {chan}");
-                            Some(chan.to_owned())
-                        } else {
-                            None
-                        };
-                        sender.send(Event::Message {timestamp: Zoned::now(), source, msg}).await?;
-                        if let Some(chan) = kicked_chan {
-                            canon_channels.remove(&chan);
-                            if canon_channels.is_empty() {
-                                tracing::info!("No channels left; quitting");
-                                client.send(Quit::new().into()).await?;
-                            }
-                        }
-                    }
-                    Ok(Some(Message {source, payload: Payload::Reply(reply)})) => {
-                        sender.send(Event::Reply {timestamp: Zoned::now(), source, reply}).await?;
-                    }
-                    Ok(None) => {
-                        tracing::info!("Connection closed");
-                        sender.send(Event::Disconnected {timestamp: Zoned::now()}).await?;
-                        break;
-                    }
-                    Err(ClientError::Parse(error)) => {
-                        sender.send(Event::ParseError {timestamp: Zoned::now(), error}).await?;
-                    }
-                    Err(e) => {
-                        let e = anyhow::Error::new(e);
-                        tracing::error!(?e, "Error communicating with server; disconnecting");
-                        sender.send(Event::Disconnected {timestamp: Zoned::now()}).await?;
-                        return Err(e);
+        match run_until_stopped(client.recv()).await {
+            Some(Ok(Some(Message {
+                source,
+                payload: Payload::ClientMessage(msg),
+            }))) => {
+                let kicked_chan = if let ClientMessage::Kick(m) = &msg
+                    && let Some(chan) = canon_channels.get(m.channel())
+                    && m.users()
+                        .iter()
+                        .any(|nick| casemapping.eq_ignore_case(nick, &me))
+                {
+                    tracing::info!(
+                        comment = m.comment().map(ToString::to_string),
+                        "Kicked from {chan}"
+                    );
+                    Some(chan.to_owned())
+                } else {
+                    None
+                };
+                sender
+                    .send(Event::Message {
+                        timestamp: Zoned::now(),
+                        source,
+                        msg,
+                    })
+                    .await?;
+                if let Some(chan) = kicked_chan {
+                    canon_channels.remove(&chan);
+                    if canon_channels.is_empty() {
+                        tracing::info!("No channels left; quitting");
+                        client.send(Quit::new().into()).await?;
                     }
                 }
             }
-            () = recv_stop_signal() => {
+            Some(Ok(Some(Message {
+                source,
+                payload: Payload::Reply(reply),
+            }))) => {
+                sender
+                    .send(Event::Reply {
+                        timestamp: Zoned::now(),
+                        source,
+                        reply,
+                    })
+                    .await?;
+            }
+            Some(Ok(None)) => {
+                tracing::info!("Connection closed");
+                sender
+                    .send(Event::Disconnected {
+                        timestamp: Zoned::now(),
+                    })
+                    .await?;
+                break;
+            }
+            Some(Err(ClientError::Parse(error))) => {
+                sender
+                    .send(Event::ParseError {
+                        timestamp: Zoned::now(),
+                        error,
+                    })
+                    .await?;
+            }
+            Some(Err(e)) => {
+                let e = anyhow::Error::new(e);
+                tracing::error!(?e, "Error communicating with server; disconnecting");
+                sender
+                    .send(Event::Disconnected {
+                        timestamp: Zoned::now(),
+                    })
+                    .await?;
+                return Err(e);
+            }
+            None => {
                 tracing::info!("Signal received; quitting");
-                client.send(Quit::new_with_reason("Terminated".parse::<TrailingParam>().expect(r#""Terminated" should be valid TrailingParam"#)).into()).await?;
+                client
+                    .send(
+                        Quit::new_with_reason(
+                            "Terminated"
+                                .parse::<TrailingParam>()
+                                .expect(r#""Terminated" should be valid TrailingParam"#),
+                        )
+                        .into(),
+                    )
+                    .await?;
             }
         }
     }
     Ok(())
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct JiffTimer;
-
-impl FormatTime for JiffTimer {
-    fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
-        let now = Zoned::now();
-        let ts = now.timestamp();
-        let offset = now.offset();
-        write!(w, "{}", ts.display_with_offset(offset))
-    }
-}
-
-#[cfg(unix)]
-async fn recv_stop_signal() -> () {
-    use tokio::signal::unix::{SignalKind, signal};
-    if let Ok(mut term) = signal(SignalKind::terminate()) {
-        select! {
-            _ = tokio::signal::ctrl_c() => (),
-            _ = term.recv() => (),
-        }
-    } else {
-        let _ = tokio::signal::ctrl_c().await;
-    }
-}
-
-#[cfg(not(unix))]
-async fn recv_stop_signal() -> () {
-    let _ = tokio::signal::ctrl_c().await;
 }
 
 async fn log_events(mut log: EventLogger, mut receiver: mpsc::Receiver<Event>) {

@@ -15,17 +15,11 @@ use irctext::{
     types::{Channel, ChannelMembership},
 };
 use itertools::Itertools; // join
+use mainutil::{init_logging, run_until_stopped};
 use std::collections::HashMap;
 use std::fmt::Write;
-use std::io::{IsTerminal, stderr};
 use std::path::PathBuf;
-use tokio::select;
 use tracing::Level;
-use tracing_subscriber::{
-    filter::Targets,
-    fmt::{format::Writer, time::FormatTime},
-    prelude::*,
-};
 
 /// Log into an IRC network, join a given set of channels, and then
 /// pretty-print all messages received to standard output until you hit Ctrl-C.
@@ -81,20 +75,7 @@ async fn main() -> anyhow::Result<()> {
         None
     };
     if let Some(loglevel) = loglevel {
-        tracing_subscriber::registry()
-            .with(
-                tracing_subscriber::fmt::layer()
-                    .with_timer(JiffTimer)
-                    .with_ansi(stderr().is_terminal())
-                    .with_writer(stderr),
-            )
-            .with(
-                Targets::new()
-                    .with_target(env!("CARGO_CRATE_NAME"), loglevel)
-                    .with_target("ircnet", loglevel)
-                    .with_default(Level::INFO),
-            )
-            .init();
+        init_logging(env!("CARGO_CRATE_NAME"), loglevel);
     }
     let cfgdata = std::fs::read(&args.config).context("failed to read configuration file")?;
     let mut cfg = toml::from_slice::<HashMap<String, Profile>>(&cfgdata)
@@ -200,56 +181,31 @@ async fn main() -> anyhow::Result<()> {
         report(&s);
     }
     loop {
-        select! {
-            r = client.recv() => {
-                match r {
-                    Ok(Some(msg)) => report(&format_msg(msg)),
-                    Ok(None) => {
-                        report("* Disconnected");
-                        break;
-                    }
-                    Err(ClientError::Parse(e)) => {
-                        report(&format!("[PARSE FAILURE] {:?}", anyhow::Error::new(e)));
-                    }
-                    Err(e) => return Err(e.into()),
-                }
+        match run_until_stopped(client.recv()).await {
+            Some(Ok(Some(msg))) => report(&format_msg(msg)),
+            Some(Ok(None)) => {
+                report("* Disconnected");
+                break;
             }
-            () = recv_stop_signal() => {
-                client.send(Quit::new_with_reason("Terminated".parse::<TrailingParam>().expect(r#""Terminated" should be valid TrailingParam"#)).into()).await?;
+            Some(Err(ClientError::Parse(e))) => {
+                report(&format!("[PARSE FAILURE] {:?}", anyhow::Error::new(e)));
+            }
+            Some(Err(e)) => return Err(e.into()),
+            None => {
+                client
+                    .send(
+                        Quit::new_with_reason(
+                            "Terminated"
+                                .parse::<TrailingParam>()
+                                .expect(r#""Terminated" should be valid TrailingParam"#),
+                        )
+                        .into(),
+                    )
+                    .await?;
             }
         }
     }
     Ok(())
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct JiffTimer;
-
-impl FormatTime for JiffTimer {
-    fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
-        let now = jiff::Zoned::now();
-        let ts = now.timestamp();
-        let offset = now.offset();
-        write!(w, "{}", ts.display_with_offset(offset))
-    }
-}
-
-#[cfg(unix)]
-async fn recv_stop_signal() -> () {
-    use tokio::signal::unix::{SignalKind, signal};
-    if let Ok(mut term) = signal(SignalKind::terminate()) {
-        select! {
-            _ = tokio::signal::ctrl_c() => (),
-            _ = term.recv() => (),
-        }
-    } else {
-        let _ = tokio::signal::ctrl_c().await;
-    }
-}
-
-#[cfg(not(unix))]
-async fn recv_stop_signal() -> () {
-    let _ = tokio::signal::ctrl_c().await;
 }
 
 fn report(msg: &str) {

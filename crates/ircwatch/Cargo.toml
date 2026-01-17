@@ -16,11 +16,11 @@ ircnet = { path = "../ircnet", features = ["serde"] }
 irctext = { path = "../irctext", features = ["anstyle"] }
 itertools.workspace = true
 jiff.workspace = true
+mainutil = { path = "../mainutil" }
 serde = { workspace = true, features = ["derive"] }
-tokio = { workspace = true, features = ["macros", "rt", "signal"] }
+tokio = { workspace = true, features = ["macros", "rt"] }
 toml.workspace = true
 tracing.workspace = true
-tracing-subscriber.workspace = true
 
 [lints]
 workspace = true

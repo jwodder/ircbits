@@ -12,18 +12,13 @@ use irctext::{
     ctcp::CtcpParams,
     types::{Channel, ISupportParam, MsgTarget},
 };
+use mainutil::{init_logging, run_until_stopped};
 use patharg::OutputArg;
 use serde_jsonlines::JsonLinesWriter;
 use std::collections::HashMap;
-use std::io::{self, BufWriter, IsTerminal, stderr};
+use std::io::{self, BufWriter};
 use std::path::PathBuf;
-use tokio::select;
 use tracing::Level;
-use tracing_subscriber::{
-    filter::Targets,
-    fmt::{format::Writer, time::FormatTime},
-    prelude::*,
-};
 
 /// Log into an IRC network, join a given set of channels, and then run
 /// indefinitely, outputting a timestamped JSON object for each `PRIVMSG` and
@@ -67,26 +62,12 @@ struct ProgramParams {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let args = Arguments::parse();
-
     let loglevel = if args.trace {
         Level::TRACE
     } else {
         Level::INFO
     };
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::fmt::layer()
-                .with_timer(JiffTimer)
-                .with_ansi(stderr().is_terminal())
-                .with_writer(stderr),
-        )
-        .with(
-            Targets::new()
-                .with_target(env!("CARGO_CRATE_NAME"), loglevel)
-                .with_target("ircnet", loglevel)
-                .with_default(Level::INFO),
-        )
-        .init();
+    init_logging(env!("CARGO_CRATE_NAME"), loglevel);
 
     let cfgdata = std::fs::read(&args.config).context("failed to read configuration file")?;
     let mut cfg = toml::from_slice::<HashMap<String, Profile>>(&cfgdata)
@@ -164,94 +145,90 @@ async fn main() -> anyhow::Result<()> {
     }
 
     loop {
-        select! {
-            r = client.recv() => {
-                match r {
-                    Ok(Some(Message {payload: Payload::ClientMessage(climsg), ..})) => {
-                        match climsg {
-                            ClientMessage::PrivMsg(m) => {
-                                for t in m.targets() {
-                                    if let MsgTarget::Channel(c0) = t && let Some(c) = canon_channels.get(c0).cloned() {
-                                        log.log(Event::new(&network, Some(c.into_inner()), "message"))?;
-                                    }
-                                }
+        match run_until_stopped(client.recv()).await {
+            Some(Ok(Some(Message {
+                payload: Payload::ClientMessage(climsg),
+                ..
+            }))) => {
+                match climsg {
+                    ClientMessage::PrivMsg(m) => {
+                        for t in m.targets() {
+                            if let MsgTarget::Channel(c0) = t
+                                && let Some(c) = canon_channels.get(c0).cloned()
+                            {
+                                log.log(Event::new(&network, Some(c.into_inner()), "message"))?;
                             }
-                            ClientMessage::Notice(m) => {
-                                for t in m.targets() {
-                                    if let MsgTarget::Channel(c0) = t && let Some(c) = canon_channels.get(c0).cloned() {
-                                        log.log(Event::new(&network, Some(c.into_inner()), "message"))?;
-                                    }
-                                }
-                            }
-                            ClientMessage::Kick(m) => {
-                                if let Some(chan) = canon_channels.get(m.channel()) && m.users().iter().any(|nick| casemapping.eq_ignore_case(nick, &me)) {
-                                    tracing::info!(comment = m.comment().map(ToString::to_string), "Kicked from {chan}");
-                                    log.log(Event::new(&network, Some(chan.as_str().to_owned()), "kicked"))?;
-                                    let chan = chan.to_owned(); // Stop borrowing from canon_channels so we can mutate it
-                                    canon_channels.remove(&chan);
-                                    if canon_channels.is_empty() {
-                                        tracing::info!("No channels left; quitting");
-                                        client.send(Quit::new().into()).await?;
-                                    }
-                                }
-                            }
-                            ClientMessage::Error(m) => {
-                                tracing::info!(reason = String::from(m.into_reason()), "Server sent ERROR message");
-                            }
-                            _ => (),
                         }
                     }
-                    Ok(Some(_)) => (),
-                    Ok(None) => {
-                        tracing::info!("Connection closed");
-                        log.log(Event::new(&network, None, "disconnected"))?;
-                        break;
+                    ClientMessage::Notice(m) => {
+                        for t in m.targets() {
+                            if let MsgTarget::Channel(c0) = t
+                                && let Some(c) = canon_channels.get(c0).cloned()
+                            {
+                                log.log(Event::new(&network, Some(c.into_inner()), "message"))?;
+                            }
+                        }
                     }
-                    Err(e) => {
-                        let e = anyhow::Error::new(e);
-                        tracing::error!(?e, "Error communicating with server");
-                        log.log(Event::new(&network, None, "error"))?;
-                        return Err(e);
+                    ClientMessage::Kick(m) => {
+                        if let Some(chan) = canon_channels.get(m.channel())
+                            && m.users()
+                                .iter()
+                                .any(|nick| casemapping.eq_ignore_case(nick, &me))
+                        {
+                            tracing::info!(
+                                comment = m.comment().map(ToString::to_string),
+                                "Kicked from {chan}"
+                            );
+                            log.log(Event::new(
+                                &network,
+                                Some(chan.as_str().to_owned()),
+                                "kicked",
+                            ))?;
+                            let chan = chan.to_owned(); // Stop borrowing from canon_channels so we can mutate it
+                            canon_channels.remove(&chan);
+                            if canon_channels.is_empty() {
+                                tracing::info!("No channels left; quitting");
+                                client.send(Quit::new().into()).await?;
+                            }
+                        }
                     }
+                    ClientMessage::Error(m) => {
+                        tracing::info!(
+                            reason = String::from(m.into_reason()),
+                            "Server sent ERROR message"
+                        );
+                    }
+                    _ => (),
                 }
             }
-            () = recv_stop_signal() => {
+            Some(Ok(Some(_))) => (),
+            Some(Ok(None)) => {
+                tracing::info!("Connection closed");
+                log.log(Event::new(&network, None, "disconnected"))?;
+                break;
+            }
+            Some(Err(e)) => {
+                let e = anyhow::Error::new(e);
+                tracing::error!(?e, "Error communicating with server");
+                log.log(Event::new(&network, None, "error"))?;
+                return Err(e);
+            }
+            None => {
                 tracing::info!("Signal received; quitting");
-                client.send(Quit::new_with_reason("Terminated".parse::<TrailingParam>().expect(r#""Terminated" should be valid TrailingParam"#)).into()).await?;
+                client
+                    .send(
+                        Quit::new_with_reason(
+                            "Terminated"
+                                .parse::<TrailingParam>()
+                                .expect(r#""Terminated" should be valid TrailingParam"#),
+                        )
+                        .into(),
+                    )
+                    .await?;
             }
         }
     }
     Ok(())
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct JiffTimer;
-
-impl FormatTime for JiffTimer {
-    fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
-        let now = jiff::Zoned::now();
-        let ts = now.timestamp();
-        let offset = now.offset();
-        write!(w, "{}", ts.display_with_offset(offset))
-    }
-}
-
-#[cfg(unix)]
-async fn recv_stop_signal() -> () {
-    use tokio::signal::unix::{SignalKind, signal};
-    if let Ok(mut term) = signal(SignalKind::terminate()) {
-        select! {
-            _ = tokio::signal::ctrl_c() => (),
-            _ = term.recv() => (),
-        }
-    } else {
-        let _ = tokio::signal::ctrl_c().await;
-    }
-}
-
-#[cfg(not(unix))]
-async fn recv_stop_signal() -> () {
-    let _ = tokio::signal::ctrl_c().await;
 }
 
 #[derive(Debug)]

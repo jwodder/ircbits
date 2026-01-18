@@ -1,0 +1,22 @@
+[package]
+name = "echobot"
+edition.workspace = true
+rust-version.workspace = true
+#description = ...
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+ircnet = { path = "../ircnet", features = ["serde"] }
+irctext = { path = "../irctext" }
+mainutil = { path = "../mainutil" }
+serde = { workspace = true, features = ["derive"] }
+tokio = { workspace = true, features = ["macros", "rt", "time"] }
+toml.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

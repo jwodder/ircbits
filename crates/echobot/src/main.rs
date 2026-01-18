@@ -66,9 +66,6 @@ async fn main() -> anyhow::Result<()> {
     let Some(profile) = cfg.remove(&network) else {
         anyhow::bail!("{network:?} profile not found in configuration file");
     };
-    if profile.echobot.channels.is_empty() {
-        anyhow::bail!("No channels configured for profile {network:?}");
-    }
 
     tracing::info!("Connecting to IRC …");
     let (mut client, login_output) = SessionBuilder::new(profile.session_params)

@@ -2,7 +2,7 @@
 name = "echobot"
 edition.workspace = true
 rust-version.workspace = true
-#description = ...
+description = "IRC bot that echoes back messages on a delay"
 authors.workspace = true
 repository.workspace = true
 license.workspace = true

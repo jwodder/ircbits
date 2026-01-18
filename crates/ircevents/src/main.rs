@@ -142,7 +142,9 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
     for chan in profile.ircevents.channels {
         tracing::info!("Joining {chan} …");
         let output = client.run(JoinCommand::new(chan.clone())).await?;
-        canon_channels.add(output.channel.clone());
+        let chan = output.channel.clone();
+        tracing::info!("Joined {chan}");
+        canon_channels.add(chan);
         sender
             .send(Event::Joined {
                 timestamp: Zoned::now(),

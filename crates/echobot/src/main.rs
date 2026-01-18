@@ -107,6 +107,7 @@ async fn main() -> anyhow::Result<()> {
         tracing::info!("Joining {chan} …");
         let output = client.run(JoinCommand::new(chan.clone())).await?;
         let chan = output.channel;
+        tracing::info!("Joined {chan}");
         canon_channels.add(chan);
     }
 

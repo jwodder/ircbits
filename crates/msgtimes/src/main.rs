@@ -49,13 +49,12 @@ struct Profile {
     #[serde(flatten)]
     session_params: SessionParams,
 
-    #[serde(default)]
     msgtimes: ProgramParams,
 }
 
-#[derive(Clone, Debug, Default, serde::Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, serde::Deserialize, Eq, PartialEq)]
 struct ProgramParams {
-    channels: Vec<Channel>,
+    channels: mitsein::vec1::Vec1<Channel>,
     away: Option<TrailingParam>,
 }
 
@@ -76,9 +75,6 @@ async fn main() -> anyhow::Result<()> {
     let Some(profile) = cfg.remove(&network) else {
         anyhow::bail!("{network:?} profile not found in configuration file");
     };
-    if profile.msgtimes.channels.is_empty() {
-        anyhow::bail!("No channels configured for profile {network:?}");
-    }
 
     let outfile = match args.outfile {
         OutputArg::Stdout => Either::Left(io::stdout().lock()),

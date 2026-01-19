@@ -15,6 +15,7 @@ ircnet = { path = "../ircnet", features = ["serde"] }
 irctext = { path = "../irctext" }
 jiff.workspace = true
 mainutil = { path = "../mainutil" }
+mitsein = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
 tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }

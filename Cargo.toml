@@ -15,6 +15,7 @@ anyhow = "1.0.98"
 clap = { version = "4.5.41", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
 itertools = "0.14.0"
 jiff = "0.2.15"
+mitsein = "0.9.0"
 patharg = "0.4.1"
 serde = "1.0.219"
 serde-jsonlines = "0.7.0"

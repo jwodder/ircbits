@@ -15,6 +15,7 @@ ircnet = { path = "../ircnet", features = ["serde"] }
 irctext = { path = "../irctext" }
 jiff.workspace = true
 mainutil = { path = "../mainutil" }
+mitsein = { workspace = true, features = ["serde"] }
 patharg.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde-jsonlines.workspace = true

@@ -336,13 +336,6 @@ pub enum JoinError {
     ErrorMessage { reason: String },
     #[error("JOIN failed with unexpected error reply {code:03}: {reply:?}")]
     UnexpectedError { code: u16, reply: String },
-    #[error(
-        "JOIN failed because server sent unexpected message: expecting {expecting}, got {msg:?}"
-    )]
-    Unexpected {
-        expecting: &'static str,
-        msg: String,
-    },
 }
 
 #[cfg(test)]

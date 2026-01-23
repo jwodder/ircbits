@@ -17,7 +17,7 @@ use irctext::{
 use itertools::Itertools; // join
 use mainutil::{init_logging, run_until_stopped};
 use std::collections::HashMap;
-use std::fmt::Write;
+use std::fmt::{self, Write};
 use std::path::PathBuf;
 use tracing::Level;
 
@@ -83,6 +83,10 @@ async fn main() -> anyhow::Result<()> {
     let Some(profile) = cfg.remove(&args.profile) else {
         anyhow::bail!("{:?} profile not found in configuration file", args.profile);
     };
+    report(&format!(
+        "[LOGIN] Logging in to {} ...",
+        profile.session_params.connect.host
+    ));
     let (mut client, login_output) = SessionBuilder::new(profile.session_params)
         .with_autoresponder(PingResponder::new())
         .with_autoresponder(
@@ -105,7 +109,9 @@ async fn main() -> anyhow::Result<()> {
     }
     let mut login_msg = format!(
         "[LOGIN] Logged in as {}; server: {} (version: {})",
-        login_output.my_nick, login_output.server_info.name, login_output.server_info.version
+        highlight(&login_output.my_nick),
+        login_output.server_info.name,
+        login_output.server_info.version
     );
     if let Some(ref ms) = login_output.mode {
         let _ = write!(&mut login_msg, "; user mode: {ms}");
@@ -164,16 +170,16 @@ async fn main() -> anyhow::Result<()> {
         }
         let _ = write!(&mut s, "; {users} users");
         if founders > 0 {
-            let _ = write!(&mut s, ", {founders} founders");
+            let _ = write!(&mut s, ", {}", quantify(founders, "founder"));
         }
         if protected > 0 {
             let _ = write!(&mut s, ", {protected} protected");
         }
         if operators > 0 {
-            let _ = write!(&mut s, ", {operators} operators");
+            let _ = write!(&mut s, ", {}", quantify(operators, "operator"));
         }
         if halfops > 0 {
-            let _ = write!(&mut s, ", {halfops} halfops");
+            let _ = write!(&mut s, ", {}", quantify(halfops, "halfop"));
         }
         if voiced > 0 {
             let _ = write!(&mut s, ", {voiced} voiced");
@@ -184,7 +190,7 @@ async fn main() -> anyhow::Result<()> {
         match run_until_stopped(client.recv()).await {
             Some(Ok(Some(msg))) => report(&format_msg(msg)),
             Some(Ok(None)) => {
-                report("* Disconnected");
+                report("# Disconnected");
                 break;
             }
             Some(Err(ClientError::Parse(e))) => {
@@ -262,13 +268,13 @@ fn format_msg(msg: Message) -> String {
         }
         Payload::ClientMessage(ClientMessage::Join(m)) => {
             format!(
-                "* {sender} joins {}",
+                "# {sender} joins {}",
                 join_and(m.channels().iter().map(|t| highlight(t.as_str())))
             )
         }
         Payload::ClientMessage(ClientMessage::Part(m)) => {
             let mut s = format!(
-                "* {sender} leaves {}",
+                "# {sender} leaves {}",
                 join_and(m.channels().iter().map(|t| highlight(t.as_str())))
             );
             if let Some(txt) = m.reason() {
@@ -277,7 +283,7 @@ fn format_msg(msg: Message) -> String {
             s
         }
         Payload::ClientMessage(ClientMessage::Quit(m)) => {
-            let mut s = format!("* {sender} quits");
+            let mut s = format!("# {sender} quits");
             if let Some(txt) = m.reason() {
                 let _ = write!(&mut s, ": {}", ircfmt_to_ansi(txt.as_str()));
             }
@@ -287,22 +293,22 @@ fn format_msg(msg: Message) -> String {
             format!("[ERROR] {}", ircfmt_to_ansi(m.reason().as_str()))
         }
         Payload::ClientMessage(ClientMessage::Nick(m)) => {
-            format!("* {sender} is now known as {}", highlight(m.nickname()))
+            format!("# {sender} is now known as {}", highlight(m.nickname()))
         }
         Payload::ClientMessage(ClientMessage::Topic(m)) => {
             if let Some(topic) = m.topic() {
                 format!(
-                    "* {sender} changed the {} topic: {}",
+                    "# {sender} changed the {} topic: {}",
                     highlight(m.channel()),
                     ircfmt_to_ansi(topic.as_str())
                 )
             } else {
-                format!("* {sender} unset the {} topic", highlight(m.channel()))
+                format!("# {sender} unset the {} topic", highlight(m.channel()))
             }
         }
         Payload::ClientMessage(ClientMessage::Invite(m)) => {
             format!(
-                "* {sender} invited {} to {}",
+                "# {sender} invited {} to {}",
                 highlight(m.nickname()),
                 highlight(m.channel())
             )
@@ -310,14 +316,14 @@ fn format_msg(msg: Message) -> String {
         Payload::ClientMessage(ClientMessage::Kick(m)) => {
             if let Some(cmt) = m.comment() {
                 format!(
-                    "* {sender} kicked {} from {}: {}",
+                    "# {sender} kicked {} from {}: {}",
                     join_and(m.users().iter().map(|u| highlight(u))),
                     highlight(m.channel()),
                     ircfmt_to_ansi(cmt.as_str()),
                 )
             } else {
                 format!(
-                    "* {sender} kicked {} from {}",
+                    "# {sender} kicked {} from {}",
                     join_and(m.users().iter().map(|u| highlight(u))),
                     highlight(m.channel())
                 )
@@ -332,7 +338,7 @@ fn format_msg(msg: Message) -> String {
                 let _ = write!(&mut comment, " {}", m.arguments());
             }
             format!(
-                "* {sender} changed the mode for {}: {comment}",
+                "# {sender} changed the mode for {}: {comment}",
                 highlight(m.target().as_str())
             )
         }
@@ -401,5 +407,56 @@ fn join_and<I: IntoIterator<Item: AsRef<str>>>(iter: I) -> String {
             s.push_str(&items[n - 1]);
             s
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
+pub struct Quantify<'a> {
+    qty: u32,
+    word: &'a str,
+    ending: &'static str,
+}
+
+impl fmt::Display for Quantify<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}{}", self.qty, self.word, self.ending)
+    }
+}
+
+/// Returns a structure that is [displayed][std::fmt::Display] as `"{qty}
+/// {word}"`, with an S added to the end of `word` if `qty` is not 1.
+pub fn quantify(qty: u32, word: &str) -> Quantify<'_> {
+    if qty == 1 {
+        Quantify {
+            qty,
+            word,
+            ending: "",
+        }
+    } else {
+        Quantify {
+            qty,
+            word,
+            ending: "s",
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn quantify_one() {
+        assert_eq!(quantify(1, "apple").to_string(), "1 apple");
+    }
+
+    #[test]
+    fn quantify_zero() {
+        assert_eq!(quantify(0, "apple").to_string(), "0 apples");
+    }
+
+    #[test]
+    fn quantify_many() {
+        assert_eq!(quantify(42, "apple").to_string(), "42 apples");
     }
 }

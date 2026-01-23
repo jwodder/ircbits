@@ -155,11 +155,4 @@ pub enum ListError {
     ErrorMessage { reason: String },
     #[error("LIST failed with unexpected error reply {code:03}: {reply:?}")]
     UnexpectedError { code: u16, reply: String },
-    #[error(
-        "LIST failed because server sent unexpected message: expecting {expecting}, got {msg:?}"
-    )]
-    Unexpected {
-        expecting: &'static str,
-        msg: String,
-    },
 }

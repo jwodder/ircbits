@@ -3,7 +3,7 @@
 [![MIT License](https://img.shields.io/github/license/jwodder/ircbits.svg)](https://opensource.org/licenses/MIT)
 
 `echobot` is a simple IRC bot that sends back any messages sent to it after a
-five-second delay.  Specifically:
+delay.  Specifically:
 
 - If the bot is in a channel to which a user sends a `PRIVMSG` of the form
   "`<nickname>: <message>`" where `<nickname>` is the bot's nickname (matched
@@ -39,6 +39,9 @@ Configuration
 
 In addition to connection details, `echobot` reads further configuration from
 the `echobot` subtable of the selected profile table in the configuration file.
-This subtable contains the following field:
+This subtable contains the following fields:
 
 - `channels` (list of strings; optional) — names of channels to join upon login
+
+- `delay` (integer; optional) — number of seconds to wait before echoing a
+  message; defaults to 5

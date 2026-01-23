@@ -18,7 +18,7 @@ use std::time::Duration;
 use tokio::{task::JoinSet, time::sleep};
 use tracing::Level;
 
-const ECHO_DELAY: Duration = Duration::from_secs(5);
+const DEFAULT_ECHO_DELAY: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
 struct Arguments {
@@ -47,6 +47,13 @@ struct Profile {
 #[derive(Clone, Debug, Default, serde::Deserialize, Eq, PartialEq)]
 struct ProgramParams {
     channels: Vec<Channel>,
+    delay: Option<u64>,
+}
+
+impl ProgramParams {
+    fn delay(&self) -> Duration {
+        self.delay.map_or(DEFAULT_ECHO_DELAY, Duration::from_secs)
+    }
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -102,6 +109,7 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or_default();
     let me = login_output.my_nick;
 
+    let delay = profile.echobot.delay();
     let mut canon_channels = ChannelCanonicalizer::new(casemapping);
     for chan in profile.echobot.channels {
         tracing::info!("Joining {chan} …");
@@ -141,7 +149,7 @@ async fn main() -> anyhow::Result<()> {
                                         Ok(echomsg) => {
                                             let reply_to = MsgTarget::from(c.clone());
                                             pending.spawn(async move {
-                                                sleep(ECHO_DELAY).await;
+                                                sleep(delay).await;
                                                 (reply_to, echomsg)
                                             });
                                         }
@@ -157,7 +165,7 @@ async fn main() -> anyhow::Result<()> {
                                     let reply_to = MsgTarget::from(clisrc.nickname.clone());
                                     let echomsg = m.text().clone();
                                     pending.spawn(async move {
-                                        sleep(ECHO_DELAY).await;
+                                        sleep(delay).await;
                                         (reply_to, echomsg)
                                     });
                                 }

@@ -7,6 +7,10 @@ use irctext::{
 use std::time::Duration;
 use thiserror::Error;
 
+/// How long to wait for an optional `RPL_CHANNELURL` (328) message after
+/// receiving the list of names
+const URL_TIMEOUT: Duration = Duration::from_secs(1);
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct JoinCommand {
     outgoing: Vec<ClientMessage>,
@@ -36,6 +40,7 @@ impl JoinCommand {
 //     - no replies
 //  - one or more RPL_NAMREPLY (353)
 //  - RPL_ENDOFNAMES (366)
+//  - optional: RPL_CHANNELURL (328)
 
 // Possible error replies:
 //  - ERROR message
@@ -124,10 +129,26 @@ impl Command for JoinCommand {
     }
 
     fn get_timeout(&mut self) -> Option<Duration> {
-        None
+        if let State::AwaitingUrl {
+            ref mut timeout, ..
+        } = self.state
+        {
+            timeout.take()
+        } else {
+            None
+        }
     }
 
-    fn handle_timeout(&mut self) {}
+    fn handle_timeout(&mut self) {
+        let state = std::mem::replace(&mut self.state, State::Void);
+        self.state = match state {
+            State::AwaitingUrl {
+                timeout: None,
+                output,
+            } => State::Done(Some(Ok(output))),
+            other => other,
+        };
+    }
 
     fn is_done(&self) -> bool {
         matches!(self.state, State::Done(_))
@@ -156,6 +177,10 @@ enum State {
         topic_set_at: u64,
     },
     GotNamReply(JoinOutput),
+    AwaitingUrl {
+        output: JoinOutput,
+        timeout: Option<Duration>,
+    },
     Done(Option<Result<JoinOutput, JoinError>>),
     Void,
 }
@@ -195,6 +220,7 @@ impl State {
                     topic_set_at: None,
                     channel_status: r.channel_status(),
                     users: r.clients().to_vec(),
+                    url: None,
                 }),
                 true,
             ),
@@ -206,6 +232,7 @@ impl State {
                     topic_set_at: None,
                     channel_status: r.channel_status(),
                     users: r.clients().to_vec(),
+                    url: None,
                 }),
                 true,
             ),
@@ -224,6 +251,7 @@ impl State {
                     topic_set_at: Some(topic_set_at),
                     channel_status: r.channel_status(),
                     users: r.clients().to_vec(),
+                    url: None,
                 }),
                 true,
             ),
@@ -231,7 +259,15 @@ impl State {
                 output.users.extend(r.clients().to_vec());
                 (State::GotNamReply(output), true)
             }
-            (State::GotNamReply(output), Reply::EndOfNames(_)) => {
+            (State::GotNamReply(output), Reply::EndOfNames(_)) => (
+                State::AwaitingUrl {
+                    output,
+                    timeout: Some(URL_TIMEOUT),
+                },
+                true,
+            ),
+            (State::AwaitingUrl { mut output, .. }, Reply::ChannelUrl(r)) => {
+                output.url = Some(r.url().to_owned());
                 (State::Done(Some(Ok(output))), true)
             }
             (State::Void, _) => panic!("handle_reply() called on Void join state"),
@@ -269,6 +305,9 @@ pub struct JoinOutput {
     /// The users currently joined to the channel along with their membership
     /// statuses therein
     pub users: Vec<(Option<ChannelMembership>, Nickname)>,
+
+    /// The URL associated with the channel, if any
+    pub url: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, Error, PartialEq)]
@@ -304,4 +343,154 @@ pub enum JoinError {
         expecting: &'static str,
         msg: String,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use irctext::ClientMessageParts;
+
+    #[test]
+    fn basic_join() {
+        let channel = "#test".parse::<Channel>().unwrap();
+        let mut cmd = JoinCommand::new(channel);
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["JOIN #test"]);
+        let received = [
+            ":mynick!~myuser@myhost.nil JOIN #test",
+            ":irc.example.com 332 mynick #test :A test channel",
+            ":irc.example.com 333 mynick #test chanop!~channer@elsewhere.test 1757535834",
+            ":irc.example.com 353 mynick = #test :mynick ~TestFather @testmod +speaker luser",
+            ":irc.example.com 353 mynick = #test :SomeOtherUser visitor im-lost tester +testbot eg.zample",
+            ":irc.example.com 366 mynick #test :End of /NAMES list.",
+        ];
+        for m in received {
+            let msg = m.parse::<Message>().unwrap();
+            assert!(cmd.handle_message(&msg));
+            assert!(cmd.get_client_messages().is_empty());
+            assert!(!cmd.is_done());
+        }
+        assert!(cmd.get_timeout().is_some());
+        cmd.handle_timeout();
+        assert!(cmd.get_client_messages().is_empty());
+        assert!(cmd.is_done());
+        let output = cmd.get_output().unwrap();
+        pretty_assertions::assert_eq!(
+            output,
+            JoinOutput {
+                channel: "#test".parse::<Channel>().unwrap(),
+                topic: Some(String::from("A test channel")),
+                topic_set_by: Some(
+                    "chanop!~channer@elsewhere.test"
+                        .parse::<ClientSource>()
+                        .unwrap()
+                ),
+                topic_set_at: Some(1757535834),
+                channel_status: ChannelStatus::Public,
+                users: vec![
+                    (None, "mynick".parse::<Nickname>().unwrap()),
+                    (
+                        Some(ChannelMembership::Founder),
+                        "TestFather".parse::<Nickname>().unwrap()
+                    ),
+                    (
+                        Some(ChannelMembership::Operator),
+                        "testmod".parse::<Nickname>().unwrap()
+                    ),
+                    (
+                        Some(ChannelMembership::Voiced),
+                        "speaker".parse::<Nickname>().unwrap()
+                    ),
+                    (None, "luser".parse::<Nickname>().unwrap()),
+                    (None, "SomeOtherUser".parse::<Nickname>().unwrap()),
+                    (None, "visitor".parse::<Nickname>().unwrap()),
+                    (None, "im-lost".parse::<Nickname>().unwrap()),
+                    (None, "tester".parse::<Nickname>().unwrap()),
+                    (
+                        Some(ChannelMembership::Voiced),
+                        "testbot".parse::<Nickname>().unwrap()
+                    ),
+                    (None, "eg.zample".parse::<Nickname>().unwrap()),
+                ],
+                url: None,
+            }
+        );
+    }
+
+    #[test]
+    fn join_channel_with_url() {
+        let channel = "#test".parse::<Channel>().unwrap();
+        let mut cmd = JoinCommand::new(channel);
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["JOIN #test"]);
+        let received = [
+            ":mynick!~myuser@myhost.nil JOIN #test",
+            ":irc.example.com 332 mynick #test :A test channel",
+            ":irc.example.com 333 mynick #test chanop!~channer@elsewhere.test 1757535834",
+            ":irc.example.com 353 mynick = #test :mynick ~TestFather @testmod +speaker luser",
+            ":irc.example.com 353 mynick = #test :SomeOtherUser visitor im-lost tester +testbot eg.zample",
+            ":irc.example.com 366 mynick #test :End of /NAMES list.",
+        ];
+        for m in received {
+            let msg = m.parse::<Message>().unwrap();
+            assert!(cmd.handle_message(&msg));
+            assert!(cmd.get_client_messages().is_empty());
+            assert!(!cmd.is_done());
+        }
+        assert!(cmd.get_timeout().is_some());
+        let m = ":services. 328 mynick #test :test.example.com";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        assert!(cmd.get_client_messages().is_empty());
+        assert!(cmd.is_done());
+        let output = cmd.get_output().unwrap();
+        pretty_assertions::assert_eq!(
+            output,
+            JoinOutput {
+                channel: "#test".parse::<Channel>().unwrap(),
+                topic: Some(String::from("A test channel")),
+                topic_set_by: Some(
+                    "chanop!~channer@elsewhere.test"
+                        .parse::<ClientSource>()
+                        .unwrap()
+                ),
+                topic_set_at: Some(1757535834),
+                channel_status: ChannelStatus::Public,
+                users: vec![
+                    (None, "mynick".parse::<Nickname>().unwrap()),
+                    (
+                        Some(ChannelMembership::Founder),
+                        "TestFather".parse::<Nickname>().unwrap()
+                    ),
+                    (
+                        Some(ChannelMembership::Operator),
+                        "testmod".parse::<Nickname>().unwrap()
+                    ),
+                    (
+                        Some(ChannelMembership::Voiced),
+                        "speaker".parse::<Nickname>().unwrap()
+                    ),
+                    (None, "luser".parse::<Nickname>().unwrap()),
+                    (None, "SomeOtherUser".parse::<Nickname>().unwrap()),
+                    (None, "visitor".parse::<Nickname>().unwrap()),
+                    (None, "im-lost".parse::<Nickname>().unwrap()),
+                    (None, "tester".parse::<Nickname>().unwrap()),
+                    (
+                        Some(ChannelMembership::Voiced),
+                        "testbot".parse::<Nickname>().unwrap()
+                    ),
+                    (None, "eg.zample".parse::<Nickname>().unwrap()),
+                ],
+                url: Some(String::from("test.example.com")),
+            }
+        );
+    }
 }

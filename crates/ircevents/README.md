@@ -307,6 +307,8 @@ JSON objects for this event type have the following additional fields:
   with their membership statuses therein.  Each object in the list contains the
   fields `"nickname"` (string) and `"membership"` (`"Founder"`, `"Protected"`,
   `"Operator"`, `"HalfOperator"`, `"Voiced"`, or `null`)
+- `"url"` (string or `null`) — the URL associated with the channel, or `null`
+  if not reported
 
 `"kick"` Event
 ----------------

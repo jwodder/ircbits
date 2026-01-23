@@ -81,6 +81,7 @@ pub enum Reply {
     List,
     ListEnd,
     ChannelModeIs,
+    ChannelUrl,
     CreationTime,
     WhoIsAccount,
     NoTopic,
@@ -220,6 +221,7 @@ impl Reply {
             322 => List::try_from(params).map(Into::into),
             323 => ListEnd::try_from(params).map(Into::into),
             324 => ChannelModeIs::try_from(params).map(Into::into),
+            328 => ChannelUrl::try_from(params).map(Into::into),
             329 => CreationTime::try_from(params).map(Into::into),
             330 => WhoIsAccount::try_from(params).map(Into::into),
             331 => NoTopic::try_from(params).map(Into::into),
@@ -444,6 +446,7 @@ pub mod codes {
     pub const RPL_LIST: u16 = 322;
     pub const RPL_LISTEND: u16 = 323;
     pub const RPL_CHANNELMODEIS: u16 = 324;
+    pub const RPL_CHANNELURL: u16 = 328;
     pub const RPL_CREATIONTIME: u16 = 329;
     pub const RPL_WHOISACCOUNT: u16 = 330;
     pub const RPL_NOTOPIC: u16 = 331;
@@ -4277,6 +4280,94 @@ impl TryFrom<ParameterList> for ChannelModeIs {
             channel,
             modestring,
             arguments,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ChannelUrl {
+    parameters: ParameterList,
+    client: ReplyTarget,
+    channel: Channel,
+    url: String,
+}
+
+impl ChannelUrl {
+    pub fn client(&self) -> &ReplyTarget {
+        &self.client
+    }
+
+    pub fn channel(&self) -> &Channel {
+        &self.channel
+    }
+
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+}
+
+impl ReplyParts for ChannelUrl {
+    fn code(&self) -> u16 {
+        codes::RPL_CHANNELURL
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_CHANNELURL")
+    }
+
+    fn parameters(&self) -> &ParameterList {
+        &self.parameters
+    }
+
+    fn is_error(&self) -> bool {
+        false
+    }
+
+    fn into_parts(self) -> (u16, ParameterList) {
+        let code = self.code();
+        (code, self.parameters)
+    }
+}
+
+impl From<ChannelUrl> for Message {
+    fn from(value: ChannelUrl) -> Message {
+        Message::from(Reply::from(value))
+    }
+}
+
+impl From<ChannelUrl> for RawMessage {
+    fn from(value: ChannelUrl) -> RawMessage {
+        RawMessage::from(Reply::from(value))
+    }
+}
+
+impl TryFrom<ParameterList> for ChannelUrl {
+    type Error = ReplyError;
+
+    fn try_from(parameters: ParameterList) -> Result<ChannelUrl, ReplyError> {
+        if parameters.len() < 3 {
+            return Err(ReplyError::ParamQty {
+                min_required: 3,
+                received: parameters.len(),
+            });
+        }
+        let p = parameters
+            .get(0)
+            .expect("Parameter 0 should exist when list length is at least 3");
+        let client = ReplyTarget::try_from(String::from(p))?;
+        let p = parameters
+            .get(1)
+            .expect("Parameter 1 should exist when list length is at least 3");
+        let channel = Channel::try_from(String::from(p))?;
+        let p = parameters
+            .last()
+            .expect("Parameter list should be nonempty when list length is at least 3");
+        let url = p.as_str().to_owned();
+        Ok(ChannelUrl {
+            parameters,
+            client,
+            channel,
+            url,
         })
     }
 }

@@ -528,6 +528,7 @@ impl AddFields for JoinOutput {
             topic_set_at,
             channel_status,
             users,
+            url,
         } = self;
         map.insert(String::from("channel"), Value::from(String::from(channel)));
         map.insert(String::from("topic"), Value::from(topic));
@@ -567,6 +568,7 @@ impl AddFields for JoinOutput {
             })
             .collect::<Vec<_>>();
         map.insert(String::from("users"), Value::from(users));
+        map.insert(String::from("url"), Value::from(url));
     }
 }
 

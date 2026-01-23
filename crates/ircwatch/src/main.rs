@@ -83,6 +83,10 @@ async fn main() -> anyhow::Result<()> {
     let Some(profile) = cfg.remove(&args.profile) else {
         anyhow::bail!("{:?} profile not found in configuration file", args.profile);
     };
+    report(&format!(
+        "[LOGIN] Logging in to {} ...",
+        profile.session_params.connect.host
+    ));
     let (mut client, login_output) = SessionBuilder::new(profile.session_params)
         .with_autoresponder(PingResponder::new())
         .with_autoresponder(

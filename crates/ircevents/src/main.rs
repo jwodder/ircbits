@@ -20,10 +20,15 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tracing::Level;
 
 const MESSAGE_CHANNEL_SIZE: usize = 65535;
+
+/// If we receive a `RPL_UNAWAY` or `RPL_NOWAWAY` within this amount of time
+/// after issuing an `AWAY` command, don't emit an event for it.
+const AWAY_REPLY_WINDOW: Duration = Duration::from_secs(5);
 
 /// Log into an IRC network, join a given set of channels, and then run
 /// indefinitely, outputting a JSON object for each message & event that
@@ -131,9 +136,12 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
             output: login_output,
         })
         .await?;
-    if let Some(p) = profile.ircevents.away {
+    let mut away_sent = if let Some(p) = profile.ircevents.away {
         client.send(Away::new(p)).await?;
-    }
+        Some(Instant::now())
+    } else {
+        None
+    };
     let mut canon_channels = ChannelCanonicalizer::new(casemapping);
     for chan in profile.ircevents.channels {
         tracing::info!("Joining {chan} …");
@@ -190,14 +198,24 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                 source,
                 payload: Payload::Reply(reply),
             }))) => {
-                sender
-                    .send(Event::Reply {
-                        timestamp: Zoned::now(),
-                        tags,
-                        source,
-                        reply,
-                    })
-                    .await?;
+                if matches!(reply, Reply::UnAway(_) | Reply::NowAway(_))
+                    && away_sent.is_some_and(|when| when.elapsed() < AWAY_REPLY_WINDOW)
+                {
+                    tracing::info!(
+                        "Received {} reply to AWAY command; not logging",
+                        reply.name().unwrap_or("UNKNOWN")
+                    );
+                    away_sent = None;
+                } else {
+                    sender
+                        .send(Event::Reply {
+                            timestamp: Zoned::now(),
+                            tags,
+                            source,
+                            reply,
+                        })
+                        .await?;
+                }
             }
             Some(Ok(None)) => {
                 tracing::info!("Connection closed");

@@ -305,3 +305,79 @@ pub enum JoinError {
         msg: String,
     },
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use irctext::ClientMessageParts;
+
+    #[test]
+    fn basic_join() {
+        let channel = "#test".parse::<Channel>().unwrap();
+        let mut cmd = JoinCommand::new(channel);
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["JOIN #test"]);
+        let received = [
+            ":mynick!~myuser@myhost.nil JOIN #test",
+            ":irc.example.com 332 mynick #test :A test channel",
+            ":irc.example.com 333 mynick #test chanop!~channer@elsewhere.test 1757535834",
+            ":irc.example.com 353 mynick = #test :mynick ~TestFather @testmod +speaker luser",
+            ":irc.example.com 353 mynick = #test :SomeOtherUser visitor im-lost tester +testbot eg.zample",
+        ];
+        for m in received {
+            let msg = m.parse::<Message>().unwrap();
+            assert!(cmd.handle_message(&msg));
+            assert!(cmd.get_client_messages().is_empty());
+            assert!(!cmd.is_done());
+        }
+        let m = ":irc.example.com 366 mynick #test :End of /NAMES list.";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        assert!(cmd.get_client_messages().is_empty());
+        assert!(cmd.is_done());
+        let output = cmd.get_output().unwrap();
+        pretty_assertions::assert_eq!(
+            output,
+            JoinOutput {
+                channel: "#test".parse::<Channel>().unwrap(),
+                topic: Some(String::from("A test channel")),
+                topic_set_by: Some(
+                    "chanop!~channer@elsewhere.test"
+                        .parse::<ClientSource>()
+                        .unwrap()
+                ),
+                topic_set_at: Some(1757535834),
+                channel_status: ChannelStatus::Public,
+                users: vec![
+                    (None, "mynick".parse::<Nickname>().unwrap()),
+                    (
+                        Some(ChannelMembership::Founder),
+                        "TestFather".parse::<Nickname>().unwrap()
+                    ),
+                    (
+                        Some(ChannelMembership::Operator),
+                        "testmod".parse::<Nickname>().unwrap()
+                    ),
+                    (
+                        Some(ChannelMembership::Voiced),
+                        "speaker".parse::<Nickname>().unwrap()
+                    ),
+                    (None, "luser".parse::<Nickname>().unwrap()),
+                    (None, "SomeOtherUser".parse::<Nickname>().unwrap()),
+                    (None, "visitor".parse::<Nickname>().unwrap()),
+                    (None, "im-lost".parse::<Nickname>().unwrap()),
+                    (None, "tester".parse::<Nickname>().unwrap()),
+                    (
+                        Some(ChannelMembership::Voiced),
+                        "testbot".parse::<Nickname>().unwrap()
+                    ),
+                    (None, "eg.zample".parse::<Nickname>().unwrap()),
+                ],
+            }
+        );
+    }
+}

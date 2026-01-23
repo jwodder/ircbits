@@ -139,4 +139,23 @@ mod whoisactually {
             assert_eq!(r.parameters, ["*", "NETWORK=Example", "draft/ICON=https://example.org/icon.svg", "are supported by this server"]);
         });
     }
+
+    #[test]
+    fn channelurl() {
+        let msg = ":services. 328 jwodder #irssi :irssi.org";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            tags,
+            source: Some(Source::Server(host)),
+            payload: Payload::Reply(Reply::ChannelUrl(r)),
+        } => {
+            assert!(tags.is_empty());
+            assert_eq!(host, Host::Domain("services."));
+            assert_eq!(r.code(), 328);
+            assert_eq!(r.client(), "jwodder");
+            assert_eq!(r.channel(), "#irssi");
+            assert_eq!(r.url(), "irssi.org");
+            assert_eq!(r.parameters, ["jwodder", "#irssi", "irssi.org"]);
+        });
+    }
 }

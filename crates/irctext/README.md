@@ -18,6 +18,7 @@ In particular:
         - Replies with unknown numeric codes are converted to a catch-all type
         - The following nonstandard numeric replies are supported:
             - `RPL_STATSCONN` (250)
+            - `RPL_CHANNELURL` (328)
             - `ERR_INVALIDCAPCMD` (410), specified by the [Capability
               Negotiation specification][cap]
         - The `<nick>` parameter of `RPL_TOPICWHOTIME` (333) is allowed to be

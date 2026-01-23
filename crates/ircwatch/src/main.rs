@@ -17,7 +17,7 @@ use irctext::{
 use itertools::Itertools; // join
 use mainutil::{init_logging, run_until_stopped};
 use std::collections::HashMap;
-use std::fmt::Write;
+use std::fmt::{self, Write};
 use std::path::PathBuf;
 use tracing::Level;
 
@@ -164,16 +164,16 @@ async fn main() -> anyhow::Result<()> {
         }
         let _ = write!(&mut s, "; {users} users");
         if founders > 0 {
-            let _ = write!(&mut s, ", {founders} founders");
+            let _ = write!(&mut s, ", {}", quantify(founders, "founder"));
         }
         if protected > 0 {
             let _ = write!(&mut s, ", {protected} protected");
         }
         if operators > 0 {
-            let _ = write!(&mut s, ", {operators} operators");
+            let _ = write!(&mut s, ", {}", quantify(operators, "operator"));
         }
         if halfops > 0 {
-            let _ = write!(&mut s, ", {halfops} halfops");
+            let _ = write!(&mut s, ", {}", quantify(halfops, "halfop"));
         }
         if voiced > 0 {
             let _ = write!(&mut s, ", {voiced} voiced");
@@ -401,5 +401,56 @@ fn join_and<I: IntoIterator<Item: AsRef<str>>>(iter: I) -> String {
             s.push_str(&items[n - 1]);
             s
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
+pub struct Quantify<'a> {
+    qty: u32,
+    word: &'a str,
+    ending: &'static str,
+}
+
+impl fmt::Display for Quantify<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}{}", self.qty, self.word, self.ending)
+    }
+}
+
+/// Returns a structure that is [displayed][std::fmt::Display] as `"{qty}
+/// {word}"`, with an S added to the end of `word` if `qty` is not 1.
+pub fn quantify(qty: u32, word: &str) -> Quantify<'_> {
+    if qty == 1 {
+        Quantify {
+            qty,
+            word,
+            ending: "",
+        }
+    } else {
+        Quantify {
+            qty,
+            word,
+            ending: "s",
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn quantify_one() {
+        assert_eq!(quantify(1, "apple").to_string(), "1 apple");
+    }
+
+    #[test]
+    fn quantify_zero() {
+        assert_eq!(quantify(0, "apple").to_string(), "0 apples");
+    }
+
+    #[test]
+    fn quantify_many() {
+        assert_eq!(quantify(42, "apple").to_string(), "42 apples");
     }
 }

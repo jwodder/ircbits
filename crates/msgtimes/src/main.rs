@@ -7,10 +7,10 @@ use ircnet::client::{
     commands::JoinCommand,
 };
 use irctext::{
-    CaseMapping, ClientMessage, Message, Payload, TrailingParam,
+    ClientMessage, Message, Payload, TrailingParam,
     clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
-    types::{Channel, ISupportParam, MsgTarget},
+    types::{CaseMapping, Channel, ISupportParam, MsgTarget},
 };
 use mainutil::{init_logging, run_until_stopped};
 use patharg::OutputArg;

@@ -9,8 +9,8 @@
 // Note that the set of valid channel type prefixes varies from server to
 // server, but for now, to keep things simple, this library treats '#' and '&'
 // — and only those characters — as channel type prefixes.
-use crate::types::{ModeTarget, MsgTarget};
-use crate::{CaseMapping, MiddleParam, TrailingParam};
+use crate::types::{CaseMapping, ModeTarget, MsgTarget};
+use crate::{MiddleParam, TrailingParam};
 use std::borrow::Cow;
 use thiserror::Error;
 

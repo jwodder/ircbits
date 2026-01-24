@@ -1,3 +1,5 @@
+use irctext::types::{CaseMapping, Channel};
+use std::collections::HashMap;
 use std::io::{IsTerminal, stderr};
 use tokio::select;
 use tracing::Level;
@@ -59,4 +61,43 @@ pub async fn recv_stop_signal() -> () {
 #[cfg(not(unix))]
 pub async fn recv_stop_signal() -> () {
     let _ = tokio::signal::ctrl_c().await;
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ChannelSet {
+    casemapping: CaseMapping,
+    lower2canon: HashMap<Channel, Channel>,
+}
+
+impl ChannelSet {
+    pub fn new(casemapping: CaseMapping) -> Self {
+        Self {
+            casemapping,
+            lower2canon: HashMap::new(),
+        }
+    }
+
+    pub fn add(&mut self, channel: Channel) -> bool {
+        let lower = channel.to_lowercase(self.casemapping);
+        self.lower2canon.insert(lower, channel).is_some()
+    }
+
+    pub fn contains(&self, channel: &Channel) -> bool {
+        let lower = channel.to_lowercase(self.casemapping);
+        self.lower2canon.contains_key(&lower)
+    }
+
+    pub fn canonicalize(&self, channel: &Channel) -> Option<&Channel> {
+        let lower = channel.to_lowercase(self.casemapping);
+        self.lower2canon.get(&lower)
+    }
+
+    pub fn remove(&mut self, channel: &Channel) -> bool {
+        let lower = channel.to_lowercase(self.casemapping);
+        self.lower2canon.remove(&lower).is_some()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.lower2canon.is_empty()
+    }
 }

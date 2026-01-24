@@ -30,7 +30,6 @@ In particular:
 
 - The following IRCv3 extensions are supported by or compatible with this
   library:
-    - [`account-tag`](https://ircv3.net/specs/extensions/account-tag)
     - [`away-notify`](https://ircv3.net/specs/extensions/away-notify)
     - [`echo-message`](https://ircv3.net/specs/extensions/echo-message)
     - [Capability Negotiation][cap], version 302

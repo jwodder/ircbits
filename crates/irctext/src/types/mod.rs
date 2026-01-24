@@ -1,4 +1,4 @@
-pub(crate) mod channel;
+mod channel;
 mod channel_membership;
 mod channel_status;
 mod elistcond;

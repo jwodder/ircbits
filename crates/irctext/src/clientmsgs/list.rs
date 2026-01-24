@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::types::{Channel, EListCond, channel::channel_prefixed};
+use crate::types::{Channel, EListCond, channel_prefixed};
 use crate::util::{join_with_commas, split_param};
 use crate::{Message, MiddleParam, ParameterList, ParameterListSizeError, RawMessage, Verb};
 

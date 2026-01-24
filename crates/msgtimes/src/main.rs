@@ -133,11 +133,7 @@ async fn main() -> anyhow::Result<()> {
         let output = client.run(JoinCommand::new(chan.clone())).await?;
         let chan = output.channel;
         tracing::info!("Joined {chan}");
-        log.log(Event::new(
-            &network,
-            Some(chan.clone().into_inner()),
-            "joined",
-        ))?;
+        log.log(Event::new(&network, Some(chan.clone()), "joined"))?;
         canon_channels.add(chan);
     }
 
@@ -151,18 +147,18 @@ async fn main() -> anyhow::Result<()> {
                     ClientMessage::PrivMsg(m) => {
                         for t in m.targets() {
                             if let MsgTarget::Channel(c0) = t
-                                && let Some(c) = canon_channels.get(c0).cloned()
+                                && let Some(c) = canon_channels.get(c0)
                             {
-                                log.log(Event::new(&network, Some(c.into_inner()), "message"))?;
+                                log.log(Event::new(&network, Some(c.clone()), "message"))?;
                             }
                         }
                     }
                     ClientMessage::Notice(m) => {
                         for t in m.targets() {
                             if let MsgTarget::Channel(c0) = t
-                                && let Some(c) = canon_channels.get(c0).cloned()
+                                && let Some(c) = canon_channels.get(c0)
                             {
-                                log.log(Event::new(&network, Some(c.into_inner()), "message"))?;
+                                log.log(Event::new(&network, Some(c.clone()), "message"))?;
                             }
                         }
                     }
@@ -176,11 +172,7 @@ async fn main() -> anyhow::Result<()> {
                                 comment = m.comment().map(ToString::to_string),
                                 "Kicked from {chan}"
                             );
-                            log.log(Event::new(
-                                &network,
-                                Some(chan.as_str().to_owned()),
-                                "kicked",
-                            ))?;
+                            log.log(Event::new(&network, Some(chan.clone()), "kicked"))?;
                             let chan = chan.to_owned(); // Stop borrowing from canon_channels so we can mutate it
                             canon_channels.remove(&chan);
                             if canon_channels.is_empty() {
@@ -246,18 +238,18 @@ impl<W: io::Write> EventLogger<W> {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 struct Event {
     network: String,
-    channel: Option<String>,
-    event: String,
+    channel: Option<Channel>,
+    event: &'static str,
     timestamp: String,
 }
 
 impl Event {
-    fn new(network: &str, channel: Option<String>, event: &str) -> Event {
+    fn new(network: &str, channel: Option<Channel>, event: &'static str) -> Event {
         let timestamp = jiff::Timestamp::now().to_string();
         Event {
             network: network.to_owned(),
             channel,
-            event: event.to_owned(),
+            event,
             timestamp,
         }
     }

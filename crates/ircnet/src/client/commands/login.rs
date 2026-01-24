@@ -499,21 +499,7 @@ impl State {
                     )
                 }
                 (State::AwaitingMode { mut output, .. }, Reply::UModeIs(r)) => {
-                    let ms = r.user_modes();
-                    let ms = if ms.starts_with(['+', '-']) {
-                        ms.to_owned()
-                    } else {
-                        format!("+{ms}")
-                    };
-                    let Ok(modestring) = ms.parse::<ModeString>() else {
-                        return (
-                            (true, None),
-                            State::error(LoginError::InvalidMode {
-                                msg: r.to_irc_line(),
-                            }),
-                        );
-                    };
-                    output.mode = Some(modestring);
+                    output.mode = Some(r.user_modes().clone());
                     ((true, None), State::Done(Some(Ok(output))))
                 }
                 (State::AwaitingMode { output, .. }, _) => {
@@ -876,8 +862,6 @@ pub enum LoginError {
         expecting: &'static str,
         msg: String,
     },
-    #[error("login failed because server sent unparseable mode string in RPL_UMODEIS: {msg:?}")]
-    InvalidMode { msg: String },
     #[error(
         r#"login failed because server responded to "CAP REQ {requested}" with inapplicable "CAP * {cmd} :{acked}"#
     )]

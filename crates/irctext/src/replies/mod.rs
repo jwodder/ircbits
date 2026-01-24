@@ -1333,6 +1333,7 @@ impl TryFrom<ParameterList> for EndOfStats {
 pub struct UModeIs {
     parameters: ParameterList,
     client: ReplyTarget,
+    user_modes: ModeString,
 }
 
 impl UModeIs {
@@ -1340,11 +1341,8 @@ impl UModeIs {
         &self.client
     }
 
-    pub fn user_modes(&self) -> &str {
-        let Some(p) = self.parameters.get(1) else {
-            unreachable!("index 1 should exist in reply parameters");
-        };
-        p.as_str()
+    pub fn user_modes(&self) -> &ModeString {
+        &self.user_modes
     }
 }
 
@@ -1397,7 +1395,15 @@ impl TryFrom<ParameterList> for UModeIs {
             .get(0)
             .expect("Parameter 0 should exist when list length is at least 2");
         let client = ReplyTarget::try_from(String::from(p))?;
-        Ok(UModeIs { parameters, client })
+        let p = parameters
+            .get(1)
+            .expect("Parameter 1 should exist when list length is at least 2");
+        let user_modes = ModeString::try_from(String::from(p))?;
+        Ok(UModeIs {
+            parameters,
+            client,
+            user_modes,
+        })
     }
 }
 

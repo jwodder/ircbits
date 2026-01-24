@@ -52,5 +52,5 @@ The `irctext` crate has the following optional features:
   [`anstyle`](https://crates.io/crate/anstyle) types and rendering IRC-styled
   text with ANSI sequences
 
-- `serde` — Enables serializing & deserializing most types with
+- `serde` — Enables serializing & deserializing various types with
   [`serde`](https://crates.io/crate/serde)

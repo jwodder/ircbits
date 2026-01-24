@@ -10,7 +10,7 @@ use irctext::{
     ReplyParts, Source, TrailingParam, TryFromStringError,
     clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
-    types::{CaseMapping, Channel, ISupportParam, TagKey, TagValue},
+    types::{Channel, ISupportParam, TagKey, TagValue},
 };
 use jiff::{Timestamp, Zoned};
 use mainutil::{ChannelSet, init_logging, run_until_stopped};
@@ -115,20 +115,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
         )
         .build()
         .await?;
-    let casemapping = login_output
-        .isupport
-        .iter()
-        .find_map(|param| {
-            if let ISupportParam::Eq(key, value) = param
-                && key == "CASEMAPPING"
-                && let Ok(cm) = value.as_str().parse::<CaseMapping>()
-            {
-                Some(cm)
-            } else {
-                None
-            }
-        })
-        .unwrap_or_default();
+    let casemapping = login_output.casemapping()?;
     let me = login_output.my_nick.clone();
     sender
         .send(Event::Connected {

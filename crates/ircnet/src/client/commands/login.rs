@@ -1,11 +1,15 @@
 use super::Command;
 use irctext::{
     ClientMessage, ClientMessageParts, Message, Payload, Reply, ReplyParts, TrailingParam,
+    TryFromStringError,
     clientmsgs::{
         Authenticate, Cap, CapEnd, CapLsRequest, CapReq, Capability, CapabilityRequest,
         CapabilityValue, Mode, Nick, Pass, User,
     },
-    types::{ISupportParam, ModeString, Nickname, ReplyTarget, Username},
+    types::{
+        CaseMapping, ISupportParam, ModeString, Nickname, ParseCaseMappingError, ReplyTarget,
+        Username,
+    },
 };
 use itertools::Itertools; // join
 use replace_with::{replace_with, replace_with_and_return};
@@ -748,6 +752,24 @@ pub struct LoginOutput {
     /// The user's client modes, or `None` if the server did not report the
     /// mode upon login
     pub mode: Option<ModeString>,
+}
+
+impl LoginOutput {
+    pub fn casemapping(&self) -> Result<CaseMapping, TryFromStringError<ParseCaseMappingError>> {
+        if let Some(value) = self.isupport.iter().find_map(|param| {
+            if let ISupportParam::Eq(key, value) = param
+                && key == "CASEMAPPING"
+            {
+                Some(value)
+            } else {
+                None
+            }
+        }) {
+            CaseMapping::try_from(value.to_string())
+        } else {
+            Ok(CaseMapping::default())
+        }
+    }
 }
 
 /// Details about the IRC server as given in the `RPL_MYINFO` reply

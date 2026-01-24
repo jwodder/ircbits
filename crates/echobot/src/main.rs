@@ -9,7 +9,7 @@ use irctext::{
     ClientMessage, Message, Payload, Source, TrailingParam,
     clientmsgs::{PrivMsg, Quit},
     ctcp::CtcpParams,
-    types::{CaseMapping, Channel, ISupportParam, MsgTarget},
+    types::{Channel, MsgTarget},
 };
 use mainutil::{ChannelSet, init_logging, recv_stop_signal};
 use std::collections::HashMap;
@@ -93,22 +93,8 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await?;
 
-    let casemapping = login_output
-        .isupport
-        .iter()
-        .find_map(|param| {
-            if let ISupportParam::Eq(key, value) = param
-                && key == "CASEMAPPING"
-                && let Ok(cm) = value.as_str().parse::<CaseMapping>()
-            {
-                Some(cm)
-            } else {
-                None
-            }
-        })
-        .unwrap_or_default();
+    let casemapping = login_output.casemapping()?;
     let me = login_output.my_nick;
-
     let delay = profile.echobot.delay();
     let mut channels = ChannelSet::new(casemapping);
     for chan in profile.echobot.channels {

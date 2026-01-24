@@ -137,6 +137,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
         })
         .await?;
     let mut away_sent = if let Some(p) = profile.ircevents.away {
+        tracing::info!("Sending AWAY message");
         client.send(Away::new(p)).await?;
         Some(Instant::now())
     } else {

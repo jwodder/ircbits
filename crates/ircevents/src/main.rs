@@ -136,13 +136,6 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
             output: login_output,
         })
         .await?;
-    let mut away_sent = if let Some(p) = profile.ircevents.away {
-        tracing::info!("Sending AWAY message");
-        client.send(Away::new(p)).await?;
-        Some(Instant::now())
-    } else {
-        None
-    };
     let mut channels = ChannelSet::new(casemapping);
     for chan in profile.ircevents.channels {
         tracing::info!("Joining {chan} …");
@@ -157,6 +150,15 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
             })
             .await?;
     }
+    // Send the AWAY *after* joining channels to avoid the AWAY_REPLY_WINDOW
+    // expiring early
+    let mut away_sent = if let Some(p) = profile.ircevents.away {
+        tracing::info!("Sending AWAY message");
+        client.send(Away::new(p)).await?;
+        Some(Instant::now())
+    } else {
+        None
+    };
     loop {
         match run_until_stopped(client.recv()).await {
             Some(Ok(Some(Message {

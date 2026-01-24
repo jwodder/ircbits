@@ -124,6 +124,7 @@ async fn main() -> anyhow::Result<()> {
     let me = login_output.my_nick;
 
     if let Some(p) = profile.msgtimes.away {
+        tracing::info!("Sending AWAY message");
         client.send(Away::new(p)).await?;
     }
 

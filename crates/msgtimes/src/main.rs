@@ -12,7 +12,7 @@ use irctext::{
     ctcp::CtcpParams,
     types::{CaseMapping, Channel, ISupportParam, MsgTarget},
 };
-use mainutil::{init_logging, run_until_stopped};
+use mainutil::{ChannelSet, init_logging, run_until_stopped};
 use patharg::OutputArg;
 use serde_jsonlines::JsonLinesWriter;
 use std::collections::HashMap;
@@ -127,14 +127,14 @@ async fn main() -> anyhow::Result<()> {
         client.send(Away::new(p)).await?;
     }
 
-    let mut canon_channels = ChannelCanonicalizer::new(casemapping);
+    let mut channels = ChannelSet::new(casemapping);
     for chan in profile.msgtimes.channels {
         tracing::info!("Joining {chan} …");
         let output = client.run(JoinCommand::new(chan.clone())).await?;
         let chan = output.channel;
         tracing::info!("Joined {chan}");
         log.log(Event::new(&network, Some(chan.clone()), "joined"))?;
-        canon_channels.add(chan);
+        channels.add(chan);
     }
 
     loop {
@@ -147,7 +147,7 @@ async fn main() -> anyhow::Result<()> {
                     ClientMessage::PrivMsg(m) => {
                         for t in m.targets() {
                             if let MsgTarget::Channel(c0) = t
-                                && let Some(c) = canon_channels.get(c0)
+                                && let Some(c) = channels.canonicalize(c0)
                             {
                                 log.log(Event::new(&network, Some(c.clone()), "message"))?;
                             }
@@ -156,14 +156,14 @@ async fn main() -> anyhow::Result<()> {
                     ClientMessage::Notice(m) => {
                         for t in m.targets() {
                             if let MsgTarget::Channel(c0) = t
-                                && let Some(c) = canon_channels.get(c0)
+                                && let Some(c) = channels.canonicalize(c0)
                             {
                                 log.log(Event::new(&network, Some(c.clone()), "message"))?;
                             }
                         }
                     }
                     ClientMessage::Kick(m) => {
-                        if let Some(chan) = canon_channels.get(m.channel())
+                        if let Some(chan) = channels.canonicalize(m.channel())
                             && m.users()
                                 .iter()
                                 .any(|nick| casemapping.eq_ignore_case(nick, &me))
@@ -173,9 +173,9 @@ async fn main() -> anyhow::Result<()> {
                                 "Kicked from {chan}"
                             );
                             log.log(Event::new(&network, Some(chan.clone()), "kicked"))?;
-                            let chan = chan.to_owned(); // Stop borrowing from canon_channels so we can mutate it
-                            canon_channels.remove(&chan);
-                            if canon_channels.is_empty() {
+                            let chan = chan.to_owned(); // Stop borrowing from `channels` so we can mutate it
+                            channels.remove(&chan);
+                            if channels.is_empty() {
                                 tracing::info!("No channels left; quitting");
                                 client.send(Quit::new()).await?;
                             }
@@ -252,39 +252,5 @@ impl Event {
             event,
             timestamp,
         }
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct ChannelCanonicalizer {
-    casemapping: CaseMapping,
-    lower2canon: HashMap<Channel, Channel>,
-}
-
-impl ChannelCanonicalizer {
-    fn new(casemapping: CaseMapping) -> Self {
-        Self {
-            casemapping,
-            lower2canon: HashMap::new(),
-        }
-    }
-
-    fn add(&mut self, channel: Channel) {
-        let lower = channel.to_lowercase(self.casemapping);
-        self.lower2canon.insert(lower, channel);
-    }
-
-    fn get(&self, channel: &Channel) -> Option<&Channel> {
-        let lower = channel.to_lowercase(self.casemapping);
-        self.lower2canon.get(&lower)
-    }
-
-    fn remove(&mut self, channel: &Channel) {
-        let lower = channel.to_lowercase(self.casemapping);
-        self.lower2canon.remove(&lower);
-    }
-
-    fn is_empty(&self) -> bool {
-        self.lower2canon.is_empty()
     }
 }

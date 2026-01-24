@@ -13,7 +13,7 @@ use irctext::{
     types::{CaseMapping, Channel, ISupportParam, TagKey, TagValue},
 };
 use jiff::{Timestamp, Zoned};
-use mainutil::{init_logging, run_until_stopped};
+use mainutil::{ChannelSet, init_logging, run_until_stopped};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::fs::File;
@@ -142,13 +142,13 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
     } else {
         None
     };
-    let mut canon_channels = ChannelCanonicalizer::new(casemapping);
+    let mut channels = ChannelSet::new(casemapping);
     for chan in profile.ircevents.channels {
         tracing::info!("Joining {chan} …");
         let output = client.run(JoinCommand::new(chan.clone())).await?;
         let chan = output.channel.clone();
         tracing::info!("Joined {chan}");
-        canon_channels.add(chan);
+        channels.add(chan);
         sender
             .send(Event::Joined {
                 timestamp: Zoned::now(),
@@ -164,7 +164,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                 payload: Payload::ClientMessage(msg),
             }))) => {
                 let kicked_chan = if let ClientMessage::Kick(m) = &msg
-                    && let Some(chan) = canon_channels.get(m.channel())
+                    && let Some(chan) = channels.canonicalize(m.channel())
                     && m.users()
                         .iter()
                         .any(|nick| casemapping.eq_ignore_case(nick, &me))
@@ -186,8 +186,8 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                     })
                     .await?;
                 if let Some(chan) = kicked_chan {
-                    canon_channels.remove(&chan);
-                    if canon_channels.is_empty() {
+                    channels.remove(&chan);
+                    if channels.is_empty() {
                         tracing::info!("No channels left; quitting");
                         client.send(Quit::new()).await?;
                     }
@@ -1029,40 +1029,6 @@ impl AddFields for Reply {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct ChannelCanonicalizer {
-    casemapping: CaseMapping,
-    lower2canon: HashMap<Channel, Channel>,
-}
-
-impl ChannelCanonicalizer {
-    fn new(casemapping: CaseMapping) -> Self {
-        Self {
-            casemapping,
-            lower2canon: HashMap::new(),
-        }
-    }
-
-    fn add(&mut self, channel: Channel) {
-        let lower = channel.to_lowercase(self.casemapping);
-        self.lower2canon.insert(lower, channel);
-    }
-
-    fn get(&self, channel: &Channel) -> Option<&Channel> {
-        let lower = channel.to_lowercase(self.casemapping);
-        self.lower2canon.get(&lower)
-    }
-
-    fn remove(&mut self, channel: &Channel) {
-        let lower = channel.to_lowercase(self.casemapping);
-        self.lower2canon.remove(&lower);
-    }
-
-    fn is_empty(&self) -> bool {
-        self.lower2canon.is_empty()
-    }
-}
-
 fn fmt_zoned(z: Zoned) -> String {
     let ts = z.timestamp();
     let offset = z.offset();
@@ -1106,6 +1072,12 @@ mod tests {
         fn trailing_dot() {
             let p = insert_extension(Path::new("foo."), "123");
             assert_eq!(p, Path::new("foo.123"));
+        }
+
+        #[test]
+        fn under_dir() {
+            let p = insert_extension(Path::new("quux/foo.txt"), "123");
+            assert_eq!(p, Path::new("quux/foo.123.txt"));
         }
     }
 }

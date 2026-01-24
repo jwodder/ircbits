@@ -11,7 +11,7 @@ use irctext::{
     ctcp::CtcpParams,
     types::{CaseMapping, Channel, ISupportParam, MsgTarget},
 };
-use mainutil::{init_logging, recv_stop_signal};
+use mainutil::{ChannelSet, init_logging, recv_stop_signal};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -110,13 +110,13 @@ async fn main() -> anyhow::Result<()> {
     let me = login_output.my_nick;
 
     let delay = profile.echobot.delay();
-    let mut canon_channels = ChannelCanonicalizer::new(casemapping);
+    let mut channels = ChannelSet::new(casemapping);
     for chan in profile.echobot.channels {
         tracing::info!("Joining {chan} …");
         let output = client.run(JoinCommand::new(chan.clone())).await?;
         let chan = output.channel;
         tracing::info!("Joined {chan}");
-        canon_channels.add(chan);
+        channels.add(chan);
     }
 
     let mut pending = JoinSet::new();
@@ -141,7 +141,7 @@ async fn main() -> anyhow::Result<()> {
                         if let Some(Source::Client(clisrc)) = source {
                             for t in m.targets() {
                                 if let MsgTarget::Channel(c0) = t
-                                    && let Some(c) = canon_channels.get(c0).cloned()
+                                    && let Some(c) = channels.canonicalize(c0)
                                     && let Some(msg) = strip_nick(&me, m.text())
                                 {
                                     tracing::info!(msg, sender = %clisrc.nickname, channel = %c, "Received command message on channel");
@@ -173,7 +173,7 @@ async fn main() -> anyhow::Result<()> {
                         }
                     }
                     ClientMessage::Kick(m) => {
-                        if let Some(chan) = canon_channels.get(m.channel())
+                        if let Some(chan) = channels.canonicalize(m.channel())
                             && m.users()
                                 .iter()
                                 .any(|nick| casemapping.eq_ignore_case(nick, &me))
@@ -182,9 +182,9 @@ async fn main() -> anyhow::Result<()> {
                                 comment = m.comment().map(ToString::to_string),
                                 "Kicked from {chan}"
                             );
-                            let chan = chan.to_owned(); // Stop borrowing from canon_channels so we can mutate it
-                            canon_channels.remove(&chan);
-                            if canon_channels.is_empty() {
+                            let chan = chan.to_owned(); // Stop borrowing from `channels` so we can mutate it
+                            channels.remove(&chan);
+                            if channels.is_empty() {
                                 tracing::info!("No channels left; quitting");
                                 client.send(Quit::new()).await?;
                             }
@@ -234,40 +234,6 @@ enum Event {
     Recv(Result<Option<Message>, ClientError>),
     EchoReady(MsgTarget, TrailingParam),
     Stopped,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct ChannelCanonicalizer {
-    casemapping: CaseMapping,
-    lower2canon: HashMap<Channel, Channel>,
-}
-
-impl ChannelCanonicalizer {
-    fn new(casemapping: CaseMapping) -> Self {
-        Self {
-            casemapping,
-            lower2canon: HashMap::new(),
-        }
-    }
-
-    fn add(&mut self, channel: Channel) {
-        let lower = channel.to_lowercase(self.casemapping);
-        self.lower2canon.insert(lower, channel);
-    }
-
-    fn get(&self, channel: &Channel) -> Option<&Channel> {
-        let lower = channel.to_lowercase(self.casemapping);
-        self.lower2canon.get(&lower)
-    }
-
-    fn remove(&mut self, channel: &Channel) {
-        let lower = channel.to_lowercase(self.casemapping);
-        self.lower2canon.remove(&lower);
-    }
-
-    fn is_empty(&self) -> bool {
-        self.lower2canon.is_empty()
-    }
 }
 
 fn strip_nick<'a>(nickname: &str, message: &'a str) -> Option<&'a str> {

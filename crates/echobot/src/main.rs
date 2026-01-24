@@ -6,10 +6,10 @@ use ircnet::client::{
     commands::JoinCommand,
 };
 use irctext::{
-    CaseMapping, ClientMessage, Message, Payload, Source, TrailingParam,
+    ClientMessage, Message, Payload, Source, TrailingParam,
     clientmsgs::{PrivMsg, Quit},
     ctcp::CtcpParams,
-    types::{Channel, ISupportParam, MsgTarget},
+    types::{CaseMapping, Channel, ISupportParam, MsgTarget},
 };
 use mainutil::{init_logging, recv_stop_signal};
 use std::collections::HashMap;

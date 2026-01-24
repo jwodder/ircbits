@@ -28,8 +28,8 @@
 // In addition to the above, in order to be sent in messages, nicknames cannot
 // contain NUL, CR, or LF.
 
-use crate::types::{ModeTarget, MsgTarget, ReplyTarget};
-use crate::{CaseMapping, MiddleParam, TrailingParam};
+use crate::types::{CaseMapping, ModeTarget, MsgTarget, ReplyTarget};
+use crate::{MiddleParam, TrailingParam};
 use std::borrow::Cow;
 use thiserror::Error;
 

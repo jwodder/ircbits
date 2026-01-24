@@ -158,4 +158,22 @@ mod whoisactually {
             assert_eq!(r.parameters, ["jwodder", "#irssi", "irssi.org"]);
         });
     }
+
+    #[test]
+    fn umodeis() {
+        let msg = ":molybdenum.libera.chat 221 jwodder +Ziw";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            tags,
+            source: Some(Source::Server(host)),
+            payload: Payload::Reply(Reply::UModeIs(r)),
+        } => {
+            assert!(tags.is_empty());
+            assert_eq!(host, Host::Domain("molybdenum.libera.chat"));
+            assert_eq!(r.code(), 221);
+            assert_eq!(r.client(), "jwodder");
+            assert_eq!(r.user_modes(), "+Ziw");
+            assert_eq!(r.parameters, ["jwodder", "+Ziw"]);
+        });
+    }
 }

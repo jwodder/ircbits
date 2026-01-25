@@ -760,6 +760,7 @@ impl LoginOutput {
 
 /// Details about the IRC server as given in the `RPL_MYINFO` reply
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ServerInfo {
     /// The name of the server
     pub name: String,
@@ -781,6 +782,7 @@ pub struct ServerInfo {
 /// Server statistics about users as supplied in the response to an optional
 /// implicit `LUSERS` command upon connection
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct LuserStats {
     /// The number of IRC operators connected to the server, or `None` if not
     /// given

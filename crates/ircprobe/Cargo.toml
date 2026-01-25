@@ -1,0 +1,25 @@
+[package]
+name = "ircprobe"
+edition.workspace = true
+rust-version.workspace = true
+#description = ...
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+either = { version = "1.15.0", features = ["serde"] }
+ircnet = { path = "../ircnet", features = ["serde"] }
+irctext = { path = "../irctext", features = ["anstyle"] }
+mainutil = { path = "../mainutil" }
+patharg.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+tokio = { workspace = true, features = ["macros", "rt", "time"] }
+toml.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

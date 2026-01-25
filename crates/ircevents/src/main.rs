@@ -454,23 +454,10 @@ impl AddFields for LoginOutput {
         map.insert(String::from("welcome_msg"), Value::from(welcome_msg));
         map.insert(String::from("yourhost_msg"), Value::from(yourhost_msg));
         map.insert(String::from("created_msg"), Value::from(created_msg));
-        let server = Map::from_iter([
-            (String::from("name"), Value::from(server_info.name)),
-            (String::from("version"), Value::from(server_info.version)),
-            (
-                String::from("user_modes"),
-                Value::from(server_info.user_modes),
-            ),
-            (
-                String::from("channel_modes"),
-                Value::from(server_info.channel_modes),
-            ),
-            (
-                String::from("param_channel_modes"),
-                Value::from(server_info.param_channel_modes),
-            ),
-        ]);
-        map.insert(String::from("server"), server.into());
+        map.insert(
+            String::from("server"),
+            serde_json::to_value(server_info).expect("Serializing ServerInfo should not fail"),
+        );
         let isupportlist = isupport
             .into_iter()
             .map(|s| match s {
@@ -482,46 +469,10 @@ impl AddFields for LoginOutput {
             })
             .collect::<Map<_, _>>();
         map.insert(String::from("isupport"), isupportlist.into());
-        let lusers = Map::from_iter([
-            (
-                String::from("operators"),
-                Value::from(luser_stats.operators),
-            ),
-            (
-                String::from("unknown_connections"),
-                Value::from(luser_stats.unknown_connections),
-            ),
-            (String::from("channels"), Value::from(luser_stats.channels)),
-            (
-                String::from("local_clients"),
-                Value::from(luser_stats.local_clients),
-            ),
-            (
-                String::from("max_local_clients"),
-                Value::from(luser_stats.max_local_clients),
-            ),
-            (
-                String::from("global_clients"),
-                Value::from(luser_stats.global_clients),
-            ),
-            (
-                String::from("max_global_clients"),
-                Value::from(luser_stats.max_global_clients),
-            ),
-            (
-                String::from("luserclient_msg"),
-                Value::from(luser_stats.luserclient_msg),
-            ),
-            (
-                String::from("luserme_msg"),
-                Value::from(luser_stats.luserme_msg),
-            ),
-            (
-                String::from("statsconn_msg"),
-                Value::from(luser_stats.statsconn_msg),
-            ),
-        ]);
-        map.insert(String::from("lusers"), lusers.into());
+        map.insert(
+            String::from("lusers"),
+            serde_json::to_value(luser_stats).expect("Serializing LuserStats should not fail"),
+        );
         map.insert(String::from("motd"), Value::from(motd));
         map.insert(String::from("mode"), Value::from(mode.map(String::from)));
     }

@@ -21,7 +21,7 @@ use std::time::Duration;
 use tokio::time::timeout;
 use tracing::Level;
 
-const NEXT_REPLY_TIMEOUT: Duration = Duration::from_secs(1);
+const NEXT_REPLY_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
 struct Arguments {

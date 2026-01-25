@@ -206,6 +206,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Issuing ADMIN query …");
     client.send(Admin::new()).await?;
     let mut admin = AdminInfo::default();
+    let mut unknown = false;
     while let Ok(r) = timeout(NEXT_REPLY_TIMEOUT, client.recv()).await {
         let Some(Message { payload, .. }) = r? else {
             anyhow::bail!("Server suddenly disconnected");
@@ -219,13 +220,20 @@ async fn main() -> anyhow::Result<()> {
                 anyhow::bail!("Server sent ERROR message: {:?}", e.reason())
             }
             Payload::ClientMessage(_) => (),
+            Payload::Reply(Reply::UnknownCommand(r)) if r.command() == &Verb::Admin => {
+                tracing::info!("Server does not support ADMIN command");
+                unknown = true;
+                break;
+            }
             Payload::Reply(r) if r.is_error() => {
                 anyhow::bail!("Server returned error: {:?}", r.to_irc_line());
             }
             Payload::Reply(_) => (),
         }
     }
-    let admin = if admin == AdminInfo::default() {
+    let admin = if unknown {
+        None
+    } else if admin == AdminInfo::default() {
         tracing::info!("No ADMIN replies received in time");
         None
     } else {

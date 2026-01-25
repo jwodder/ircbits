@@ -40,7 +40,7 @@ impl ConnectionParams {
 
 #[cfg(feature = "serde")]
 fn default_tls() -> bool {
-    false
+    true
 }
 
 #[allow(missing_debug_implementations)]

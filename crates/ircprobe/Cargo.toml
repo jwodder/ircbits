@@ -10,7 +10,6 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
-either = { version = "1.15.0", features = ["serde"] }
 ircnet = { path = "../ircnet", features = ["serde"] }
 irctext = { path = "../irctext", features = ["anstyle"] }
 mainutil = { path = "../mainutil" }

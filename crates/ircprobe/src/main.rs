@@ -1,6 +1,5 @@
 use anyhow::Context;
 use clap::Parser;
-use either::Either;
 use ircnet::client::{
     SessionBuilder, SessionParams,
     autoresponders::{CtcpQueryResponder, PingResponder},
@@ -201,9 +200,11 @@ async fn main() -> anyhow::Result<()> {
         .isupport
         .into_iter()
         .map(|s| match s {
-            ISupportParam::Set(key) => (String::from(key), Either::Right(true)),
-            ISupportParam::Unset(key) => (String::from(key), Either::Right(false)),
-            ISupportParam::Eq(key, value) => (String::from(key), Either::Left(String::from(value))),
+            ISupportParam::Set(key) => (String::from(key), ISupportValue::Bool(true)),
+            ISupportParam::Unset(key) => (String::from(key), ISupportValue::Bool(false)),
+            ISupportParam::Eq(key, value) => {
+                (String::from(key), ISupportValue::Str(String::from(value)))
+            }
         })
         .collect::<BTreeMap<_, _>>();
     let output = IrcInfo {
@@ -233,13 +234,20 @@ async fn main() -> anyhow::Result<()> {
 struct IrcInfo {
     capabilities: Option<BTreeMap<String, Option<String>>>,
     server: ServerInfo,
-    isupport: BTreeMap<String, Either<String, bool>>,
+    isupport: BTreeMap<String, ISupportValue>,
     lusers: LuserStats,
     motd: Option<String>,
     version: Option<VersionInfo>,
     admin: AdminInfo,
     links: Vec<Link>,
     info: Vec<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(untagged)]
+enum ISupportValue {
+    Str(String),
+    Bool(bool),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]

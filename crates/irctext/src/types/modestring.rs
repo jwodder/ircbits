@@ -1,4 +1,5 @@
 use crate::{MiddleParam, TrailingParam};
+use std::collections::{BTreeMap, btree_map::Entry};
 use thiserror::Error;
 
 #[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -42,6 +43,49 @@ impl From<ModeString> for MiddleParam {
 impl From<ModeString> for TrailingParam {
     fn from(value: ModeString) -> TrailingParam {
         TrailingParam::from(MiddleParam::from(value))
+    }
+}
+
+/// `left - right` evaluates to the modestring that, when applied to an entity
+/// with modestring `right`, would result in a modestring containing the modes
+/// in `left`.
+///
+/// Modes that are present in `right` but not `left` are ignored.
+impl std::ops::Sub for &ModeString {
+    type Output = ModeString;
+
+    fn sub(self, other: &ModeString) -> ModeString {
+        let mut left = self
+            .modes()
+            .map(|(st, ch)| (ch, st))
+            .collect::<BTreeMap<_, _>>();
+        let right = other
+            .modes()
+            .map(|(st, ch)| (ch, st))
+            .collect::<BTreeMap<_, _>>();
+        for (ch, st) in right {
+            if let Entry::Occupied(e) = left.entry(ch)
+                && *e.get() == st
+            {
+                e.remove();
+            }
+        }
+        let mut ms = String::new();
+        let mut state = ModeState::Enabled;
+        for (ch, st) in left {
+            if ms.is_empty() || st != state {
+                ms.push(match st {
+                    ModeState::Enabled => '+',
+                    ModeState::Disabled => '-',
+                });
+                state = st;
+            }
+            ms.push(ch);
+        }
+        if ms.is_empty() {
+            ms.push('+');
+        }
+        ModeString::try_from(ms).expect("should be valid modestring")
     }
 }
 
@@ -156,5 +200,16 @@ mod tests {
         assert_eq!(ms.state('i'), Some(ModeState::Disabled));
         assert_eq!(ms.state('w'), Some(ModeState::Disabled));
         assert_eq!(ms.state('x'), None);
+    }
+
+    #[rstest]
+    #[case("+Zi", "+iw", "+Z")]
+    #[case("+Zi", "+Zi", "+")]
+    #[case("-Zi", "-Zi", "+")]
+    #[case("+", "+iw", "+")]
+    #[case("+Zi", "+", "+Zi")]
+    #[case("+Zi", "-iw", "+Zi")]
+    fn sub(#[case] left: ModeString, #[case] right: ModeString, #[case] out: ModeString) {
+        assert_eq!(&left - &right, out);
     }
 }

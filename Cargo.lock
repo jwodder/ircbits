@@ -570,6 +570,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ircprobe"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "ircnet",
+ "irctext",
+ "mainutil",
+ "patharg",
+ "serde",
+ "serde_json",
+ "tokio",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "irctext"
 version = "0.0.0"
 dependencies = [

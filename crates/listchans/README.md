@@ -28,6 +28,6 @@ Output Format
 The output is a JSON array of the channels reported by the server, each given
 as an object with the following fields:
 
-- `"channel"` — the name of the channel
-- `"clients"` — the number of users currently in the channel
-- `"topic"` — the channel's topic
+- `"channel"` (string) — the name of the channel
+- `"clients"` (integer) — the number of users currently in the channel
+- `"topic"` (string) — the channel's topic

@@ -7,7 +7,7 @@ use ircnet::client::{
 };
 use irctext::{
     ClientMessage, Message, Payload, Reply, ReplyParts, Verb,
-    clientmsgs::{Admin, Info, Links, Quit, Version},
+    clientmsgs::{Admin, Cap, CapLsRequest, Info, Links, Quit, Version},
     ctcp::CtcpParams,
     types::ISupportParam,
 };
@@ -57,6 +57,7 @@ async fn main() -> anyhow::Result<()> {
     let Some(profile) = cfg.remove(&args.profile) else {
         anyhow::bail!("{:?} profile not found in configuration file", args.profile);
     };
+    let sasl = profile.login.sasl;
 
     tracing::info!("Connecting to IRC …");
     let (mut client, login_output) = SessionBuilder::new(profile)
@@ -77,6 +78,42 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await?;
     tracing::info!("Connected");
+
+    let caplist = if !sasl {
+        tracing::info!("Issuing CAP LS query …");
+        client.send(CapLsRequest::new_with_version(302)).await?;
+        let mut capabilities = Vec::new();
+        let mut unknown = false;
+        loop {
+            let Some(Message { payload, .. }) = client.recv().await? else {
+                anyhow::bail!("Server suddenly disconnected");
+            };
+            match payload {
+                Payload::ClientMessage(ClientMessage::Cap(Cap::LsResponse(r))) => {
+                    capabilities.extend(r.capabilities);
+                    if !r.continued {
+                        break;
+                    }
+                }
+                Payload::ClientMessage(ClientMessage::Error(e)) => {
+                    anyhow::bail!("Server sent ERROR message: {:?}", e.reason())
+                }
+                Payload::ClientMessage(_) => (),
+                Payload::Reply(Reply::UnknownCommand(r)) if r.command() == &Verb::Cap => {
+                    tracing::info!("Server does not support CAP command");
+                    unknown = true;
+                    break;
+                }
+                Payload::Reply(r) if r.is_error() => {
+                    anyhow::bail!("Server returned error: {:?}", r.to_irc_line());
+                }
+                Payload::Reply(_) => (),
+            }
+        }
+        (!unknown).then_some(capabilities)
+    } else {
+        login_output.capabilities
+    };
 
     tracing::info!("Issuing VERSION query …");
     client.send(Version::new()).await?;
@@ -199,7 +236,7 @@ async fn main() -> anyhow::Result<()> {
     client.send(Quit::new()).await?;
     while client.recv_new().await?.is_some() {}
 
-    let capabilities = login_output.capabilities.map(|caps| {
+    let capabilities = caplist.map(|caps| {
         caps.into_iter()
             .map(|(name, value)| (String::from(name), value.map(String::from)))
             .collect::<BTreeMap<_, _>>()

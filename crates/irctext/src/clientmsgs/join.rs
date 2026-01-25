@@ -176,7 +176,7 @@ mod tests {
     use assert_matches::assert_matches;
 
     #[test]
-    fn parse_plain() {
+    fn parse_trailing_channels() {
         let msg = ":jwodder!~jwuser@jwodder.users.testnet.inspircd.org JOIN :#testnet";
         let msg = msg.parse::<Message>().unwrap();
         assert_matches!(msg, Message {

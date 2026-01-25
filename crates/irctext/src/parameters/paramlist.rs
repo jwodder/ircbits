@@ -271,6 +271,18 @@ impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, Option<TrailingParam>
                 let p3 = params.trailing;
                 Ok((p1, p2, p3))
             }
+            (1, true) => {
+                let p1 = params
+                    .middle
+                    .into_iter()
+                    .next()
+                    .expect("First element should exist when len is 1");
+                let trailing = params.trailing.expect("trailing should be Some");
+                match String::from(trailing).parse::<MiddleParam>() {
+                    Ok(p2) => Ok((p1, p2, None)),
+                    Err(_) => Err(TryFromParameterListError::TrailingNotMiddle),
+                }
+            }
             _ => Err(TryFromParameterListError::RangeSizeMismatch {
                 min_required: 2,
                 max_required: 3,
@@ -474,5 +486,16 @@ mod tests {
         let (p1, p2): (_, Option<TrailingParam>) = params.try_into().unwrap();
         assert_eq!(p1, "#testnet");
         assert!(p2.is_none());
+    }
+
+    #[test]
+    fn middle_trailing_into_two_or_three() {
+        let params = ParameterList::builder()
+            .with_middle("apple".parse::<MiddleParam>().unwrap())
+            .with_trailing("banana".parse::<TrailingParam>().unwrap());
+        let (p1, p2, p3): (_, _, Option<TrailingParam>) = params.try_into().unwrap();
+        assert_eq!(p1, "apple");
+        assert_eq!(p2, "banana");
+        assert!(p3.is_none());
     }
 }

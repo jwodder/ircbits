@@ -6,7 +6,7 @@ use ircnet::client::{
     commands::{LuserStats, ServerInfo},
 };
 use irctext::{
-    ClientMessage, Message, Payload, Reply, ReplyParts,
+    ClientMessage, Message, Payload, Reply, ReplyParts, Verb,
     clientmsgs::{Admin, Info, Links, Quit, Version},
     ctcp::CtcpParams,
     types::ISupportParam,
@@ -130,14 +130,17 @@ async fn main() -> anyhow::Result<()> {
             Payload::Reply(_) => (),
         }
     }
-    if admin == AdminInfo::default() {
+    let admin = if admin == AdminInfo::default() {
         tracing::info!("No ADMIN replies received in time");
-        // TODO: Set `admin` to `None`?
-    }
+        None
+    } else {
+        Some(admin)
+    };
 
     tracing::info!("Issuing LINKS query …");
     client.send(Links).await?;
     let mut links = Vec::new();
+    let mut unknown = false;
     loop {
         let Some(Message { payload, .. }) = client.recv().await? else {
             anyhow::bail!("Server suddenly disconnected");
@@ -156,13 +159,18 @@ async fn main() -> anyhow::Result<()> {
                 anyhow::bail!("Server sent ERROR message: {:?}", e.reason())
             }
             Payload::ClientMessage(_) => (),
-            // TODO: If we get ERR_UNKNOWNCOMMAND, set `links` to `None` somehow
+            Payload::Reply(Reply::UnknownCommand(r)) if r.command() == &Verb::Links => {
+                tracing::info!("Server does not support LINKS command");
+                unknown = true;
+                break;
+            }
             Payload::Reply(r) if r.is_error() => {
                 anyhow::bail!("Server returned error: {:?}", r.to_irc_line());
             }
             Payload::Reply(_) => (),
         }
     }
+    let links = (!unknown).then_some(links);
 
     tracing::info!("Issuing INFO query …");
     client.send(Info).await?;
@@ -238,8 +246,8 @@ struct IrcInfo {
     lusers: LuserStats,
     motd: Option<String>,
     version: Option<VersionInfo>,
-    admin: AdminInfo,
-    links: Vec<Link>,
+    admin: Option<AdminInfo>,
+    links: Option<Vec<Link>>,
     info: Vec<String>,
 }
 

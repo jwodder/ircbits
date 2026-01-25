@@ -7,7 +7,7 @@ use ircnet::client::{
 };
 use irctext::{
     ClientMessage, Message, Payload, Reply, ReplyParts, Verb,
-    clientmsgs::{Admin, Cap, CapLsRequest, Info, Links, Quit, Version},
+    clientmsgs::{Admin, Cap, CapLsRequest, Info, Links, Lusers, Quit, Version},
     ctcp::CtcpParams,
     types::ISupportParam,
 };
@@ -113,6 +113,61 @@ async fn main() -> anyhow::Result<()> {
         (!unknown).then_some(capabilities)
     } else {
         login_output.capabilities
+    };
+
+    let lusers = if login_output.luser_stats == LuserStats::default() {
+        tracing::info!("Issuing LUSERS query …");
+        client.send(Lusers).await?;
+        let mut lusers = LuserStats::default();
+        while let Ok(r) = timeout(NEXT_REPLY_TIMEOUT, client.recv()).await {
+            let Some(Message { payload, .. }) = r? else {
+                anyhow::bail!("Server suddenly disconnected");
+            };
+            match payload {
+                Payload::Reply(Reply::LuserClient(r)) => {
+                    lusers.luserclient_msg = Some(r.message().to_owned());
+                }
+                Payload::Reply(Reply::LuserOp(r)) => {
+                    lusers.operators = Some(r.ops());
+                }
+                Payload::Reply(Reply::LuserUnknown(r)) => {
+                    lusers.unknown_connections = Some(r.connections());
+                }
+                Payload::Reply(Reply::LuserChannels(r)) => {
+                    lusers.channels = Some(r.channels());
+                }
+                Payload::Reply(Reply::LuserMe(r)) => {
+                    lusers.luserme_msg = Some(r.message().to_owned());
+                }
+                Payload::Reply(Reply::LocalUsers(r)) => {
+                    lusers.local_clients = r.current_users();
+                    lusers.max_local_clients = r.max_users();
+                }
+                Payload::Reply(Reply::GlobalUsers(r)) => {
+                    lusers.global_clients = r.current_users();
+                    lusers.max_global_clients = r.max_users();
+                }
+                Payload::Reply(Reply::StatsConn(r)) => {
+                    lusers.statsconn_msg = Some(r.message().to_owned());
+                }
+                Payload::ClientMessage(ClientMessage::Error(e)) => {
+                    anyhow::bail!("Server sent ERROR message: {:?}", e.reason())
+                }
+                Payload::ClientMessage(_) => (),
+                Payload::Reply(r) if r.is_error() => {
+                    anyhow::bail!("Server returned error: {:?}", r.to_irc_line());
+                }
+                Payload::Reply(_) => (),
+            }
+        }
+        if lusers == LuserStats::default() {
+            tracing::info!("No LUSERS replies received in time");
+            None
+        } else {
+            Some(lusers)
+        }
+    } else {
+        Some(login_output.luser_stats)
     };
 
     tracing::info!("Issuing VERSION query …");
@@ -256,7 +311,7 @@ async fn main() -> anyhow::Result<()> {
         capabilities,
         server: login_output.server_info,
         isupport,
-        lusers: login_output.luser_stats,
+        lusers,
         motd: login_output.motd,
         version,
         admin,
@@ -280,7 +335,7 @@ struct IrcInfo {
     capabilities: Option<BTreeMap<String, Option<String>>>,
     server: ServerInfo,
     isupport: BTreeMap<String, ISupportValue>,
-    lusers: LuserStats,
+    lusers: Option<LuserStats>,
     motd: Option<String>,
     version: Option<VersionInfo>,
     admin: Option<AdminInfo>,

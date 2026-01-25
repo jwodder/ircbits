@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::{ModeString, ModeTarget};
-use crate::{Message, ParameterList, ParameterListSizeError, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TryFromParameterListError, Verb};
 use std::fmt::Write;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -92,10 +92,12 @@ impl TryFrom<ParameterList> for Mode {
 
     fn try_from(params: ParameterList) -> Result<Mode, ClientMessageError> {
         let mut iter = params.into_iter();
-        let p1 = iter.next().ok_or(ParameterListSizeError::Exact {
-            required: 1,
-            received: 0,
-        })?;
+        let p1 = iter
+            .next()
+            .ok_or(TryFromParameterListError::ExactSizeMismatch {
+                required: 1,
+                received: 0,
+            })?;
         let target = ModeTarget::try_from(String::from(p1))?;
         let modestring = if let Some(p2) = iter.next() {
             Some(ModeString::try_from(String::from(p2))?)

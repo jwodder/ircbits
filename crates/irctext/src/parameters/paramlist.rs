@@ -124,13 +124,13 @@ impl TryFrom<String> for ParameterList {
 }
 
 impl TryFrom<ParameterList> for () {
-    type Error = ParameterListSizeError;
+    type Error = TryFromParameterListError;
 
-    fn try_from(params: ParameterList) -> Result<(), ParameterListSizeError> {
+    fn try_from(params: ParameterList) -> Result<(), TryFromParameterListError> {
         if params.is_empty() {
             Ok(())
         } else {
-            Err(ParameterListSizeError::Exact {
+            Err(TryFromParameterListError::ExactSizeMismatch {
                 required: 0,
                 received: params.len(),
             })
@@ -139,9 +139,9 @@ impl TryFrom<ParameterList> for () {
 }
 
 impl TryFrom<ParameterList> for (TrailingParam,) {
-    type Error = ParameterListSizeError;
+    type Error = TryFromParameterListError;
 
-    fn try_from(mut params: ParameterList) -> Result<(TrailingParam,), ParameterListSizeError> {
+    fn try_from(mut params: ParameterList) -> Result<(TrailingParam,), TryFromParameterListError> {
         if params.len() == 1 {
             let p = params
                 .middle
@@ -151,7 +151,7 @@ impl TryFrom<ParameterList> for (TrailingParam,) {
                 .expect("There should be something to unwrap when len is 1");
             Ok((p,))
         } else {
-            Err(ParameterListSizeError::Exact {
+            Err(TryFromParameterListError::ExactSizeMismatch {
                 required: 1,
                 received: params.len(),
             })
@@ -160,13 +160,15 @@ impl TryFrom<ParameterList> for (TrailingParam,) {
 }
 
 impl TryFrom<ParameterList> for (Option<TrailingParam>,) {
-    type Error = ParameterListSizeError;
+    type Error = TryFromParameterListError;
 
-    fn try_from(params: ParameterList) -> Result<(Option<TrailingParam>,), ParameterListSizeError> {
+    fn try_from(
+        params: ParameterList,
+    ) -> Result<(Option<TrailingParam>,), TryFromParameterListError> {
         match (params.middle.len(), params.trailing.is_some()) {
             (1, false) => Ok((params.middle.into_iter().next().map(TrailingParam::from),)),
             (0, _) => Ok((params.trailing,)),
-            _ => Err(ParameterListSizeError::Range {
+            _ => Err(TryFromParameterListError::RangeSizeMismatch {
                 min_required: 0,
                 max_required: 1,
                 received: params.len(),
@@ -176,11 +178,11 @@ impl TryFrom<ParameterList> for (Option<TrailingParam>,) {
 }
 
 impl TryFrom<ParameterList> for (MiddleParam, TrailingParam) {
-    type Error = ParameterListSizeError;
+    type Error = TryFromParameterListError;
 
     fn try_from(
         params: ParameterList,
-    ) -> Result<(MiddleParam, TrailingParam), ParameterListSizeError> {
+    ) -> Result<(MiddleParam, TrailingParam), TryFromParameterListError> {
         if params.len() == 2 {
             let mut middles = params.middle.into_iter();
             let p1 = middles
@@ -193,7 +195,7 @@ impl TryFrom<ParameterList> for (MiddleParam, TrailingParam) {
                 .expect("Second element should exist when len is 2");
             Ok((p1, p2))
         } else {
-            Err(ParameterListSizeError::Exact {
+            Err(TryFromParameterListError::ExactSizeMismatch {
                 required: 2,
                 received: params.len(),
             })
@@ -202,11 +204,11 @@ impl TryFrom<ParameterList> for (MiddleParam, TrailingParam) {
 }
 
 impl TryFrom<ParameterList> for (MiddleParam, Option<TrailingParam>) {
-    type Error = ParameterListSizeError;
+    type Error = TryFromParameterListError;
 
     fn try_from(
         params: ParameterList,
-    ) -> Result<(MiddleParam, Option<TrailingParam>), ParameterListSizeError> {
+    ) -> Result<(MiddleParam, Option<TrailingParam>), TryFromParameterListError> {
         match (params.middle.len(), params.trailing.is_some()) {
             (2, false) => {
                 let mut middles = params.middle.into_iter();
@@ -224,7 +226,14 @@ impl TryFrom<ParameterList> for (MiddleParam, Option<TrailingParam>) {
                 let p2 = params.trailing;
                 Ok((p1, p2))
             }
-            _ => Err(ParameterListSizeError::Range {
+            (0, true) => {
+                let trailing = params.trailing.expect("trailing should be Some");
+                match String::from(trailing).parse::<MiddleParam>() {
+                    Ok(p1) => Ok((p1, None)),
+                    Err(_) => Err(TryFromParameterListError::TrailingNotMiddle),
+                }
+            }
+            _ => Err(TryFromParameterListError::RangeSizeMismatch {
                 min_required: 1,
                 max_required: 2,
                 received: params.len(),
@@ -234,11 +243,11 @@ impl TryFrom<ParameterList> for (MiddleParam, Option<TrailingParam>) {
 }
 
 impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, Option<TrailingParam>) {
-    type Error = ParameterListSizeError;
+    type Error = TryFromParameterListError;
 
     fn try_from(
         params: ParameterList,
-    ) -> Result<(MiddleParam, MiddleParam, Option<TrailingParam>), ParameterListSizeError> {
+    ) -> Result<(MiddleParam, MiddleParam, Option<TrailingParam>), TryFromParameterListError> {
         match (params.middle.len(), params.trailing.is_some()) {
             (3, false) => {
                 let mut middles = params.middle.into_iter();
@@ -262,7 +271,19 @@ impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, Option<TrailingParam>
                 let p3 = params.trailing;
                 Ok((p1, p2, p3))
             }
-            _ => Err(ParameterListSizeError::Range {
+            (1, true) => {
+                let p1 = params
+                    .middle
+                    .into_iter()
+                    .next()
+                    .expect("First element should exist when len is 1");
+                let trailing = params.trailing.expect("trailing should be Some");
+                match String::from(trailing).parse::<MiddleParam>() {
+                    Ok(p2) => Ok((p1, p2, None)),
+                    Err(_) => Err(TryFromParameterListError::TrailingNotMiddle),
+                }
+            }
+            _ => Err(TryFromParameterListError::RangeSizeMismatch {
                 min_required: 2,
                 max_required: 3,
                 received: params.len(),
@@ -272,11 +293,11 @@ impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, Option<TrailingParam>
 }
 
 impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, TrailingParam) {
-    type Error = ParameterListSizeError;
+    type Error = TryFromParameterListError;
 
     fn try_from(
         params: ParameterList,
-    ) -> Result<(MiddleParam, MiddleParam, TrailingParam), ParameterListSizeError> {
+    ) -> Result<(MiddleParam, MiddleParam, TrailingParam), TryFromParameterListError> {
         if params.len() == 3 {
             let mut middles = params.middle.into_iter();
             let p1 = middles
@@ -292,7 +313,7 @@ impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, TrailingParam) {
                 .expect("Third element should exist when len is 3");
             Ok((p1, p2, p3))
         } else {
-            Err(ParameterListSizeError::Exact {
+            Err(TryFromParameterListError::ExactSizeMismatch {
                 required: 3,
                 received: params.len(),
             })
@@ -301,11 +322,11 @@ impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, TrailingParam) {
 }
 
 impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, MiddleParam, TrailingParam) {
-    type Error = ParameterListSizeError;
+    type Error = TryFromParameterListError;
 
     fn try_from(
         params: ParameterList,
-    ) -> Result<(MiddleParam, MiddleParam, MiddleParam, TrailingParam), ParameterListSizeError>
+    ) -> Result<(MiddleParam, MiddleParam, MiddleParam, TrailingParam), TryFromParameterListError>
     {
         if params.len() == 4 {
             let mut middles = params.middle.into_iter();
@@ -325,7 +346,7 @@ impl TryFrom<ParameterList> for (MiddleParam, MiddleParam, MiddleParam, Trailing
                 .expect("Fourth element should exist when len is 4");
             Ok((p1, p2, p3, p4))
         } else {
-            Err(ParameterListSizeError::Exact {
+            Err(TryFromParameterListError::ExactSizeMismatch {
                 required: 4,
                 received: params.len(),
             })
@@ -342,17 +363,19 @@ pub enum ParseParameterListError {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
-pub enum ParameterListSizeError {
+pub enum TryFromParameterListError {
     #[error("invalid number of parameters: {required} required, {received} received")]
-    Exact { required: usize, received: usize },
+    ExactSizeMismatch { required: usize, received: usize },
     #[error(
         "invalid number of parameters: {min_required}-{max_required} required, {received} received"
     )]
-    Range {
+    RangeSizeMismatch {
         min_required: usize,
         max_required: usize,
         received: usize,
     },
+    #[error("trailing parameter could not be converted to valid middle parameter")]
+    TrailingNotMiddle,
 }
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
@@ -451,3 +474,28 @@ impl DoubleEndedIterator for ParameterListIntoIter {
 impl ExactSizeIterator for ParameterListIntoIter {}
 
 impl std::iter::FusedIterator for ParameterListIntoIter {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn trailing_into_one_or_two() {
+        let params =
+            ParameterList::builder().with_trailing("#testnet".parse::<TrailingParam>().unwrap());
+        let (p1, p2): (_, Option<TrailingParam>) = params.try_into().unwrap();
+        assert_eq!(p1, "#testnet");
+        assert!(p2.is_none());
+    }
+
+    #[test]
+    fn middle_trailing_into_two_or_three() {
+        let params = ParameterList::builder()
+            .with_middle("apple".parse::<MiddleParam>().unwrap())
+            .with_trailing("banana".parse::<TrailingParam>().unwrap());
+        let (p1, p2, p3): (_, _, Option<TrailingParam>) = params.try_into().unwrap();
+        assert_eq!(p1, "apple");
+        assert_eq!(p2, "banana");
+        assert!(p3.is_none());
+    }
+}

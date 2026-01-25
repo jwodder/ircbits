@@ -86,7 +86,7 @@ use crate::types::{
     ParseUsernameError,
 };
 use crate::{
-    Message, ParameterList, ParameterListSizeError, ParseMiddleParamError, Payload, RawMessage,
+    Message, ParameterList, ParseMiddleParamError, Payload, RawMessage, TryFromParameterListError,
     TryFromStringError, Verb,
 };
 use enum_dispatch::enum_dispatch;
@@ -223,7 +223,7 @@ pub enum ClientMessageError {
     UnknownCap(String),
 
     #[error(transparent)]
-    ParamQty(#[from] ParameterListSizeError),
+    Params(#[from] TryFromParameterListError),
 
     #[error("failed to parse capability string")]
     Capability(#[from] TryFromStringError<ParseCapabilityError>),

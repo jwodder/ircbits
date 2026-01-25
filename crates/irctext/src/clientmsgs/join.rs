@@ -2,7 +2,7 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::{Channel, Key};
 use crate::util::{DisplayMaybeTrailing, join_with_commas, split_param};
 use crate::{
-    Message, MiddleParam, ParameterList, ParameterListSizeError, RawMessage, TrailingParam, Verb,
+    Message, MiddleParam, ParameterList, RawMessage, TrailingParam, TryFromParameterListError, Verb,
 };
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -146,8 +146,8 @@ impl TryFrom<ParameterList> for Join {
         let (p1, p2): (_, Option<TrailingParam>) = params.try_into()?;
         if p1 == "0" {
             if p2.is_some() {
-                return Err(ClientMessageError::ParamQty(
-                    ParameterListSizeError::Exact {
+                return Err(ClientMessageError::Params(
+                    TryFromParameterListError::ExactSizeMismatch {
                         required: 1,
                         received: 2,
                     },
@@ -166,5 +166,33 @@ impl TryFrom<ParameterList> for Join {
             };
             Ok(Join(InnerJoin::Channels { channels, keys }))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Payload, Source};
+    use assert_matches::assert_matches;
+
+    #[test]
+    fn parse_trailing_channels() {
+        let msg = ":jwodder!~jwuser@jwodder.users.testnet.inspircd.org JOIN :#testnet";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            tags,
+            source: Some(Source::Client(clisrc)),
+            payload: Payload::ClientMessage(ClientMessage::Join(join)),
+        } => {
+            assert!(tags.is_empty());
+            assert_eq!(clisrc.nickname, "jwodder");
+            assert_eq!(clisrc.user.as_ref().unwrap(), "~jwuser");
+            assert_eq!(clisrc.host.as_ref().unwrap(), "jwodder.users.testnet.inspircd.org");
+            assert!(!join.is_zero());
+            assert_matches!(join.channels(), [testnet] => {
+                assert_eq!(testnet, "#testnet");
+            });
+            assert!(join.keys().is_empty());
+        });
     }
 }

@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::{Message, MiddleParam, ParameterList, ParameterListSizeError, RawMessage, Verb};
+use crate::{Message, MiddleParam, ParameterList, RawMessage, TryFromParameterListError, Verb};
 use std::fmt::Write;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -125,8 +125,8 @@ impl TryFrom<ParameterList> for Connect {
                 remote_server,
             })
         } else {
-            Err(ClientMessageError::ParamQty(
-                ParameterListSizeError::Range {
+            Err(ClientMessageError::Params(
+                TryFromParameterListError::RangeSizeMismatch {
                     min_required: 1,
                     max_required: 3,
                     received: params.len(),

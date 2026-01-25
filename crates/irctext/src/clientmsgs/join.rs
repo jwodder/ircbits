@@ -168,3 +168,31 @@ impl TryFrom<ParameterList> for Join {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Payload, Source};
+    use assert_matches::assert_matches;
+
+    #[test]
+    fn parse_plain() {
+        let msg = ":jwodder!~jwuser@jwodder.users.testnet.inspircd.org JOIN :#testnet";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            tags,
+            source: Some(Source::Client(clisrc)),
+            payload: Payload::ClientMessage(ClientMessage::Join(join)),
+        } => {
+            assert!(tags.is_empty());
+            assert_eq!(clisrc.nickname, "jwodder");
+            assert_eq!(clisrc.user.as_ref().unwrap(), "~jwuser");
+            assert_eq!(clisrc.host.as_ref().unwrap(), "jwodder.users.testnet.inspircd.org");
+            assert!(!join.is_zero());
+            assert_matches!(join.channels(), [testnet] => {
+                assert_eq!(testnet, "#testnet");
+            });
+            assert!(join.keys().is_empty());
+        });
+    }
+}

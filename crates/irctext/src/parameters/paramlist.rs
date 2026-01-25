@@ -451,3 +451,17 @@ impl DoubleEndedIterator for ParameterListIntoIter {
 impl ExactSizeIterator for ParameterListIntoIter {}
 
 impl std::iter::FusedIterator for ParameterListIntoIter {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn trailing_into_one_or_two() {
+        let params =
+            ParameterList::builder().with_trailing("#testnet".parse::<TrailingParam>().unwrap());
+        let (p1, p2): (_, Option<TrailingParam>) = params.try_into().unwrap();
+        assert_eq!(p1, "#testnet");
+        assert!(p2.is_none());
+    }
+}

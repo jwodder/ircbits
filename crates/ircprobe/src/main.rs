@@ -23,6 +23,9 @@ use tracing::Level;
 
 const NEXT_REPLY_TIMEOUT: Duration = Duration::from_secs(5);
 
+/// Fetch various details about an IRC server
+///
+/// Visit <https://github.com/jwodder/ircbits> for more information.
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
 struct Arguments {
     /// Read IRC network connection details from the given configuration file

@@ -2,7 +2,7 @@
 name = "ircprobe"
 edition.workspace = true
 rust-version.workspace = true
-#description = ...
+description = "Fetch various details about an IRC server"
 authors.workspace = true
 repository.workspace = true
 license.workspace = true

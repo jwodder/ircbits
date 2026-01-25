@@ -19,8 +19,10 @@ In particular:
         - The following nonstandard numeric replies are supported:
             - `RPL_STATSCONN` (250)
             - `RPL_CHANNELURL` (328)
-            - `ERR_INVALIDCAPCMD` (410), specified by the [Capability
-              Negotiation specification][cap]
+        - The following client messages and numeric replies specified by IRCv3
+          extensions are supported:
+            - `TAGMSG` ([Message Tags][])
+            - `ERR_INVALIDCAPCMD` (410) ([Capability Negotiation][cap])
         - The `<nick>` parameter of `RPL_TOPICWHOTIME` (333) is allowed to be
           either just a nickname or a string of the form `<nick>!<user>@<host>`
         - The trailing comments parameter of `RPL_VERSION` (351) is optional
@@ -29,19 +31,7 @@ In particular:
 
 - The only support channel membership prefixes are `~`, `&`, `@`, `%`, and `+`.
 
-- The following IRCv3 extensions are supported by or compatible with this
-  library:
-    - [`away-notify`](https://ircv3.net/specs/extensions/away-notify)
-    - [`echo-message`](https://ircv3.net/specs/extensions/echo-message)
-    - [Capability Negotiation][cap], version 302
-    - [`invite-notify`](https://ircv3.net/specs/extensions/invite-notify)
-    - [Message Tags](https://ircv3.net/specs/extensions/message-tags) and other
-      extensions that only define new tags
-    - [`pre-away`](https://ircv3.net/specs/extensions/pre-away)
-    - SASL Authentication, versions
-      [3.1](https://ircv3.net/specs/extensions/sasl-3.1) and
-      [3.2](https://ircv3.net/specs/extensions/sasl-3.2)
-
+[Message Tags]: https://ircv3.net/specs/extensions/message-tags
 [cap]: https://ircv3.net/specs/extensions/capability-negotiation.html
 
 Features

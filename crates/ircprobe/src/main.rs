@@ -185,7 +185,7 @@ async fn main() -> anyhow::Result<()> {
                 version = Some(VersionInfo {
                     version: r.version().to_owned(),
                     server: r.server().to_owned(),
-                    comments: r.comments().to_owned(),
+                    comments: r.comments().map(ToOwned::to_owned),
                 });
             }
             Payload::Reply(Reply::ISupport(_)) => (),
@@ -357,7 +357,7 @@ enum ISupportValue {
 struct VersionInfo {
     version: String,
     server: String,
-    comments: String,
+    comments: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]

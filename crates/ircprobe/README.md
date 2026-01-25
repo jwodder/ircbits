@@ -86,7 +86,7 @@ The output is a JSON object with the following fields:
 
     - `"version"` (string)
     - `"server"` (string)
-    - `"comments"` (string)
+    - `"comments"` (string or `null`)
 
 - `"admin"` (object or `null`) — Information returned in response to an `ADMIN`
   command, or `null` if no such response was received.  When present, this

@@ -5604,11 +5604,13 @@ impl Version {
         p.as_str()
     }
 
-    pub fn comments(&self) -> &str {
-        let Some(p) = self.parameters.last() else {
-            unreachable!("reply parameters should be nonempty");
-        };
-        p.as_str()
+    pub fn comments(&self) -> Option<&str> {
+        (self.parameters.len() > 3).then(|| {
+            let Some(p) = self.parameters.last() else {
+                unreachable!("reply parameters should be nonempty");
+            };
+            p.as_str()
+        })
     }
 }
 
@@ -5651,15 +5653,15 @@ impl TryFrom<ParameterList> for Version {
     type Error = ReplyError;
 
     fn try_from(parameters: ParameterList) -> Result<Version, ReplyError> {
-        if parameters.len() < 4 {
+        if parameters.len() < 3 {
             return Err(ReplyError::ParamQty {
-                min_required: 4,
+                min_required: 3,
                 received: parameters.len(),
             });
         }
         let p = parameters
             .get(0)
-            .expect("Parameter 0 should exist when list length is at least 4");
+            .expect("Parameter 0 should exist when list length is at least 3");
         let client = ReplyTarget::try_from(String::from(p))?;
         Ok(Version { parameters, client })
     }

@@ -23,6 +23,7 @@ In particular:
               Negotiation specification][cap]
         - The `<nick>` parameter of `RPL_TOPICWHOTIME` (333) is allowed to be
           either just a nickname or a string of the form `<nick>!<user>@<host>`
+        - The trailing comments parameter of `RPL_VERSION` (351) is optional
 
 - The only supported channel type prefixes are `#` and `&`.
 

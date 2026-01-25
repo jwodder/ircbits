@@ -176,4 +176,24 @@ mod whoisactually {
             assert_eq!(r.parameters, ["jwodder", "+Ziw"]);
         });
     }
+
+    #[test]
+    fn version_no_comment() {
+        let msg = ":irc.ergo.chat 351 jwodder ergo-v2.17.0-rc1 irc.ergo.chat";
+        let msg = msg.parse::<Message>().unwrap();
+        assert_matches!(msg, Message {
+            tags,
+            source: Some(Source::Server(host)),
+            payload: Payload::Reply(Reply::Version(r)),
+        } => {
+            assert!(tags.is_empty());
+            assert_eq!(host, Host::Domain("irc.ergo.chat"));
+            assert_eq!(r.code(), 351);
+            assert_eq!(r.client(), "jwodder");
+            assert_eq!(r.version(), "ergo-v2.17.0-rc1");
+            assert_eq!(r.server(), "irc.ergo.chat");
+            assert!(r.comments().is_none());
+            assert_eq!(r.parameters, ["jwodder", "ergo-v2.17.0-rc1", "irc.ergo.chat"]);
+        });
+    }
 }

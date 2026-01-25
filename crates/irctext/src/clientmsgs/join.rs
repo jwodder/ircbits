@@ -2,7 +2,7 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::{Channel, Key};
 use crate::util::{DisplayMaybeTrailing, join_with_commas, split_param};
 use crate::{
-    Message, MiddleParam, ParameterList, ParameterListSizeError, RawMessage, TrailingParam, Verb,
+    Message, MiddleParam, ParameterList, RawMessage, TrailingParam, TryFromParameterListError, Verb,
 };
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -146,8 +146,8 @@ impl TryFrom<ParameterList> for Join {
         let (p1, p2): (_, Option<TrailingParam>) = params.try_into()?;
         if p1 == "0" {
             if p2.is_some() {
-                return Err(ClientMessageError::ParamQty(
-                    ParameterListSizeError::Exact {
+                return Err(ClientMessageError::Params(
+                    TryFromParameterListError::ExactSizeMismatch {
                         required: 1,
                         received: 2,
                     },

@@ -2,7 +2,7 @@ use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::ReplyTarget;
 use crate::util::{join_with_space, split_spaces};
 use crate::{
-    Message, MiddleParam, ParameterList, ParameterListSizeError, RawMessage, TrailingParam,
+    Message, MiddleParam, ParameterList, RawMessage, TrailingParam, TryFromParameterListError,
     TryFromStringError, Verb,
 };
 use std::fmt::{self, Write};
@@ -97,14 +97,14 @@ impl TryFrom<ParameterList> for Cap {
                     "LS" => Ok(Cap::from(CapLsRequest::new())),
                     "LIST" => Ok(Cap::from(CapListRequest)),
                     "END" => Ok(Cap::from(CapEnd)),
-                    "REQ" => Err(ClientMessageError::ParamQty(
-                        ParameterListSizeError::Exact {
+                    "REQ" => Err(ClientMessageError::Params(
+                        TryFromParameterListError::ExactSizeMismatch {
                             required: 2,
                             received: 1,
                         },
                     )),
-                    "ACK" | "NAK" | "NEW" | "DEL" => Err(ClientMessageError::ParamQty(
-                        ParameterListSizeError::Exact {
+                    "ACK" | "NAK" | "NEW" | "DEL" => Err(ClientMessageError::Params(
+                        TryFromParameterListError::ExactSizeMismatch {
                             required: 3,
                             received: 1,
                         },
@@ -133,14 +133,14 @@ impl TryFrom<ParameterList> for Cap {
                             .collect::<Result<Vec<_>, _>>()?;
                         Ok(Cap::from(CapReq { capabilities }))
                     }
-                    "LIST" | "END" => Err(ClientMessageError::ParamQty(
-                        ParameterListSizeError::Exact {
+                    "LIST" | "END" => Err(ClientMessageError::Params(
+                        TryFromParameterListError::ExactSizeMismatch {
                             required: 1,
                             received: 2,
                         },
                     )),
-                    "ACK" | "NAK" | "NEW" | "DEL" => Err(ClientMessageError::ParamQty(
-                        ParameterListSizeError::Exact {
+                    "ACK" | "NAK" | "NEW" | "DEL" => Err(ClientMessageError::Params(
+                        TryFromParameterListError::ExactSizeMismatch {
                             required: 3,
                             received: 1,
                         },
@@ -221,14 +221,14 @@ impl TryFrom<ParameterList> for Cap {
                             capabilities,
                         }))
                     }
-                    "END" => Err(ClientMessageError::ParamQty(
-                        ParameterListSizeError::Exact {
+                    "END" => Err(ClientMessageError::Params(
+                        TryFromParameterListError::ExactSizeMismatch {
                             required: 1,
                             received: 2,
                         },
                     )),
-                    "REQ" => Err(ClientMessageError::ParamQty(
-                        ParameterListSizeError::Exact {
+                    "REQ" => Err(ClientMessageError::Params(
+                        TryFromParameterListError::ExactSizeMismatch {
                             required: 2,
                             received: 1,
                         },
@@ -279,20 +279,20 @@ impl TryFrom<ParameterList> for Cap {
                             capabilities,
                         }))
                     }
-                    "END" => Err(ClientMessageError::ParamQty(
-                        ParameterListSizeError::Exact {
+                    "END" => Err(ClientMessageError::Params(
+                        TryFromParameterListError::ExactSizeMismatch {
                             required: 1,
                             received: 2,
                         },
                     )),
-                    "REQ" => Err(ClientMessageError::ParamQty(
-                        ParameterListSizeError::Exact {
+                    "REQ" => Err(ClientMessageError::Params(
+                        TryFromParameterListError::ExactSizeMismatch {
                             required: 2,
                             received: 1,
                         },
                     )),
-                    "ACK" | "NAK" | "NEW" | "DEL" => Err(ClientMessageError::ParamQty(
-                        ParameterListSizeError::Exact {
+                    "ACK" | "NAK" | "NEW" | "DEL" => Err(ClientMessageError::Params(
+                        TryFromParameterListError::ExactSizeMismatch {
                             required: 3,
                             received: 1,
                         },
@@ -300,8 +300,8 @@ impl TryFrom<ParameterList> for Cap {
                     _ => Err(ClientMessageError::UnknownCap(subcommand.into_inner())),
                 }
             }
-            len => Err(ClientMessageError::ParamQty(
-                ParameterListSizeError::Range {
+            len => Err(ClientMessageError::Params(
+                TryFromParameterListError::RangeSizeMismatch {
                     min_required: 1,
                     max_required: 4,
                     received: len,

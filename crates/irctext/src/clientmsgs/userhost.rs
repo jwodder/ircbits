@@ -1,6 +1,6 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::Nickname;
-use crate::{Message, ParameterList, ParameterListSizeError, RawMessage, Verb};
+use crate::{Message, ParameterList, RawMessage, TryFromParameterListError, Verb};
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -69,8 +69,8 @@ impl TryFrom<ParameterList> for UserHost {
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(UserHost { nicknames })
         } else {
-            Err(ClientMessageError::ParamQty(
-                ParameterListSizeError::Range {
+            Err(ClientMessageError::Params(
+                TryFromParameterListError::RangeSizeMismatch {
                     min_required: 1,
                     max_required: 5,
                     received: params.len(),

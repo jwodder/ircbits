@@ -1,7 +1,7 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
 use crate::types::{Channel, EListCond, channel_prefixed};
 use crate::util::{join_with_commas, split_param};
-use crate::{Message, MiddleParam, ParameterList, ParameterListSizeError, RawMessage, Verb};
+use crate::{Message, MiddleParam, ParameterList, RawMessage, TryFromParameterListError, Verb};
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct List {
@@ -134,8 +134,8 @@ impl TryFrom<ParameterList> for List {
                     channels = Vec::new();
                     elistconds = split_param::<EListCond>(p.as_str())?;
                     if iter.next().is_some() {
-                        return Err(ClientMessageError::ParamQty(
-                            ParameterListSizeError::Exact {
+                        return Err(ClientMessageError::Params(
+                            TryFromParameterListError::ExactSizeMismatch {
                                 required: 1,
                                 received: len,
                             },
@@ -151,8 +151,8 @@ impl TryFrom<ParameterList> for List {
                 elistconds,
             })
         } else {
-            Err(ClientMessageError::ParamQty(
-                ParameterListSizeError::Range {
+            Err(ClientMessageError::Params(
+                TryFromParameterListError::RangeSizeMismatch {
                     min_required: 0,
                     max_required: 2,
                     received: len,

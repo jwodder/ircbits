@@ -25,6 +25,12 @@ impl ModeString {
     pub fn modes(&self) -> Modes<'_> {
         Modes::new(self)
     }
+
+    pub fn state(&self, mode: char) -> Option<ModeState> {
+        self.modes()
+            .filter_map(|(st, ch)| (ch == mode).then_some(st))
+            .last()
+    }
 }
 
 impl From<ModeString> for MiddleParam {
@@ -100,6 +106,7 @@ mod tests {
         let mut iter = ms.modes();
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
+        assert_eq!(ms.state('x'), None);
     }
 
     #[test]
@@ -112,6 +119,10 @@ mod tests {
         assert_eq!(iter.next(), Some((ModeState::Enabled, 'w')));
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
+        assert_eq!(ms.state('Z'), Some(ModeState::Enabled));
+        assert_eq!(ms.state('i'), Some(ModeState::Enabled));
+        assert_eq!(ms.state('w'), Some(ModeState::Enabled));
+        assert_eq!(ms.state('x'), None);
     }
 
     #[test]
@@ -124,6 +135,10 @@ mod tests {
         assert_eq!(iter.next(), Some((ModeState::Disabled, 'w')));
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
+        assert_eq!(ms.state('Z'), Some(ModeState::Disabled));
+        assert_eq!(ms.state('i'), Some(ModeState::Disabled));
+        assert_eq!(ms.state('w'), Some(ModeState::Disabled));
+        assert_eq!(ms.state('x'), None);
     }
 
     #[test]
@@ -137,5 +152,9 @@ mod tests {
         assert_eq!(iter.next(), Some((ModeState::Disabled, 'w')));
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
+        assert_eq!(ms.state('Z'), Some(ModeState::Enabled));
+        assert_eq!(ms.state('i'), Some(ModeState::Disabled));
+        assert_eq!(ms.state('w'), Some(ModeState::Disabled));
+        assert_eq!(ms.state('x'), None);
     }
 }

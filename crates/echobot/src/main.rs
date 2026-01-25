@@ -20,6 +20,9 @@ use tracing::Level;
 
 const DEFAULT_ECHO_DELAY: Duration = Duration::from_secs(5);
 
+/// IRC bot that sends back any messages sent to it after a delay
+///
+/// Visit <https://github.com/jwodder/ircbits> for more information.
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
 struct Arguments {
     /// Read IRC network connection details from the given configuration file

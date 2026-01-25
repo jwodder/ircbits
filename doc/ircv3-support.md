@@ -9,7 +9,7 @@ here.
 | [`account-extban`][]                                          | ✓         | ~        | ~         | ~           | ~          | ~          | ~           | ~          |
 | [`account-notify`][]                                          | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
 | [`account-tag`][]                                             | ~         | ~        | ~         | ~           | ~          | ~          | ~           | ~          |
-| [`away-notify`[]                                              | ✓         | ~        | ~         | ~           | ~          | ~          | ~           | ~          |
+| [`away-notify`][]                                             | ✓         | ~        | ~         | ~           | ~          | ~          | ~           | ~          |
 | [`batch`][]                                                   | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
 | [Bot Mode][]                                                  | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
 | [Capability Negotiation][], version 302                       | ✓         | ✓        | ✓         | ✓           | ✓          | ✓          | ✓           | ✓          |
@@ -36,7 +36,7 @@ here.
 | [`WEBIRC`][]                                                  | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
 | [`WHOX`][]                                                    | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
 
-[Capability Negotation]: https://ircv3.net/specs/extensions/capability-negotiation
+[Capability Negotiation]: https://ircv3.net/specs/extensions/capability-negotiation
 [Message Tags]: https://ircv3.net/specs/extensions/message-tags
 [sasl31]: https://ircv3.net/specs/extensions/sasl-3.1
 [sasl32]: https://ircv3.net/specs/extensions/sasl-3.2

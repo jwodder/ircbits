@@ -22,3 +22,4 @@
 //!   [`serde`]
 pub mod client;
 pub mod connect;
+pub mod sasl;

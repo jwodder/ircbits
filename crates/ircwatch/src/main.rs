@@ -314,20 +314,15 @@ fn format_msg(msg: Message) -> String {
             )
         }
         Payload::ClientMessage(ClientMessage::Kick(m)) => {
+            let mut s = format!(
+                "# {sender} kicked {} from {}",
+                join_and(m.users().iter().map(|u| highlight(u))),
+                highlight(m.channel())
+            );
             if let Some(cmt) = m.comment() {
-                format!(
-                    "# {sender} kicked {} from {}: {}",
-                    join_and(m.users().iter().map(|u| highlight(u))),
-                    highlight(m.channel()),
-                    ircfmt_to_ansi(cmt.as_str()),
-                )
-            } else {
-                format!(
-                    "# {sender} kicked {} from {}",
-                    join_and(m.users().iter().map(|u| highlight(u))),
-                    highlight(m.channel())
-                )
+                let _ = write!(&mut s, ": {}", ircfmt_to_ansi(cmt.as_str()));
             }
+            s
         }
         Payload::ClientMessage(ClientMessage::Wallops(m)) => {
             format!("[WALLOPS] {}", ircfmt_to_ansi(m.text()))
@@ -346,7 +341,7 @@ fn format_msg(msg: Message) -> String {
             format!(
                 "# {sender} killed {}'s connection: {}",
                 highlight(m.nickname()),
-                m.comment()
+                ircfmt_to_ansi(m.comment()),
             )
         }
         Payload::ClientMessage(_) => format!("[OTHER] Unexpected client message: {msg}"),

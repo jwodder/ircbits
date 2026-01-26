@@ -119,9 +119,7 @@ impl<'de> serde::Deserialize<'de> for SaslMechanism {
 
 #[derive(Debug, Error)]
 pub enum SaslError {
-    #[error(
-        "SASL failed because server sent unexpected message: expecting {expecting}, got {msg:?}"
-    )]
+    #[error("server sent unexpected message: expecting {expecting}, got {msg:?}")]
     Unexpected {
         expecting: &'static str,
         msg: String,
@@ -132,4 +130,12 @@ pub enum SaslError {
     PreparePassword(#[source] stringprep::Error),
     #[error("failed to decode base64 payload from server")]
     Base64Decode(#[from] base64::DecodeError),
+    #[error("failed to decode message from server as UTF-8")]
+    Utf8Decode(#[from] std::str::Utf8Error),
+    #[error("nonce returned by server did not start with our nonce")]
+    Nonce,
+    #[error("mismatch between signatures computed by client and server")]
+    Signature,
+    #[error("server returned error: {0:?}")]
+    Server(String),
 }

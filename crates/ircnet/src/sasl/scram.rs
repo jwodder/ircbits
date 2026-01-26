@@ -14,6 +14,7 @@ use rand::{
     rngs::StdRng,
 };
 use replace_with::replace_with_and_return;
+use std::fmt;
 use thiserror::Error;
 
 const CLIENT_NONCE_LENGTH: usize = 24;
@@ -63,18 +64,15 @@ impl ScramSasl {
         let mech_msg = Authenticate::new(mech);
         let nonce = generate_nonce();
         let username = nickname.as_str().parse::<Username>()?;
-        let clifirst = ClientFirstMessage {
-            authzid: nickname.clone(),
-            username,
-            nonce: nonce.clone(),
-        };
+        let password = password.parse::<Password>()?;
         Ok(ScramSasl {
             state: State::Start(Start {
                 hash,
                 mech_msg,
                 nonce,
-                clifirst,
-                password: password.to_owned(),
+                authzid: nickname.clone(),
+                username,
+                password,
             }),
         })
     }
@@ -117,6 +115,7 @@ enum State {
     AwaitingServerFirstMsg,
     GotServerFirstMsg,
     AwaitingServerFinalMsg,
+    Finishing,
     Done,
     Error,
 }
@@ -126,8 +125,9 @@ struct Start {
     hash: HashAlgo,
     mech_msg: Authenticate,
     nonce: String,
-    clifirst: ClientFirstMessage,
-    password: String,
+    authzid: AuthzId,
+    username: Username,
+    password: Password,
 }
 
 impl ScramState for Start {
@@ -141,7 +141,8 @@ impl ScramState for Start {
             AwaitingPlus {
                 hash: self.hash,
                 nonce: self.nonce,
-                clifirst: self.clifirst,
+                authzid: self.authzid,
+                username: self.username,
                 password: self.password,
             }
             .into(),
@@ -157,8 +158,9 @@ impl ScramState for Start {
 struct AwaitingPlus {
     hash: HashAlgo,
     nonce: String,
-    clifirst: ClientFirstMessage,
-    password: String,
+    authzid: AuthzId,
+    username: Username,
+    password: Password,
 }
 
 impl ScramState for AwaitingPlus {
@@ -167,7 +169,8 @@ impl ScramState for AwaitingPlus {
             Ok(GotPlus {
                 hash: self.hash,
                 nonce: self.nonce,
-                clifirst: self.clifirst,
+                authzid: self.authzid,
+                username: self.username,
                 password: self.password,
             }
             .into())
@@ -193,8 +196,9 @@ impl ScramState for AwaitingPlus {
 struct GotPlus {
     hash: HashAlgo,
     nonce: String,
-    clifirst: ClientFirstMessage,
-    password: String,
+    authzid: AuthzId,
+    username: Username,
+    password: Password,
 }
 
 impl ScramState for GotPlus {
@@ -203,11 +207,19 @@ impl ScramState for GotPlus {
     }
 
     fn get_output(self) -> (Vec<Authenticate>, State) {
+        let msgs = ClientFirstMessage {
+            authzid: &self.authzid,
+            username: &self.username,
+            nonce: &self.nonce,
+        }
+        .to_auth_msgs();
         (
-            self.clifirst.into_auth_msgs(),
+            msgs,
             AwaitingServerFirstMsg {
                 hash: self.hash,
                 nonce: self.nonce,
+                authzid: self.authzid,
+                username: self.username,
                 password: self.password,
                 input: String::new(),
             }
@@ -224,7 +236,9 @@ impl ScramState for GotPlus {
 struct AwaitingServerFirstMsg {
     hash: HashAlgo,
     nonce: String,
-    password: String,
+    authzid: AuthzId,
+    username: Username,
+    password: Password,
     /// Undecoded base 64 formed by concatenating the payloads of the
     /// Authenticate messages received so far
     input: String,
@@ -238,17 +252,55 @@ impl ScramState for AwaitingServerFirstMsg {
         }
         if payload.len() < 400 {
             let bs = STANDARD.decode(&self.input)?;
-            let s = match String::from_utf8(bs) {
-                Ok(s) => s,
-                Err(e) => todo!("Return some error"),
-            };
-            // TODO: Parse to ServerFirstMessage
-            // TODO: Do scram computation
-            // TODO: Assemble ClientFinalMessage
-            let clifinal = todo!();
-            let server_signature = todo!();
+            let s = std::str::from_utf8(&bs)?;
+            let server_first = s.parse::<ServerFirstMessage>()?;
+
+            // AuthMessage     := client-first-message-bare + "," +
+            //                        server-first-message + "," +
+            //                        client-final-message-without-proof
+            //
+            // client-first-message-bare = username "," nonce
+            //
+            // server-first-message =
+            //       [reserved-mext ","] nonce "," salt ","
+            //       iteration-count ["," extensions]
+            //
+            // client-final-message-without-proof =
+            //       channel-binding "," nonce
+            //
+            // channel-binding = "c=" base64
+            //       ;; base64 encoding of cbind-input.
+            //
+            // cbind-input   = gs2-header [ cbind-data ]
+            //       ;; cbind-data MUST be present for
+            //       ;; gs2-cbind-flag of "p" and MUST be absent
+            //       ;; for "y" or "n".
+
+            let client_nonce = self.nonce;
+            let final_nonce = server_first.nonce;
+            if !final_nonce.starts_with(&client_nonce) {
+                return Err(SaslError::Nonce);
+            }
+            let cbind_input = format!("n,a={},", Gs2Escaped(&self.authzid));
+            let auth_message = format!(
+                "n={username},r={client_nonce},{s},c={binding},r={final_nonce}",
+                username = Gs2Escaped(self.username.as_str()),
+                binding = STANDARD.encode(&cbind_input),
+            );
+            let Computation {
+                client_proof,
+                server_signature,
+            } = compute_scram(
+                self.hash,
+                &self.password,
+                &server_first.salt,
+                server_first.iteration_count,
+                &auth_message,
+            );
             Ok(GotServerFirstMsg {
-                clifinal,
+                authzid: self.authzid,
+                nonce: final_nonce,
+                client_proof,
                 server_signature,
             }
             .into())
@@ -269,7 +321,9 @@ impl ScramState for AwaitingServerFirstMsg {
 // About to send client-final-message
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct GotServerFirstMsg {
-    clifinal: ClientFinalMessage,
+    authzid: AuthzId,
+    nonce: String,
+    client_proof: Bytes,
     server_signature: Bytes,
 }
 
@@ -279,8 +333,14 @@ impl ScramState for GotServerFirstMsg {
     }
 
     fn get_output(self) -> (Vec<Authenticate>, State) {
+        let msgs = ClientFinalMessage {
+            authzid: &self.authzid,
+            nonce: &self.nonce,
+            proof: &self.client_proof,
+        }
+        .to_auth_msgs();
         (
-            self.clifinal.into_auth_msgs(),
+            msgs,
             AwaitingServerFinalMsg {
                 server_signature: self.server_signature,
                 input: String::new(),
@@ -303,8 +363,27 @@ struct AwaitingServerFinalMsg {
 }
 
 impl ScramState for AwaitingServerFinalMsg {
-    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
-        todo!()
+    fn handle_message(mut self, msg: Authenticate) -> Result<State, SaslError> {
+        let payload = msg.parameter().as_str();
+        if payload != "+" {
+            self.input.push_str(payload);
+        }
+        if payload.len() < 400 {
+            let bs = STANDARD.decode(&self.input)?;
+            let s = std::str::from_utf8(&bs)?;
+            match s.parse::<ServerFinalMessage>()? {
+                ServerFinalMessage::Success { verifier } => {
+                    if verifier == self.server_signature {
+                        Ok(Finishing.into())
+                    } else {
+                        Err(SaslError::Signature)
+                    }
+                }
+                ServerFinalMessage::Error { message } => Err(SaslError::Server(message)),
+            }
+        } else {
+            Ok(self.into())
+        }
     }
 
     fn get_output(self) -> (Vec<Authenticate>, State) {
@@ -317,11 +396,28 @@ impl ScramState for AwaitingServerFinalMsg {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+struct Finishing;
+
+impl ScramState for Finishing {
+    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+        panic!("handle_message() called before calling get_output()")
+    }
+
+    fn get_output(self) -> (Vec<Authenticate>, State) {
+        (vec![Authenticate::new_empty()], Done.into())
+    }
+
+    fn is_done(&self) -> bool {
+        false
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct Done;
 
 impl ScramState for Done {
     fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
-        todo!()
+        panic!("handle_message() called on Done state")
     }
 
     fn get_output(self) -> (Vec<Authenticate>, State) {
@@ -351,7 +447,7 @@ impl ScramState for Error {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct ClientFirstMessage {
+struct ClientFirstMessage<'a> {
     // > The "gs2-authzid" holds the SASL authorization identity.  It is encoded
     // > using UTF-8 [RFC3629] with three exceptions:
     // >
@@ -362,18 +458,31 @@ struct ClientFirstMessage {
     // > - The server MUST replace any "=" (equals) in the string with "=3D".
     //
     // — RFC 5801, §4
-    authzid: Nickname,
-    username: Username,
-    nonce: String,
+    authzid: &'a AuthzId,
+    username: &'a Username,
+    nonce: &'a str,
 }
 
-impl ClientFirstMessage {
-    fn into_auth_msgs(self) -> Vec<Authenticate> {
-        todo!()
+impl ClientFirstMessage<'_> {
+    fn to_auth_msgs(&self) -> Vec<Authenticate> {
+        Authenticate::new_encoded(self.to_string().as_bytes())
     }
 }
 
-// TODO: impl fmt::Display for ClientFirstMessage
+impl fmt::Display for ClientFirstMessage<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // gs2-header
+        write!(f, "n,a={},", Gs2Escaped(self.authzid))?;
+        // client-first-message-bare
+        write!(
+            f,
+            "n={},r={}",
+            Gs2Escaped(self.username.as_str()),
+            self.nonce
+        )?;
+        Ok(())
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct ServerFirstMessage {
@@ -382,21 +491,39 @@ struct ServerFirstMessage {
     iteration_count: u32,
 }
 
-// TODO: impl std::str::FromStr for ServerFirstMessage
+impl std::str::FromStr for ServerFirstMessage {
+    type Err = SaslError;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct ClientFinalMessage {
-    nonce: String,
-    proof: Bytes,
-}
-
-impl ClientFinalMessage {
-    fn into_auth_msgs(self) -> Vec<Authenticate> {
+    fn from_str(s: &str) -> Result<ServerFirstMessage, Self::Err> {
         todo!()
     }
 }
 
-// TODO: impl fmt::Display for ClientFinalMessage
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct ClientFinalMessage<'a> {
+    authzid: &'a AuthzId,
+    nonce: &'a str,
+    proof: &'a [u8],
+}
+
+impl ClientFinalMessage<'_> {
+    fn to_auth_msgs(&self) -> Vec<Authenticate> {
+        Authenticate::new_encoded(self.to_string().as_bytes())
+    }
+}
+
+impl fmt::Display for ClientFinalMessage<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let cbind_input = format!("n,a={},", Gs2Escaped(self.authzid));
+        write!(
+            f,
+            "c={},r={},p={}",
+            STANDARD.encode(&cbind_input),
+            self.nonce,
+            STANDARD.encode(self.proof)
+        )
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum ServerFinalMessage {
@@ -404,20 +531,22 @@ enum ServerFinalMessage {
     Error { message: String },
 }
 
-// TODO: impl std::str::FromStr for ServerFinalMessage
+impl std::str::FromStr for ServerFinalMessage {
+    type Err = SaslError;
+
+    fn from_str(s: &str) -> Result<ServerFinalMessage, Self::Err> {
+        todo!()
+    }
+}
+
+type AuthzId = Nickname;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct Username(String);
 
 impl Username {
-    fn escaped(&self) -> std::borrow::Cow<'_, str> {
-        // > The characters ',' or '=' in usernames are sent as '=2C' and '=3D'
-        // > respectively.  If the server receives a username that contains '='
-        // > not followed by either '2C' or '3D', then the server MUST fail the
-        // > authentication.
-        //
-        // — RFC 5802, §5.1
-        todo!()
+    fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
@@ -450,6 +579,40 @@ pub enum PrepareUsernameError {
     Empty,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct Password(String);
+
+impl Password {
+    fn as_bytes(&self) -> &[u8] {
+        self.0.as_bytes()
+    }
+}
+
+impl std::str::FromStr for Password {
+    type Err = SaslError;
+
+    fn from_str(s: &str) -> Result<Password, SaslError> {
+        let s = stringprep::saslprep(s).map_err(SaslError::PreparePassword)?;
+        Ok(Password(s.into_owned()))
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct Gs2Escaped<'a>(&'a str);
+
+impl fmt::Display for Gs2Escaped<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for ch in self.0.chars() {
+            match ch {
+                ',' => write!(f, "=2C")?,
+                '=' => write!(f, "=3D")?,
+                c => write!(f, "{c}")?,
+            }
+        }
+        Ok(())
+    }
+}
+
 fn generate_nonce() -> String {
     let mut rng = StdRng::from_os_rng();
     Alphanumeric
@@ -467,13 +630,12 @@ struct Computation {
 
 fn compute_scram(
     hash: HashAlgo,
-    password: &str,
+    password: &Password,
     salt: &[u8],
     iteration_count: u32,
     auth_message: &str,
-) -> Result<Computation, SaslError> {
-    let normed_password = stringprep::saslprep(password).map_err(SaslError::PreparePassword)?;
-    let salted_password = hash.iter_hash(normed_password.as_bytes(), salt, iteration_count);
+) -> Computation {
+    let salted_password = hash.iter_hash(password.as_bytes(), salt, iteration_count);
     let client_key = hash.hmac(&salted_password, b"Client Key");
     let stored_key = hash.hash(&client_key);
     let client_signature = hash.hmac(&stored_key, auth_message.as_bytes());
@@ -482,8 +644,8 @@ fn compute_scram(
         .collect::<Bytes>();
     let server_key = hash.hmac(&salted_password, b"Server Key");
     let server_signature = hash.hmac(&server_key, auth_message.as_bytes());
-    Ok(Computation {
+    Computation {
         client_proof,
         server_signature,
-    })
+    }
 }

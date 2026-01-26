@@ -52,6 +52,13 @@ impl Authenticate {
         Authenticate::new(param)
     }
 
+    pub fn new_empty() -> Authenticate {
+        let Ok(param) = "+".parse::<TrailingParam>() else {
+            unreachable!(r#""+" should be valid trailing param"#);
+        };
+        Authenticate::new(param)
+    }
+
     pub fn parameter(&self) -> &TrailingParam {
         &self.parameter
     }

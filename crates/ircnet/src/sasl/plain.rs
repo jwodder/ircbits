@@ -110,7 +110,7 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(outgoing, ["AUTHENTICATE :PLAIN"]);
         assert!(!flow.is_done());
-        let msg = Authenticate::new("+".parse::<TrailingParam>().unwrap());
+        let msg = Authenticate::new_empty();
         assert!(flow.handle_message(msg).is_ok());
         let outgoing = flow
             .get_output()

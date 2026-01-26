@@ -485,19 +485,13 @@ impl State {
                     }
                     ((true, None), State::Motd(output))
                 }
-                (State::Motd(mut output), Reply::EndOfMotd(r)) => {
-                    if let Some(s) = output.motd.as_mut() {
-                        s.push('\n');
-                        s.push_str(r.message());
-                    }
-                    (
-                        (true, None),
-                        State::AwaitingMode {
-                            output,
-                            timeout: Some(MODE_TIMEOUT),
-                        },
-                    )
-                }
+                (State::Motd(output), Reply::EndOfMotd(_)) => (
+                    (true, None),
+                    State::AwaitingMode {
+                        output,
+                        timeout: Some(MODE_TIMEOUT),
+                    },
+                ),
                 (State::AwaitingMode { mut output, .. }, Reply::UModeIs(r)) => {
                     output.mode = Some(r.user_modes().clone());
                     ((true, None), State::Done(Some(Ok(output))))
@@ -1095,8 +1089,7 @@ mod tests {
                         "- Website and documentation:  https://libera.chat\n",
                         "- Webchat:                    https://web.libera.chat\n",
                         "- Network policies:           https://libera.chat/policies\n",
-                        "- Email:                      support@libera.chat\n",
-                        "End of /MOTD command.",
+                        "- Email:                      support@libera.chat",
                     )
                     .to_owned()
                 ),
@@ -1388,8 +1381,7 @@ mod tests {
                         "- Website and documentation:  https://libera.chat\n",
                         "- Webchat:                    https://web.libera.chat\n",
                         "- Network policies:           https://libera.chat/policies\n",
-                        "- Email:                      support@libera.chat\n",
-                        "End of /MOTD command.",
+                        "- Email:                      support@libera.chat",
                     )
                     .to_owned()
                 ),
@@ -1612,8 +1604,7 @@ mod tests {
                         "- Website and documentation:  https://libera.chat\n",
                         "- Webchat:                    https://web.libera.chat\n",
                         "- Network policies:           https://libera.chat/policies\n",
-                        "- Email:                      support@libera.chat\n",
-                        "End of /MOTD command.",
+                        "- Email:                      support@libera.chat",
                     )
                     .to_owned()
                 ),

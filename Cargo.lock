@@ -563,6 +563,7 @@ dependencies = [
  "rustls-native-certs",
  "rustls-pki-types",
  "serde",
+ "strum",
  "thiserror",
  "tokio",
  "tokio-rustls",

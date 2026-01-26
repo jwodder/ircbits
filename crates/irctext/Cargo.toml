@@ -12,7 +12,7 @@ anstyle = { workspace = true, optional = true }
 base64 = "0.22.1"
 enum_dispatch.workspace = true
 serde = { workspace = true, features = ["derive"], optional = true }
-strum = { version = "0.27.1", features = ["derive"] }
+strum.workspace = true
 thiserror.workspace = true
 url = "2.5.0"
 

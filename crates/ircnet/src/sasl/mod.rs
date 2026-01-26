@@ -48,10 +48,15 @@ pub enum SaslMachine {
     Scram(ScramSasl),
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(
+    strum::AsRefStr, Clone, Copy, Debug, strum::Display, strum::EnumString, Eq, Hash, PartialEq,
+)]
 pub enum SaslMechanism {
+    #[strum(to_string = "PLAIN")]
     Plain,
+    #[strum(to_string = "SCRAM-SHA-1")]
     ScramSha1,
+    #[strum(to_string = "SCRAM-SHA-512")]
     ScramSha512,
 }
 
@@ -64,6 +69,49 @@ impl SaslMechanism {
                 ScramSasl::new(nickname, password, HashAlgo::Sha512).into()
             }
         }
+    }
+}
+
+pub type ParseSaslMechanismError = strum::ParseError;
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl serde::Serialize for SaslMechanism {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        serializer.serialize_str(self.as_ref())
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl<'de> serde::Deserialize<'de> for SaslMechanism {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::de::Deserializer<'de>,
+    {
+        struct Visitor;
+
+        impl serde::de::Visitor<'_> for Visitor {
+            type Value = SaslMechanism;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                formatter.write_str("a supported SASL mechanism")
+            }
+
+            fn visit_str<E>(self, input: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                input
+                    .parse::<SaslMechanism>()
+                    .map_err(|_| E::invalid_value(serde::de::Unexpected::Str(input), &self))
+            }
+        }
+
+        deserializer.deserialize_string(Visitor)
     }
 }
 

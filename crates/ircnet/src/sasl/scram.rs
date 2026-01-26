@@ -1,4 +1,4 @@
-#![expect(dead_code, unused_variables, unreachable_code, clippy::todo)]
+#![expect(unused_variables, clippy::todo)]
 use super::{SaslError, SaslFlow, SaslMechanism};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use bytes::Bytes;
@@ -495,7 +495,27 @@ impl std::str::FromStr for ServerFirstMessage {
     type Err = SaslError;
 
     fn from_str(s: &str) -> Result<ServerFirstMessage, Self::Err> {
-        todo!()
+        let mut ss = s;
+        let nonce = if let Some(("r", r)) = parse_gs2_pair(&mut ss)? {
+            r.to_owned()
+        } else {
+            return Err(SaslError::Parse);
+        };
+        let salt = if let Some(("s", b64salt)) = parse_gs2_pair(&mut ss)? {
+            Bytes::from(STANDARD.decode(b64salt)?)
+        } else {
+            return Err(SaslError::Parse);
+        };
+        let iteration_count = if let Some(("i", i)) = parse_gs2_pair(&mut ss)? {
+            i.parse::<u32>().map_err(|_| SaslError::Parse)?
+        } else {
+            return Err(SaslError::Parse);
+        };
+        Ok(ServerFirstMessage {
+            nonce,
+            salt,
+            iteration_count,
+        })
     }
 }
 
@@ -535,7 +555,17 @@ impl std::str::FromStr for ServerFinalMessage {
     type Err = SaslError;
 
     fn from_str(s: &str) -> Result<ServerFinalMessage, Self::Err> {
-        todo!()
+        let mut ss = s;
+        match parse_gs2_pair(&mut ss)? {
+            Some(("e", value)) => Ok(ServerFinalMessage::Error {
+                message: value.to_owned(),
+            }),
+            Some(("v", b64)) => {
+                let verifier = Bytes::from(STANDARD.decode(b64)?);
+                Ok(ServerFinalMessage::Success { verifier })
+            }
+            _ => Err(SaslError::Parse),
+        }
     }
 }
 
@@ -622,6 +652,23 @@ fn generate_nonce() -> String {
         .collect()
 }
 
+fn parse_gs2_pair<'a>(s: &mut &'a str) -> Result<Option<(&'a str, &'a str)>, SaslError> {
+    if s.is_empty() {
+        return Ok(None);
+    }
+    let kv = match s.split_once(',') {
+        Some((pre, post)) => {
+            *s = post;
+            pre
+        }
+        None => std::mem::take(s),
+    };
+    match kv.split_once('=') {
+        Some((k, v)) => Ok(Some((k, v))),
+        None => Err(SaslError::Parse),
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct Computation {
     client_proof: Bytes,
@@ -647,5 +694,93 @@ fn compute_scram(
     Computation {
         client_proof,
         server_signature,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod server_first_message {
+        use super::*;
+
+        #[test]
+        fn parse_rfc_example() {
+            let msg = "r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,s=QSXCR+Q6sek8bf92,i=4096"
+                .parse::<ServerFirstMessage>()
+                .unwrap();
+            assert_eq!(
+                msg,
+                ServerFirstMessage {
+                    nonce: String::from("fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j"),
+                    salt: Bytes::from(
+                        b"\x41\x25\xc2\x47\xe4\x3a\xb1\xe9\x3c\x6d\xff\x76".as_slice()
+                    ),
+                    iteration_count: 4096,
+                }
+            );
+        }
+
+        #[test]
+        fn parse_ircv3_example() {
+            let msg = "r=c5RqLCZy0L4fGkKAZ0hujFBsXQoKcivqCw9iDZPSpb,s=5mJO6d4rjCnsBU1X,i=4096"
+                .parse::<ServerFirstMessage>()
+                .unwrap();
+            assert_eq!(
+                msg,
+                ServerFirstMessage {
+                    nonce: String::from("c5RqLCZy0L4fGkKAZ0hujFBsXQoKcivqCw9iDZPSpb"),
+                    salt: Bytes::from(
+                        b"\xe6\x62\x4e\xe9\xde\x2b\x8c\x29\xec\x05\x4d\x57".as_slice()
+                    ),
+                    iteration_count: 4096,
+                }
+            );
+        }
+    }
+
+    mod server_final_message {
+        use super::*;
+
+        #[test]
+        fn parse_rfc_example() {
+            let msg = "v=rmF9pqV8S7suAoZWja4dJRkFsKQ="
+                .parse::<ServerFinalMessage>()
+                .unwrap();
+            assert_eq!(
+                msg,
+                ServerFinalMessage::Success {
+                    verifier: Bytes::from(
+                        b"\xae\x61\x7d\xa6\xa5\x7c\x4b\xbb\x2e\x02\x86\x56\x8d\xae\x1d\x25\x19\x05\xb0\xa4".as_slice()
+                    )
+                }
+            );
+        }
+
+        #[test]
+        fn parse_ircv3_example() {
+            let msg = "v=ZWR23c9MJir0ZgfGf5jEtLOn6Ng="
+                .parse::<ServerFinalMessage>()
+                .unwrap();
+            assert_eq!(
+                msg,
+                ServerFinalMessage::Success {
+                    verifier: Bytes::from(
+                        b"\x65\x64\x76\xdd\xcf\x4c\x26\x2a\xf4\x66\x07\xc6\x7f\x98\xc4\xb4\xb3\xa7\xe8\xd8".as_slice()
+                    )
+                }
+            );
+        }
+
+        #[test]
+        fn parse_error() {
+            let msg = "e=other-error".parse::<ServerFinalMessage>().unwrap();
+            assert_eq!(
+                msg,
+                ServerFinalMessage::Error {
+                    message: String::from("other-error")
+                }
+            );
+        }
     }
 }

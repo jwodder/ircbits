@@ -138,4 +138,6 @@ pub enum SaslError {
     Signature,
     #[error("server returned error: {0:?}")]
     Server(String),
+    #[error("failed to parse message from server")]
+    Parse,
 }

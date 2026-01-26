@@ -2,6 +2,7 @@
 use super::{SaslError, SaslFlow, SaslMechanism};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use bytes::Bytes;
+use enum_dispatch::enum_dispatch;
 use irctext::{
     TrailingParam,
     clientmsgs::{Authenticate, ClientMessageParts},
@@ -47,7 +48,6 @@ impl HashAlgo {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ScramSasl {
-    hash: HashAlgo,
     state: State,
 }
 
@@ -69,13 +69,13 @@ impl ScramSasl {
             nonce: nonce.clone(),
         };
         Ok(ScramSasl {
-            hash,
-            state: State::Start {
+            state: State::Start(Start {
+                hash,
                 mech_msg,
                 nonce,
                 clifirst,
                 password: password.to_owned(),
-            },
+            }),
         })
     }
 }
@@ -84,182 +84,270 @@ impl SaslFlow for ScramSasl {
     fn handle_message(&mut self, msg: Authenticate) -> Result<(), SaslError> {
         replace_with_and_return(
             &mut self.state,
-            || State::Void,
-            |state| match state {
-                State::Start { .. } => {
-                    panic!("handle_message() called before calling get_output()")
-                }
-                State::AwaitingPlus {
-                    nonce,
-                    clifirst,
-                    password,
-                } => {
-                    if msg.parameter() == "+" {
-                        (
-                            Ok(()),
-                            State::GotPlus {
-                                nonce,
-                                clifirst,
-                                password,
-                            },
-                        )
-                    } else {
-                        (
-                            Err(SaslError::Unexpected {
-                                expecting: r#""AUTHENTICATE +""#,
-                                msg: msg.to_irc_line(),
-                            }),
-                            State::Done,
-                        )
-                    }
-                }
-                State::GotPlus { .. } => {
-                    panic!("handle_message() called before calling get_output()")
-                }
-                State::AwaitingServerFirstMsg {
-                    nonce,
-                    password,
-                    mut input,
-                } => {
-                    let payload = msg.parameter().as_str();
-                    if payload != "+" {
-                        input.push_str(payload);
-                    }
-                    if payload.len() < 400 {
-                        let bs = match STANDARD.decode(input) {
-                            Ok(bs) => bs,
-                            Err(e) => return (Err(SaslError::Base64Decode(e)), State::Done),
-                        };
-                        let s = match String::from_utf8(bs) {
-                            Ok(s) => s,
-                            Err(e) => todo!("Return some error"),
-                        };
-                        // Parse to ServerFirstMessage
-                        // Do scram computation
-                        // Assemble ClientFinalMessage
-                        let clifinal = todo!();
-                        let server_signature = todo!();
-                        (
-                            Ok(()),
-                            State::GotServerFirstMsg {
-                                clifinal,
-                                server_signature,
-                            },
-                        )
-                    } else {
-                        (
-                            Ok(()),
-                            State::AwaitingServerFirstMsg {
-                                nonce,
-                                password,
-                                input,
-                            },
-                        )
-                    }
-                }
-                State::GotServerFirstMsg { .. } => {
-                    panic!("handle_message() called before calling get_output()")
-                }
-                State::AwaitingServerFinalMsg { .. } => todo!(),
-                State::Done => panic!("get_output() called on Done SASL state"),
-                State::Void => panic!("get_output() called on Void SASL state"),
+            || State::Error(Error),
+            move |state| match state.handle_message(msg) {
+                Ok(state) => (Ok(()), state),
+                Err(e) => (Err(e), State::Error(Error)),
             },
         )
     }
 
     fn get_output(&mut self) -> Vec<Authenticate> {
-        replace_with_and_return(
-            &mut self.state,
-            || State::Void,
-            |state| match state {
-                State::Start {
-                    mech_msg,
-                    nonce,
-                    clifirst,
-                    password,
-                } => (
-                    vec![mech_msg],
-                    State::AwaitingPlus {
-                        nonce,
-                        clifirst,
-                        password,
-                    },
-                ),
-                State::AwaitingPlus { .. } => (Vec::new(), state),
-                State::GotPlus {
-                    nonce,
-                    clifirst,
-                    password,
-                } => (
-                    clifirst.into_auth_msgs(),
-                    State::AwaitingServerFirstMsg {
-                        nonce,
-                        password,
-                        input: String::new(),
-                    },
-                ),
-                State::AwaitingServerFirstMsg { .. } => (Vec::new(), state),
-                State::GotServerFirstMsg {
-                    clifinal,
-                    server_signature,
-                } => (
-                    clifinal.into_auth_msgs(),
-                    State::AwaitingServerFinalMsg {
-                        server_signature,
-                        input: String::new(),
-                    },
-                ),
-                State::AwaitingServerFinalMsg { .. } => (Vec::new(), state),
-                State::Done => (Vec::new(), State::Done),
-                State::Void => panic!("get_output() called on Void SASL state"),
-            },
+        replace_with_and_return(&mut self.state, || State::Error(Error), State::get_output)
+    }
+
+    fn is_done(&self) -> bool {
+        self.state.is_done()
+    }
+}
+
+#[enum_dispatch]
+trait ScramState {
+    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError>;
+    fn get_output(self) -> (Vec<Authenticate>, State);
+    fn is_done(&self) -> bool;
+}
+
+#[enum_dispatch(ScramState)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum State {
+    Start,
+    AwaitingPlus,
+    GotPlus,
+    AwaitingServerFirstMsg,
+    GotServerFirstMsg,
+    AwaitingServerFinalMsg,
+    Done,
+    Error,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct Start {
+    hash: HashAlgo,
+    mech_msg: Authenticate,
+    nonce: String,
+    clifirst: ClientFirstMessage,
+    password: String,
+}
+
+impl ScramState for Start {
+    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+        panic!("handle_message() called before calling get_output()")
+    }
+
+    fn get_output(self) -> (Vec<Authenticate>, State) {
+        (
+            vec![self.mech_msg],
+            AwaitingPlus {
+                hash: self.hash,
+                nonce: self.nonce,
+                clifirst: self.clifirst,
+                password: self.password,
+            }
+            .into(),
         )
     }
 
     fn is_done(&self) -> bool {
-        self.state == State::Done
+        false
     }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-enum State {
-    Start {
-        mech_msg: Authenticate,
-        nonce: String,
-        clifirst: ClientFirstMessage,
-        password: String,
-    },
-    AwaitingPlus {
-        nonce: String,
-        clifirst: ClientFirstMessage,
-        password: String,
-    },
-    GotPlus {
-        // about to send first client-first-message
-        nonce: String,
-        clifirst: ClientFirstMessage,
-        password: String,
-    },
-    AwaitingServerFirstMsg {
-        nonce: String,
-        password: String,
-        /// Undecoded base 64 formed by concatenating the payloads of the
-        /// Authenticate messages received so far
-        input: String,
-    },
-    GotServerFirstMsg {
-        // about to send client-final-message
-        clifinal: ClientFinalMessage,
-        server_signature: Bytes,
-    },
-    AwaitingServerFinalMsg {
-        server_signature: Bytes,
-        /// Undecoded base 64 formed by concatenating the payloads of the
-        /// Authenticate messages received so far
-        input: String,
-    },
-    Done,
-    Void,
+struct AwaitingPlus {
+    hash: HashAlgo,
+    nonce: String,
+    clifirst: ClientFirstMessage,
+    password: String,
+}
+
+impl ScramState for AwaitingPlus {
+    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+        if msg.parameter() == "+" {
+            Ok(GotPlus {
+                hash: self.hash,
+                nonce: self.nonce,
+                clifirst: self.clifirst,
+                password: self.password,
+            }
+            .into())
+        } else {
+            Err(SaslError::Unexpected {
+                expecting: r#""AUTHENTICATE +""#,
+                msg: msg.to_irc_line(),
+            })
+        }
+    }
+
+    fn get_output(self) -> (Vec<Authenticate>, State) {
+        (Vec::new(), self.into())
+    }
+
+    fn is_done(&self) -> bool {
+        false
+    }
+}
+
+// About to send first client-first-message
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct GotPlus {
+    hash: HashAlgo,
+    nonce: String,
+    clifirst: ClientFirstMessage,
+    password: String,
+}
+
+impl ScramState for GotPlus {
+    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+        panic!("handle_message() called before calling get_output()")
+    }
+
+    fn get_output(self) -> (Vec<Authenticate>, State) {
+        (
+            self.clifirst.into_auth_msgs(),
+            AwaitingServerFirstMsg {
+                hash: self.hash,
+                nonce: self.nonce,
+                password: self.password,
+                input: String::new(),
+            }
+            .into(),
+        )
+    }
+
+    fn is_done(&self) -> bool {
+        false
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct AwaitingServerFirstMsg {
+    hash: HashAlgo,
+    nonce: String,
+    password: String,
+    /// Undecoded base 64 formed by concatenating the payloads of the
+    /// Authenticate messages received so far
+    input: String,
+}
+
+impl ScramState for AwaitingServerFirstMsg {
+    fn handle_message(mut self, msg: Authenticate) -> Result<State, SaslError> {
+        let payload = msg.parameter().as_str();
+        if payload != "+" {
+            self.input.push_str(payload);
+        }
+        if payload.len() < 400 {
+            let bs = STANDARD.decode(&self.input)?;
+            let s = match String::from_utf8(bs) {
+                Ok(s) => s,
+                Err(e) => todo!("Return some error"),
+            };
+            // TODO: Parse to ServerFirstMessage
+            // TODO: Do scram computation
+            // TODO: Assemble ClientFinalMessage
+            let clifinal = todo!();
+            let server_signature = todo!();
+            Ok(GotServerFirstMsg {
+                clifinal,
+                server_signature,
+            }
+            .into())
+        } else {
+            Ok(self.into())
+        }
+    }
+
+    fn get_output(self) -> (Vec<Authenticate>, State) {
+        (Vec::new(), self.into())
+    }
+
+    fn is_done(&self) -> bool {
+        false
+    }
+}
+
+// About to send client-final-message
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct GotServerFirstMsg {
+    clifinal: ClientFinalMessage,
+    server_signature: Bytes,
+}
+
+impl ScramState for GotServerFirstMsg {
+    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+        panic!("handle_message() called before calling get_output()")
+    }
+
+    fn get_output(self) -> (Vec<Authenticate>, State) {
+        (
+            self.clifinal.into_auth_msgs(),
+            AwaitingServerFinalMsg {
+                server_signature: self.server_signature,
+                input: String::new(),
+            }
+            .into(),
+        )
+    }
+
+    fn is_done(&self) -> bool {
+        false
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct AwaitingServerFinalMsg {
+    server_signature: Bytes,
+    /// Undecoded base 64 formed by concatenating the payloads of the
+    /// Authenticate messages received so far
+    input: String,
+}
+
+impl ScramState for AwaitingServerFinalMsg {
+    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+        todo!()
+    }
+
+    fn get_output(self) -> (Vec<Authenticate>, State) {
+        (Vec::new(), self.into())
+    }
+
+    fn is_done(&self) -> bool {
+        false
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct Done;
+
+impl ScramState for Done {
+    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+        todo!()
+    }
+
+    fn get_output(self) -> (Vec<Authenticate>, State) {
+        (Vec::new(), self.into())
+    }
+
+    fn is_done(&self) -> bool {
+        true
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct Error;
+
+impl ScramState for Error {
+    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+        panic!("handle_message() called on Error state")
+    }
+
+    fn get_output(self) -> (Vec<Authenticate>, State) {
+        panic!("get_output() called on Error state")
+    }
+
+    fn is_done(&self) -> bool {
+        panic!("is_done() called on Error state")
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

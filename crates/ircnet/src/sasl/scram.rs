@@ -1,19 +1,22 @@
-#![expect(unused_variables, clippy::todo)]
 use super::{SaslError, SaslFlow, SaslMechanism};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use bytes::Bytes;
 use enum_dispatch::enum_dispatch;
+use hmac::{Hmac, Mac};
 use irctext::{
     TrailingParam,
     clientmsgs::{Authenticate, ClientMessageParts},
     types::Nickname,
 };
+use pbkdf2::pbkdf2_hmac_array;
 use rand::{
     SeedableRng,
     distr::{Alphanumeric, Distribution},
     rngs::StdRng,
 };
 use replace_with::replace_with_and_return;
+use sha1::{Digest as _, Sha1};
+use sha2::Sha512;
 use std::fmt;
 use thiserror::Error;
 
@@ -34,16 +37,35 @@ impl HashAlgo {
     }
 
     fn hash(self, bs: &[u8]) -> Bytes {
-        todo!()
+        match self {
+            HashAlgo::Sha1 => Bytes::from_iter(Sha1::digest(bs)),
+            HashAlgo::Sha512 => Bytes::from_iter(Sha512::digest(bs)),
+        }
     }
 
     fn hmac(self, key: &[u8], s: &[u8]) -> Bytes {
-        todo!()
+        match self {
+            HashAlgo::Sha1 => {
+                let mut mac =
+                    Hmac::<Sha1>::new_from_slice(key).expect("any key length should be accepted");
+                mac.update(s);
+                Bytes::from_iter(mac.finalize().into_bytes())
+            }
+            HashAlgo::Sha512 => {
+                let mut mac =
+                    Hmac::<Sha512>::new_from_slice(key).expect("any key length should be accepted");
+                mac.update(s);
+                Bytes::from_iter(mac.finalize().into_bytes())
+            }
+        }
     }
 
     // RFC 5802's "Hi()"
     fn iter_hash(self, s: &[u8], salt: &[u8], i: u32) -> Bytes {
-        todo!()
+        match self {
+            HashAlgo::Sha1 => Bytes::from_iter(pbkdf2_hmac_array::<Sha1, 20>(s, salt, i)),
+            HashAlgo::Sha512 => Bytes::from_iter(pbkdf2_hmac_array::<Sha512, 64>(s, salt, i)),
+        }
     }
 }
 
@@ -131,7 +153,7 @@ struct Start {
 }
 
 impl ScramState for Start {
-    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
         panic!("handle_message() called before calling get_output()")
     }
 
@@ -202,7 +224,7 @@ struct GotPlus {
 }
 
 impl ScramState for GotPlus {
-    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
         panic!("handle_message() called before calling get_output()")
     }
 
@@ -328,7 +350,7 @@ struct GotServerFirstMsg {
 }
 
 impl ScramState for GotServerFirstMsg {
-    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
         panic!("handle_message() called before calling get_output()")
     }
 
@@ -399,7 +421,7 @@ impl ScramState for AwaitingServerFinalMsg {
 struct Finishing;
 
 impl ScramState for Finishing {
-    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
         panic!("handle_message() called before calling get_output()")
     }
 
@@ -416,7 +438,7 @@ impl ScramState for Finishing {
 struct Done;
 
 impl ScramState for Done {
-    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
         panic!("handle_message() called on Done state")
     }
 
@@ -433,7 +455,7 @@ impl ScramState for Done {
 struct Error;
 
 impl ScramState for Error {
-    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
         panic!("handle_message() called on Error state")
     }
 

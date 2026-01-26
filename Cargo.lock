@@ -553,6 +553,7 @@ name = "ircnet"
 version = "0.0.0"
 dependencies = [
  "bytes",
+ "enum_dispatch",
  "futures-util",
  "irctext",
  "itertools",

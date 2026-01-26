@@ -9,6 +9,7 @@ license.workspace = true
 
 [dependencies]
 bytes = "1.5.0"
+enum_dispatch.workspace = true
 futures-util = { version = "0.3.31", default-features = false, features = ["sink", "std"] }
 irctext = { path = "../irctext" }
 itertools.workspace = true

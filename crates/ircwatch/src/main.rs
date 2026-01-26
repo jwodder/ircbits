@@ -342,6 +342,13 @@ fn format_msg(msg: Message) -> String {
                 highlight(m.target().as_str())
             )
         }
+        Payload::ClientMessage(ClientMessage::Kill(m)) => {
+            format!(
+                "# {sender} killed {}'s connection: {}",
+                highlight(m.nickname()),
+                m.comment()
+            )
+        }
         Payload::ClientMessage(_) => format!("[OTHER] Unexpected client message: {msg}"),
         Payload::Reply(_) => format!("[OTHER] Unexpected reply: {msg}"),
     }

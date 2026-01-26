@@ -313,7 +313,7 @@ JSON objects for this event type have the following additional fields:
 `"kick"` Event
 ----------------
 
-Emitted when an `KICK` message is received.
+Emitted when a `KICK` message is received.
 
 JSON objects for this event type have the following additional fields:
 
@@ -325,9 +325,6 @@ JSON objects for this event type have the following additional fields:
 ----------------
 
 Emitted when a `KILL` message is received.
-
-This event should not occur during normal operation and is included only for
-completeness.
 
 JSON objects for this event type have the following additional fields:
 

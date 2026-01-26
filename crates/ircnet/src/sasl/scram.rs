@@ -80,11 +80,19 @@ impl ScramSasl {
         password: &str,
         hash: HashAlgo,
     ) -> Result<ScramSasl, SaslError> {
+        ScramSasl::new_with_nonce(nickname, password, hash, generate_nonce())
+    }
+
+    fn new_with_nonce(
+        nickname: &Nickname,
+        password: &str,
+        hash: HashAlgo,
+        nonce: String,
+    ) -> Result<ScramSasl, SaslError> {
         let Ok(mech) = hash.mechanism().as_ref().parse::<TrailingParam>() else {
             unreachable!("SaslMechanism strings should be valid trailing params");
         };
         let mech_msg = Authenticate::new(mech);
-        let nonce = generate_nonce();
         let username = nickname.as_str().parse::<Username>()?;
         let password = password.parse::<Password>()?;
         Ok(ScramSasl {
@@ -804,5 +812,67 @@ mod tests {
                 }
             );
         }
+    }
+
+    #[test]
+    fn sha1session() {
+        // Taken from <https://ircv3.net/specs/extensions/sasl-3.1>
+        let mut flow = ScramSasl::new_with_nonce(
+            &"jilles".parse::<Nickname>().unwrap(),
+            "sesame",
+            HashAlgo::Sha1,
+            "c5RqLCZy0L4fGkKAZ0hujFBs".to_owned(),
+        )
+        .unwrap();
+
+        let outgoing = flow
+            .get_output()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["AUTHENTICATE :SCRAM-SHA-1"]);
+        assert!(!flow.is_done());
+
+        let msg = Authenticate::new_empty();
+        assert!(flow.handle_message(msg).is_ok());
+        let outgoing = flow
+            .get_output()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            outgoing,
+            ["AUTHENTICATE :bixhPWppbGxlcyxuPWppbGxlcyxyPWM1UnFMQ1p5MEw0ZkdrS0FaMGh1akZCcw=="]
+        );
+        assert!(!flow.is_done());
+
+        let msg = Authenticate::new("cj1jNVJxTENaeTBMNGZHa0tBWjBodWpGQnNYUW9LY2l2cUN3OWlEWlBTcGIscz01bUpPNmQ0cmpDbnNCVTFYLGk9NDA5Ng==".parse::<TrailingParam>().unwrap());
+        assert!(flow.handle_message(msg).is_ok());
+        let outgoing = flow
+            .get_output()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            outgoing,
+            [
+                "AUTHENTICATE :Yz1iaXhoUFdwcGJHeGxjeXc9LHI9YzVScUxDWnkwTDRmR2tLQVowaHVqRkJzWFFvS2NpdnFDdzlpRFpQU3BiLHA9T1ZVaGdQdTh3RW0yY0RvVkxmYUh6VlVZUFdVPQ=="
+            ]
+        );
+        assert!(!flow.is_done());
+
+        let msg = Authenticate::new(
+            "dj1aV1IyM2M5TUppcjBaZ2ZHZjVqRXRMT242Tmc9"
+                .parse::<TrailingParam>()
+                .unwrap(),
+        );
+        assert!(flow.handle_message(msg).is_ok());
+        let outgoing = flow
+            .get_output()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["AUTHENTICATE :+"]);
+        assert!(flow.is_done());
     }
 }

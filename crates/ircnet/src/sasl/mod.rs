@@ -3,7 +3,7 @@ mod scram;
 pub use self::plain::PlainSasl;
 pub use self::scram::*;
 use enum_dispatch::enum_dispatch;
-use irctext::clientmsgs::Authenticate;
+use irctext::{clientmsgs::Authenticate, types::Nickname};
 use thiserror::Error;
 
 /// A trait for sans IO state machines for authenticating with an IRC server
@@ -61,12 +61,14 @@ pub enum SaslMechanism {
 }
 
 impl SaslMechanism {
-    pub fn new_flow(self, nickname: &str, password: &str) -> SaslMachine {
+    pub fn new_flow(self, nickname: &Nickname, password: &str) -> Result<SaslMachine, SaslError> {
         match self {
-            SaslMechanism::Plain => PlainSasl::new(nickname, password).into(),
-            SaslMechanism::ScramSha1 => ScramSasl::new(nickname, password, HashAlgo::Sha1).into(),
+            SaslMechanism::Plain => Ok(PlainSasl::new(nickname, password).into()),
+            SaslMechanism::ScramSha1 => {
+                Ok(ScramSasl::new(nickname, password, HashAlgo::Sha1)?.into())
+            }
             SaslMechanism::ScramSha512 => {
-                ScramSasl::new(nickname, password, HashAlgo::Sha512).into()
+                Ok(ScramSasl::new(nickname, password, HashAlgo::Sha512)?.into())
             }
         }
     }
@@ -115,7 +117,7 @@ impl<'de> serde::Deserialize<'de> for SaslMechanism {
     }
 }
 
-#[derive(Clone, Debug, Eq, Error, PartialEq)]
+#[derive(Debug, Error)]
 pub enum SaslError {
     #[error(
         "SASL failed because server sent unexpected message: expecting {expecting}, got {msg:?}"
@@ -124,4 +126,10 @@ pub enum SaslError {
         expecting: &'static str,
         msg: String,
     },
+    #[error("username preparation failed")]
+    PrepareUsername(#[from] PrepareUsernameError),
+    #[error("password preparation failed")]
+    PreparePassword(#[source] stringprep::Error),
+    #[error("failed to decode base64 payload from server")]
+    Base64Decode(#[from] base64::DecodeError),
 }

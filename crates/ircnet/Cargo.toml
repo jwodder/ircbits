@@ -8,16 +8,19 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
+base64.workspace = true
 bytes = "1.5.0"
 enum_dispatch.workspace = true
 futures-util = { version = "0.3.31", default-features = false, features = ["sink", "std"] }
 irctext = { path = "../irctext" }
 itertools.workspace = true
 jiff.workspace = true
+rand = "0.9.2"
 replace_with = "0.1.8"
 rustls-native-certs = "0.8.1"
 rustls-pki-types = "1.10.0"
 serde = { workspace = true, features = ["derive"], optional = true }
+stringprep = "0.1.5"
 strum.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["net", "time"] }

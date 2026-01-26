@@ -2,6 +2,7 @@ use super::{SaslError, SaslFlow};
 use irctext::{
     TrailingParam,
     clientmsgs::{Authenticate, ClientMessageParts},
+    types::Nickname,
 };
 use replace_with::replace_with_and_return;
 
@@ -11,7 +12,7 @@ pub struct PlainSasl {
 }
 
 impl PlainSasl {
-    pub fn new(nickname: &str, password: &str) -> PlainSasl {
+    pub fn new(nickname: &Nickname, password: &str) -> PlainSasl {
         let Ok(plain) = "PLAIN".parse::<TrailingParam>() else {
             unreachable!(r#""PLAIN" should be valid trailing param"#);
         };
@@ -101,7 +102,7 @@ mod tests {
 
     #[test]
     fn login() {
-        let mut flow = PlainSasl::new("jwodder", "hunter2");
+        let mut flow = PlainSasl::new(&"jwodder".parse::<Nickname>().unwrap(), "hunter2");
         let outgoing = flow
             .get_output()
             .into_iter()

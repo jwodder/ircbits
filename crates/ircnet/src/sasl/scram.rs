@@ -524,19 +524,18 @@ struct ServerFirstMessage {
 impl std::str::FromStr for ServerFirstMessage {
     type Err = SaslError;
 
-    fn from_str(s: &str) -> Result<ServerFirstMessage, Self::Err> {
-        let mut ss = s;
-        let nonce = if let Some(("r", r)) = parse_gs2_pair(&mut ss)? {
+    fn from_str(mut s: &str) -> Result<ServerFirstMessage, Self::Err> {
+        let nonce = if let Some(("r", r)) = parse_gs2_pair(&mut s)? {
             r.to_owned()
         } else {
             return Err(SaslError::Parse);
         };
-        let salt = if let Some(("s", b64salt)) = parse_gs2_pair(&mut ss)? {
+        let salt = if let Some(("s", b64salt)) = parse_gs2_pair(&mut s)? {
             Bytes::from(STANDARD.decode(b64salt)?)
         } else {
             return Err(SaslError::Parse);
         };
-        let iteration_count = if let Some(("i", i)) = parse_gs2_pair(&mut ss)? {
+        let iteration_count = if let Some(("i", i)) = parse_gs2_pair(&mut s)? {
             i.parse::<u32>().map_err(|_| SaslError::Parse)?
         } else {
             return Err(SaslError::Parse);
@@ -584,9 +583,8 @@ enum ServerFinalMessage {
 impl std::str::FromStr for ServerFinalMessage {
     type Err = SaslError;
 
-    fn from_str(s: &str) -> Result<ServerFinalMessage, Self::Err> {
-        let mut ss = s;
-        match parse_gs2_pair(&mut ss)? {
+    fn from_str(mut s: &str) -> Result<ServerFinalMessage, Self::Err> {
+        match parse_gs2_pair(&mut s)? {
             Some(("e", value)) => Ok(ServerFinalMessage::Error {
                 message: value.to_owned(),
             }),

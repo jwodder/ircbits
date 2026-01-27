@@ -64,6 +64,8 @@ pub enum SaslMechanism {
     Plain,
     #[strum(to_string = "SCRAM-SHA-1")]
     ScramSha1,
+    #[strum(to_string = "SCRAM-SHA-256")]
+    ScramSha256,
     #[strum(to_string = "SCRAM-SHA-512")]
     ScramSha512,
 }
@@ -85,6 +87,10 @@ impl SaslMechanism {
             }
             SaslMechanism::ScramSha1 => {
                 let (machine, msg1) = ScramSasl::new(nickname, password, HashAlgo::Sha1)?;
+                Ok((machine.into(), msg1))
+            }
+            SaslMechanism::ScramSha256 => {
+                let (machine, msg1) = ScramSasl::new(nickname, password, HashAlgo::Sha256)?;
                 Ok((machine.into(), msg1))
             }
             SaslMechanism::ScramSha512 => {

@@ -15,8 +15,8 @@ use rand::{
     rngs::StdRng,
 };
 use replace_with::replace_with_and_return;
-use sha1::{Digest as _, Sha1};
-use sha2::Sha512;
+use sha1::{Digest, Sha1};
+use sha2::{Sha256, Sha512};
 use std::fmt;
 use thiserror::Error;
 
@@ -25,6 +25,7 @@ const CLIENT_NONCE_LENGTH: usize = 24;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum HashAlgo {
     Sha1,
+    Sha256,
     Sha512,
 }
 
@@ -32,6 +33,7 @@ impl HashAlgo {
     fn mechanism(self) -> SaslMechanism {
         match self {
             HashAlgo::Sha1 => SaslMechanism::ScramSha1,
+            HashAlgo::Sha256 => SaslMechanism::ScramSha256,
             HashAlgo::Sha512 => SaslMechanism::ScramSha512,
         }
     }
@@ -39,6 +41,7 @@ impl HashAlgo {
     fn hash(self, bs: &[u8]) -> Bytes {
         match self {
             HashAlgo::Sha1 => Bytes::from_iter(Sha1::digest(bs)),
+            HashAlgo::Sha256 => Bytes::from_iter(Sha256::digest(bs)),
             HashAlgo::Sha512 => Bytes::from_iter(Sha512::digest(bs)),
         }
     }
@@ -48,6 +51,12 @@ impl HashAlgo {
             HashAlgo::Sha1 => {
                 let mut mac =
                     Hmac::<Sha1>::new_from_slice(key).expect("any key length should be accepted");
+                mac.update(s);
+                Bytes::from_iter(mac.finalize().into_bytes())
+            }
+            HashAlgo::Sha256 => {
+                let mut mac =
+                    Hmac::<Sha256>::new_from_slice(key).expect("any key length should be accepted");
                 mac.update(s);
                 Bytes::from_iter(mac.finalize().into_bytes())
             }
@@ -64,6 +73,7 @@ impl HashAlgo {
     fn iter_hash(self, s: &[u8], salt: &[u8], i: u32) -> Bytes {
         match self {
             HashAlgo::Sha1 => Bytes::from_iter(pbkdf2_hmac_array::<Sha1, 20>(s, salt, i)),
+            HashAlgo::Sha256 => Bytes::from_iter(pbkdf2_hmac_array::<Sha256, 32>(s, salt, i)),
             HashAlgo::Sha512 => Bytes::from_iter(pbkdf2_hmac_array::<Sha512, 64>(s, salt, i)),
         }
     }

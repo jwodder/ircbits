@@ -48,6 +48,7 @@ fn default_sasl() -> bool {
 fn default_sasl_mechs() -> Vec1<SaslMechanism> {
     Vec1::from([
         SaslMechanism::ScramSha512,
+        SaslMechanism::ScramSha256,
         SaslMechanism::ScramSha1,
         SaslMechanism::Plain,
     ])

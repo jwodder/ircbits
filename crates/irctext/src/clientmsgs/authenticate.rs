@@ -13,22 +13,20 @@ impl Authenticate {
     }
 
     pub fn new_encoded(bytes: &[u8]) -> Vec<Authenticate> {
-        let mut b64 = STANDARD.encode(bytes);
+        let b64 = STANDARD.encode(bytes);
+        let mut b64 = &*b64;
         let mut msgs = Vec::with_capacity(b64.len() / 400 + 1);
         loop {
             if b64.is_empty() {
-                let Ok(param) = "+".parse::<TrailingParam>() else {
-                    unreachable!(r#""+" should be valid trailing param"#);
-                };
-                msgs.push(Authenticate::new(param));
+                msgs.push(Authenticate::new_empty());
                 return msgs;
             } else {
                 let end = b64.len().min(400);
-                let Ok(param) = TrailingParam::try_from(b64.drain(..end).collect::<String>())
-                else {
+                let Ok(param) = b64[..end].parse::<TrailingParam>() else {
                     unreachable!("base64 text should be valid trailing param");
                 };
                 msgs.push(Authenticate::new(param));
+                b64 = &b64[end..];
                 if end < 400 && b64.is_empty() {
                     return msgs;
                 }
@@ -48,6 +46,13 @@ impl Authenticate {
     pub fn new_abort() -> Authenticate {
         let Ok(param) = "*".parse::<TrailingParam>() else {
             unreachable!(r#""*" should be valid trailing param"#);
+        };
+        Authenticate::new(param)
+    }
+
+    pub fn new_empty() -> Authenticate {
+        let Ok(param) = "+".parse::<TrailingParam>() else {
+            unreachable!(r#""+" should be valid trailing param"#);
         };
         Authenticate::new(param)
     }

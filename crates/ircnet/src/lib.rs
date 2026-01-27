@@ -1,3 +1,4 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
 //! `ircnet` is a Rust library for connecting to IRC servers and sending &
 //! receiving messages using message types defined in the [`irctext`][] crate.
 //!
@@ -22,3 +23,4 @@
 //!   [`serde`]
 pub mod client;
 pub mod connect;
+pub mod sasl;

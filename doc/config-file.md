@@ -25,8 +25,19 @@ stated otherwise.
 - `realname` (string) — the "real name" to declare when logging into IRC
 - `sasl` (boolean; optional; default: `true`) — Whether to attempt to
   authenticate using SASL.  If this is set to `true` and the remote server does
-  not support capability negotiation, the program will proceed normally without
-  using SASL.
+  not support capability negotiation or SASL, the program will proceed normally
+  without using SASL.
+- `sasl-mechanisms` (nonempty list of strings; optional) — The list of SASL
+  mechanisms to use as part of authenticating with SASL, in decreasing order of
+  preference.  The supported SASL mechanisms in their default order is:
+
+    - `"SCRAM-SHA-512"`
+    - `"SCRAM-SHA-256"`
+    - `"SCRAM-SHA-1"`
+    - `"PLAIN"`
+
+    If a server does not support any configured mechanisms, the program will
+    proceed normally without using SASL.
 
 Many `ircbits` commands read further command-specific configuration from
 subtables of profile tables that are keyed by the name of the command; see each

@@ -17,10 +17,7 @@ impl Authenticate {
         let mut msgs = Vec::with_capacity(b64.len() / 400 + 1);
         loop {
             if b64.is_empty() {
-                let Ok(param) = "+".parse::<TrailingParam>() else {
-                    unreachable!(r#""+" should be valid trailing param"#);
-                };
-                msgs.push(Authenticate::new(param));
+                msgs.push(Authenticate::new_empty());
                 return msgs;
             } else {
                 let end = b64.len().min(400);

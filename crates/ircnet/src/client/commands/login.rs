@@ -1,4 +1,5 @@
 use super::Command;
+use crate::sasl::{SaslError, SaslFlow, SaslMachine, SaslMechanism};
 use irctext::{
     ClientMessage, ClientMessageParts, Message, Payload, Reply, ReplyParts, TrailingParam,
     TryFromStringError,
@@ -12,7 +13,9 @@ use irctext::{
     },
 };
 use itertools::Itertools; // join
+use mitsein::vec1::Vec1;
 use replace_with::{replace_with, replace_with_and_return};
+use std::collections::HashSet;
 use std::time::Duration;
 use thiserror::Error;
 
@@ -29,6 +32,11 @@ pub struct LoginParams {
     pub realname: TrailingParam,
     #[cfg_attr(feature = "serde", serde(default = "default_sasl"))]
     pub sasl: bool,
+    #[cfg_attr(
+        feature = "serde",
+        serde(rename = "sasl-mechanisms", default = "default_sasl_mechs")
+    )]
+    pub sasl_mechanisms: Vec1<SaslMechanism>,
 }
 
 #[cfg(feature = "serde")]
@@ -36,35 +44,41 @@ fn default_sasl() -> bool {
     true
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(feature = "serde")]
+fn default_sasl_mechs() -> Vec1<SaslMechanism> {
+    Vec1::from([
+        SaslMechanism::ScramSha512,
+        SaslMechanism::ScramSha1,
+        SaslMechanism::Plain,
+    ])
+}
+
+#[derive(Debug)]
 pub struct Login {
     outgoing: Vec<ClientMessage>,
-    auth_msgs: Vec<ClientMessage>,
     state: State,
 }
 
 impl Login {
     pub fn new(params: LoginParams) -> Login {
-        let auth_msgs =
-            Authenticate::new_plain_sasl(&params.nickname, &params.nickname, &params.password)
-                .into_iter()
-                .map(ClientMessage::from)
-                .collect::<Vec<_>>();
         let mut outgoing = Vec::with_capacity(4);
         if params.sasl {
             outgoing.push(ClientMessage::from(CapLsRequest::new_with_version(302)));
         }
-        outgoing.push(ClientMessage::from(Pass::new(params.password)));
-        outgoing.push(ClientMessage::from(Nick::new(params.nickname)));
+        outgoing.push(ClientMessage::from(Pass::new(params.password.clone())));
+        outgoing.push(ClientMessage::from(Nick::new(params.nickname.clone())));
         outgoing.push(ClientMessage::from(User::new(
             params.username,
             params.realname,
         )));
         Login {
             outgoing,
-            auth_msgs,
             state: if params.sasl {
-                State::Start
+                State::Start {
+                    sasl_mechs: Vec::from(params.sasl_mechanisms),
+                    nickname: params.nickname,
+                    password: params.password,
+                }
             } else {
                 State::Awaiting001 { capabilities: None }
             },
@@ -75,14 +89,15 @@ impl Login {
 // Order of replies on successful login:
 // - With SASL:
 //     - S: `CAP * LS :…`, possibly preceded by zero or more `CAP * LS * :…`
-//          - If "PLAIN" isn't in sasl, send CAP END and await RPL_WELCOME
+//          - If no supported mechanisms are in sasl, send CAP END and await
+//            RPL_WELCOME
 //     - C: CAP REQ sasl
 //     - S: CAP * ACK sasl
 //          - Or `CAP * NAK sasl`, in which case we error out
-//     - C: AUTHENTICATE PLAIN
+//     - C: AUTHENTICATE <mechanism>
 //     - S: AUTHENTICATE +
 //          - Or ERR_SASLMECHS (908)
-//     - C: AUTHENTICATE {base64("{nickname}\0{nickname}\0{password}")}
+//     - SASL flow
 //     - S: RPL_LOGGEDIN (900)
 //     - S: RPL_SASLSUCCESS (903)
 // - Without SASL:
@@ -134,7 +149,7 @@ impl Command for Login {
         match &msg.payload {
             Payload::Reply(rpl) => {
                 if rpl.is_error() && !matches!(rpl, Reply::NoMotd(_)) {
-                    if self.state == State::Start
+                    if matches!(self.state, State::Start { .. })
                         && let Reply::UnknownCommand(r) = rpl
                         && r.command() == "CAP"
                     {
@@ -210,10 +225,8 @@ impl Command for Login {
                     true
                 }
                 ClientMessage::Authenticate(auth) => {
-                    if self.state.handle_auth(auth) {
-                        let msgs = std::mem::take(&mut self.auth_msgs);
-                        self.outgoing.extend(msgs);
-                    }
+                    let msgs = self.state.handle_auth(auth);
+                    self.outgoing.extend(msgs.into_iter().map(Into::into));
                     true
                 }
                 other => self.state.handle_other(other),
@@ -257,19 +270,34 @@ impl Command for Login {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug)]
 enum State {
-    Start,
+    Start {
+        sasl_mechs: Vec<SaslMechanism>,
+        nickname: Nickname,
+        password: TrailingParam,
+    },
     ListingCaps {
         capabilities: Vec<(Capability, Option<CapabilityValue>)>,
+        sasl_mechs: Vec<SaslMechanism>,
+        nickname: Nickname,
+        password: TrailingParam,
     },
     AwaitingAck {
         capabilities: Vec<(Capability, Option<CapabilityValue>)>,
+        sasl_mechs: Vec<SaslMechanism>,
+        nickname: Nickname,
+        password: TrailingParam,
     },
     SentMechanism {
         capabilities: Vec<(Capability, Option<CapabilityValue>)>,
+        sasl: SaslMachine,
     },
-    SentAuth {
+    Sasl {
+        capabilities: Vec<(Capability, Option<CapabilityValue>)>,
+        sasl: SaslMachine,
+    },
+    SaslDone {
         capabilities: Vec<(Capability, Option<CapabilityValue>)>,
     },
     Got900 {
@@ -318,7 +346,7 @@ impl State {
             self,
             || State::Void,
             |state| match (state, rpl) {
-                (State::Start, Reply::Welcome(r)) => {
+                (State::Start { .. }, Reply::Welcome(r)) => {
                     if let ReplyTarget::Nick(nick) = r.client() {
                         let my_nick = nick.clone();
                         (
@@ -333,7 +361,7 @@ impl State {
                         ((true, None), State::error(LoginError::StarWelcome))
                     }
                 }
-                (State::SentAuth { capabilities }, Reply::LoggedIn(_)) => {
+                (State::SaslDone { capabilities }, Reply::LoggedIn(_)) => {
                     ((true, None), State::Got900 { capabilities })
                 }
                 (State::Got900 { capabilities }, Reply::SaslSuccess(_)) => (
@@ -540,63 +568,142 @@ impl State {
             self,
             || State::Void,
             |state| match (state, cap) {
-                (State::Start, Cap::LsResponse(m)) => {
+                (
+                    State::Start {
+                        mut sasl_mechs,
+                        nickname,
+                        password,
+                    },
+                    Cap::LsResponse(m),
+                ) => {
                     let capabilities = m.capabilities.clone();
                     if m.continued {
-                        (None, State::ListingCaps { capabilities })
-                    } else if has_plain_sasl(&capabilities) {
-                        let cap_req = ClientMessage::from(CapReq {
-                            capabilities: vec![
-                                "sasl"
-                                    .parse::<CapabilityRequest>()
-                                    .expect(r#""sasl" should be valid capability request"#),
-                            ],
-                        });
-                        (Some(cap_req), State::AwaitingAck { capabilities })
-                    } else {
-                        let cap_end = ClientMessage::from(CapEnd);
                         (
-                            Some(cap_end),
-                            State::Awaiting001 {
-                                capabilities: Some(capabilities),
+                            None,
+                            State::ListingCaps {
+                                capabilities,
+                                sasl_mechs,
+                                nickname,
+                                password,
                             },
                         )
+                    } else {
+                        let server_mechs = servers_sasl_mechs(&capabilities);
+                        sasl_mechs.retain(|m| server_mechs.contains(m));
+                        if !sasl_mechs.is_empty() {
+                            let cap_req = ClientMessage::from(CapReq {
+                                capabilities: vec![
+                                    "sasl"
+                                        .parse::<CapabilityRequest>()
+                                        .expect(r#""sasl" should be valid capability request"#),
+                                ],
+                            });
+                            (
+                                Some(cap_req),
+                                State::AwaitingAck {
+                                    capabilities,
+                                    sasl_mechs,
+                                    nickname,
+                                    password,
+                                },
+                            )
+                        } else {
+                            tracing::debug!(
+                                "Server does not support any enabled SASL mechanisms; skipping SASL"
+                            );
+                            let cap_end = ClientMessage::from(CapEnd);
+                            (
+                                Some(cap_end),
+                                State::Awaiting001 {
+                                    capabilities: Some(capabilities),
+                                },
+                            )
+                        }
                     }
                 }
-                (State::ListingCaps { mut capabilities }, Cap::LsResponse(m)) => {
+                (
+                    State::ListingCaps {
+                        mut capabilities,
+                        mut sasl_mechs,
+                        nickname,
+                        password,
+                    },
+                    Cap::LsResponse(m),
+                ) => {
                     capabilities.extend(m.capabilities.clone());
                     if m.continued {
-                        (None, State::ListingCaps { capabilities })
-                    } else if has_plain_sasl(&capabilities) {
-                        let cap_req = ClientMessage::from(CapReq {
-                            capabilities: vec![
-                                "sasl"
-                                    .parse::<CapabilityRequest>()
-                                    .expect(r#""sasl" should be valid capability request"#),
-                            ],
-                        });
-                        (Some(cap_req), State::AwaitingAck { capabilities })
-                    } else {
-                        let cap_end = ClientMessage::from(CapEnd);
                         (
-                            Some(cap_end),
-                            State::Awaiting001 {
-                                capabilities: Some(capabilities),
+                            None,
+                            State::ListingCaps {
+                                capabilities,
+                                sasl_mechs,
+                                nickname,
+                                password,
                             },
                         )
+                    } else {
+                        let server_mechs = servers_sasl_mechs(&capabilities);
+                        sasl_mechs.retain(|m| server_mechs.contains(m));
+                        if !sasl_mechs.is_empty() {
+                            let cap_req = ClientMessage::from(CapReq {
+                                capabilities: vec![
+                                    "sasl"
+                                        .parse::<CapabilityRequest>()
+                                        .expect(r#""sasl" should be valid capability request"#),
+                                ],
+                            });
+                            (
+                                Some(cap_req),
+                                State::AwaitingAck {
+                                    capabilities,
+                                    sasl_mechs,
+                                    nickname,
+                                    password,
+                                },
+                            )
+                        } else {
+                            tracing::debug!(
+                                "Server does not support any enabled SASL mechanisms; skipping SASL"
+                            );
+                            let cap_end = ClientMessage::from(CapEnd);
+                            (
+                                Some(cap_end),
+                                State::Awaiting001 {
+                                    capabilities: Some(capabilities),
+                                },
+                            )
+                        }
                     }
                 }
-                (State::AwaitingAck { capabilities }, Cap::Ack(m)) => {
+                (
+                    State::AwaitingAck {
+                        capabilities,
+                        sasl_mechs,
+                        nickname,
+                        password,
+                    },
+                    Cap::Ack(m),
+                ) => {
                     if m.capabilities
                         .iter()
                         .any(|c| c.capability == "sasl" && !c.disable)
                     {
-                        let auth_plain = ClientMessage::from(Authenticate::new(
-                            "PLAIN"
-                                .parse::<TrailingParam>()
-                                .expect(r#""PLAIN" should be valid trailing param"#),
-                        ));
-                        (Some(auth_plain), State::SentMechanism { capabilities })
+                        let mech = sasl_mechs
+                            .into_iter()
+                            .next()
+                            .expect("sasl_mechs should be nonempty");
+                        match mech.new_flow(&nickname, &password) {
+                            Ok((sasl, msg1)) => {
+                                tracing::debug!(
+                                    "Starting SASL authentication with {mech} mechanism"
+                                );
+                                (
+                                    Some(ClientMessage::from(msg1)),
+                                    State::SentMechanism { capabilities, sasl },
+                                )
+                            }
+                            Err(e) => (None, State::error(LoginError::Sasl(e))),
+                        }
                     } else {
                         (
                             None,
@@ -634,24 +741,35 @@ impl State {
         )
     }
 
-    fn handle_auth(&mut self, auth: &Authenticate) -> bool {
+    fn handle_auth(&mut self, auth: &Authenticate) -> Vec<Authenticate> {
         replace_with_and_return(
             self,
             || State::Void,
-            |state| {
-                match (state, auth.parameter().as_str()) {
-                    (State::SentMechanism { capabilities }, "+") => {
-                        (true, State::SentAuth { capabilities })
-                        // Caller should now send auth_msgs
+            |state| match state {
+                State::SentMechanism {
+                    capabilities,
+                    mut sasl,
+                }
+                | State::Sasl {
+                    capabilities,
+                    mut sasl,
+                } => match sasl.handle_message(auth) {
+                    Ok(msgs) => {
+                        if sasl.is_done() {
+                            (msgs, State::SaslDone { capabilities })
+                        } else {
+                            (msgs, State::Sasl { capabilities, sasl })
+                        }
                     }
-                    (state, _) => {
-                        let expecting = state.expecting();
-                        let msg = auth.to_irc_line();
-                        (
-                            false,
-                            State::error(LoginError::Unexpected { expecting, msg }),
-                        )
-                    }
+                    Err(e) => (Vec::new(), State::error(LoginError::Sasl(e))),
+                },
+                state => {
+                    let expecting = state.expecting();
+                    let msg = auth.to_irc_line();
+                    (
+                        Vec::new(),
+                        State::error(LoginError::Unexpected { expecting, msg }),
+                    )
                 }
             },
         )
@@ -675,11 +793,12 @@ impl State {
 
     fn expecting(&self) -> &'static str {
         match self {
-            State::Start => r#""CAP * LS" response or RPL_WELCOME (001) reply"#,
+            State::Start { .. } => r#""CAP * LS" response or RPL_WELCOME (001) reply"#,
             State::ListingCaps { .. } => r#""CAP * LS" response"#,
             State::AwaitingAck { .. } => r#""CAP * ACK" response"#,
             State::SentMechanism { .. } => r#""AUTHENTICATE +" response"#,
-            State::SentAuth { .. } => "RPL_LOGGEDIN (900) reply",
+            State::Sasl { .. } => r#""AUTHENTICATE" response"#,
+            State::SaslDone { .. } => "RPL_LOGGEDIN (900) reply",
             State::Got900 { .. } => "RPL_SASLSUCCESS (903) reply",
             State::Awaiting001 { .. } => "RPL_WELCOME (001) reply",
             State::Got001 { .. } => "RPL_YOURHOST (002) reply",
@@ -819,7 +938,7 @@ pub struct LuserStats {
     pub statsconn_msg: Option<String>,
 }
 
-#[derive(Clone, Debug, Eq, Error, PartialEq)]
+#[derive(Debug, Error)]
 pub enum LoginError {
     #[error("login failed due to overly-long input line: {message:?}")]
     InputTooLong { message: String },
@@ -868,15 +987,28 @@ pub enum LoginError {
     },
     #[error("login failed because server NAKed our request to enable SASL")]
     SaslNacked,
+    #[error("login failed due to SASL failing")]
+    Sasl(SaslError),
 }
 
-// Returns true if there's a "sasl" cap and it either lacks a value or has
-// "PLAIN" in its value
-fn has_plain_sasl(caps: &[(Capability, Option<CapabilityValue>)]) -> bool {
-    caps.iter()
+fn servers_sasl_mechs(caps: &[(Capability, Option<CapabilityValue>)]) -> HashSet<SaslMechanism> {
+    match caps
+        .iter()
         .filter_map(|(key, value)| (key == "sasl").then_some(value.as_ref()))
         .next_back()
-        .is_some_and(|m| m.is_none_or(|mechs| mechs.split(',').any(|m| m == "PLAIN")))
+    {
+        Some(Some(value)) => value
+            .split(',')
+            .filter_map(|m| m.parse::<SaslMechanism>().ok())
+            .collect(),
+        Some(None) => {
+            // Server does not support SASL v3.2 / Capability Negotation 302
+            // and so isn't telling us what SASL mechanisms it supports.  Just
+            // try everything we support.
+            SaslMechanism::iter().collect()
+        }
+        None => HashSet::new(),
+    }
 }
 
 #[cfg(test)]
@@ -891,6 +1023,7 @@ mod tests {
             username: "jwuser".parse::<Username>().unwrap(),
             realname: "Just this guy, you know?".parse::<TrailingParam>().unwrap(),
             sasl: false,
+            sasl_mechanisms: Vec1::from_one(SaslMechanism::Plain),
         };
         let mut cmd = Login::new(params);
         let outgoing = cmd.get_client_messages();
@@ -1106,6 +1239,7 @@ mod tests {
             username: "jwuser".parse::<Username>().unwrap(),
             realname: "Just this guy, you know?".parse::<TrailingParam>().unwrap(),
             sasl: true,
+            sasl_mechanisms: Vec1::from_one(SaslMechanism::Plain),
         };
         let mut cmd = Login::new(params);
 
@@ -1398,6 +1532,7 @@ mod tests {
             username: "jwuser".parse::<Username>().unwrap(),
             realname: "Just this guy, you know?".parse::<TrailingParam>().unwrap(),
             sasl: true,
+            sasl_mechanisms: Vec1::from_one(SaslMechanism::Plain),
         };
         let mut cmd = Login::new(params);
 

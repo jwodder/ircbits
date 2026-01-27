@@ -112,7 +112,7 @@ impl ScramSasl {
 }
 
 impl SaslFlow for ScramSasl {
-    fn handle_message(&mut self, msg: Authenticate) -> Result<Vec<Authenticate>, SaslError> {
+    fn handle_message(&mut self, msg: &Authenticate) -> Result<Vec<Authenticate>, SaslError> {
         replace_with_and_return(
             &mut self.state,
             || State::Error(Error),
@@ -130,7 +130,7 @@ impl SaslFlow for ScramSasl {
 
 #[enum_dispatch]
 trait ScramState {
-    fn handle_message(self, msg: Authenticate) -> Result<(State, Vec<Authenticate>), SaslError>;
+    fn handle_message(self, msg: &Authenticate) -> Result<(State, Vec<Authenticate>), SaslError>;
     fn is_done(&self) -> bool;
 }
 
@@ -154,7 +154,7 @@ struct AwaitingPlus {
 }
 
 impl ScramState for AwaitingPlus {
-    fn handle_message(self, msg: Authenticate) -> Result<(State, Vec<Authenticate>), SaslError> {
+    fn handle_message(self, msg: &Authenticate) -> Result<(State, Vec<Authenticate>), SaslError> {
         if msg.parameter() == "+" {
             let msgs = ClientFirstMessage {
                 authzid: &self.authzid,
@@ -202,7 +202,7 @@ struct AwaitingServerFirstMsg {
 impl ScramState for AwaitingServerFirstMsg {
     fn handle_message(
         mut self,
-        msg: Authenticate,
+        msg: &Authenticate,
     ) -> Result<(State, Vec<Authenticate>), SaslError> {
         let payload = msg.parameter().as_str();
         if payload != "+" {
@@ -290,7 +290,7 @@ struct AwaitingServerFinalMsg {
 impl ScramState for AwaitingServerFinalMsg {
     fn handle_message(
         mut self,
-        msg: Authenticate,
+        msg: &Authenticate,
     ) -> Result<(State, Vec<Authenticate>), SaslError> {
         let payload = msg.parameter().as_str();
         if payload != "+" {
@@ -323,7 +323,7 @@ impl ScramState for AwaitingServerFinalMsg {
 struct Done;
 
 impl ScramState for Done {
-    fn handle_message(self, _msg: Authenticate) -> Result<(State, Vec<Authenticate>), SaslError> {
+    fn handle_message(self, _msg: &Authenticate) -> Result<(State, Vec<Authenticate>), SaslError> {
         panic!("handle_message() called on Done state")
     }
 
@@ -336,7 +336,7 @@ impl ScramState for Done {
 struct Error;
 
 impl ScramState for Error {
-    fn handle_message(self, _msg: Authenticate) -> Result<(State, Vec<Authenticate>), SaslError> {
+    fn handle_message(self, _msg: &Authenticate) -> Result<(State, Vec<Authenticate>), SaslError> {
         panic!("handle_message() called on Error state")
     }
 
@@ -695,7 +695,7 @@ mod tests {
 
         let msg = Authenticate::new_empty();
         let outgoing = flow
-            .handle_message(msg)
+            .handle_message(&msg)
             .unwrap()
             .into_iter()
             .map(|msg| msg.to_irc_line())
@@ -708,7 +708,7 @@ mod tests {
 
         let msg = Authenticate::new("cj1jNVJxTENaeTBMNGZHa0tBWjBodWpGQnNYUW9LY2l2cUN3OWlEWlBTcGIscz01bUpPNmQ0cmpDbnNCVTFYLGk9NDA5Ng==".parse::<TrailingParam>().unwrap());
         let outgoing = flow
-            .handle_message(msg)
+            .handle_message(&msg)
             .unwrap()
             .into_iter()
             .map(|msg| msg.to_irc_line())
@@ -727,7 +727,7 @@ mod tests {
                 .unwrap(),
         );
         let outgoing = flow
-            .handle_message(msg)
+            .handle_message(&msg)
             .unwrap()
             .into_iter()
             .map(|msg| msg.to_irc_line())

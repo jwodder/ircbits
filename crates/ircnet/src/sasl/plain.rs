@@ -35,7 +35,7 @@ enum State {
 }
 
 impl SaslFlow for PlainSasl {
-    fn handle_message(&mut self, msg: Authenticate) -> Result<Vec<Authenticate>, SaslError> {
+    fn handle_message(&mut self, msg: &Authenticate) -> Result<Vec<Authenticate>, SaslError> {
         replace_with_and_return(
             &mut self.state,
             || State::Void,
@@ -74,7 +74,7 @@ mod tests {
         assert_eq!(msg1.to_irc_line(), "AUTHENTICATE :PLAIN");
         let msg = Authenticate::new_empty();
         let outgoing = flow
-            .handle_message(msg)
+            .handle_message(&msg)
             .unwrap()
             .into_iter()
             .map(|msg| msg.to_irc_line())

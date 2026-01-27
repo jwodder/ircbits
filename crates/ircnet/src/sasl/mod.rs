@@ -36,7 +36,7 @@ use thiserror::Error;
 ///       authentication is in progress.
 #[enum_dispatch]
 pub trait SaslFlow {
-    fn handle_message(&mut self, msg: Authenticate) -> Result<Vec<Authenticate>, SaslError>;
+    fn handle_message(&mut self, msg: &Authenticate) -> Result<Vec<Authenticate>, SaslError>;
     fn is_done(&self) -> bool;
 }
 
@@ -48,7 +48,16 @@ pub enum SaslMachine {
 }
 
 #[derive(
-    strum::AsRefStr, Clone, Copy, Debug, strum::Display, strum::EnumString, Eq, Hash, PartialEq,
+    strum::AsRefStr,
+    Clone,
+    Copy,
+    Debug,
+    strum::Display,
+    strum::EnumIter,
+    strum::EnumString,
+    Eq,
+    Hash,
+    PartialEq,
 )]
 pub enum SaslMechanism {
     #[strum(to_string = "PLAIN")]
@@ -60,6 +69,10 @@ pub enum SaslMechanism {
 }
 
 impl SaslMechanism {
+    pub fn iter() -> SaslMechanismIter {
+        <SaslMechanism as strum::IntoEnumIterator>::iter()
+    }
+
     pub fn new_flow(
         self,
         nickname: &Nickname,

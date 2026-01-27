@@ -16,6 +16,7 @@ hmac = "0.12.1"
 irctext = { path = "../irctext" }
 itertools.workspace = true
 jiff.workspace = true
+mitsein.workspace = true
 pbkdf2 = "0.12.2"
 rand = "0.9.2"
 replace_with = "0.1.8"
@@ -36,7 +37,7 @@ tracing.workspace = true
 pretty_assertions = "1.4.1"
 
 [features]
-serde = ["dep:serde", "irctext/serde"]
+serde = ["dep:serde", "irctext/serde", "mitsein/serde"]
 
 [lints]
 workspace = true

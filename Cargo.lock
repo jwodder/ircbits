@@ -618,6 +618,7 @@ dependencies = [
  "irctext",
  "itertools",
  "jiff",
+ "mitsein",
  "pbkdf2",
  "pretty_assertions",
  "rand",

@@ -15,7 +15,7 @@ use irctext::{
 use itertools::Itertools; // join
 use mitsein::vec1::Vec1;
 use replace_with::{replace_with, replace_with_and_return};
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::time::Duration;
 use thiserror::Error;
 
@@ -96,7 +96,7 @@ impl Login {
 //          - Or `CAP * NAK sasl`, in which case we error out
 //     - C: AUTHENTICATE <mechanism>
 //     - S: AUTHENTICATE +
-//          - Or ERR_SASLMECHS (908)
+//          - Or ERR_SASLFAIL (904) or ERR_SASLMECHS (908)
 //     - SASL flow
 //     - S: RPL_LOGGEDIN (900)
 //     - S: RPL_SASLSUCCESS (903)
@@ -185,15 +185,80 @@ impl Command for Login {
                         Reply::NickLocked(r) => LoginError::NickLocked {
                             message: r.message().to_string(),
                         },
-                        Reply::SaslFail(r) => LoginError::SaslFail {
-                            message: r.message().to_string(),
-                        },
+                        Reply::SaslFail(r) => {
+                            if let State::SentMechanism {
+                                ref mut sasl_mechs,
+                                ref nickname,
+                                ref password,
+                                ref mut sasl,
+                                ..
+                            } = self.state
+                                && let Some(mech) = sasl_mechs.pop_front()
+                            {
+                                match mech.new_flow(nickname, password) {
+                                    Ok((new_sasl, msg1)) => {
+                                        tracing::debug!(
+                                            "Starting SASL authentication with {mech} mechanism"
+                                        );
+                                        self.outgoing.push(ClientMessage::from(msg1));
+                                        *sasl = new_sasl;
+                                        return true;
+                                    }
+                                    Err(e) => LoginError::Sasl(e),
+                                }
+                            } else {
+                                LoginError::SaslFail {
+                                    message: r.message().to_string(),
+                                }
+                            }
+                        }
                         Reply::SaslAlready(r) => LoginError::SaslAlready {
                             message: r.message().to_string(),
                         },
-                        Reply::SaslMechs(r) => LoginError::SaslMechs {
-                            message: format!("{} {}", r.mechanisms(), r.message()),
-                        },
+                        Reply::SaslMechs(r) => {
+                            if let State::SentMechanism {
+                                ref mut sasl_mechs,
+                                ref nickname,
+                                ref password,
+                                ref mut sasl,
+                                ref capabilities,
+                                ..
+                            } = self.state
+                            {
+                                let server_mechs = r
+                                    .mechanisms()
+                                    .split(',')
+                                    .filter_map(|m| m.parse::<SaslMechanism>().ok())
+                                    .collect::<HashSet<_>>();
+                                sasl_mechs.retain(|m| server_mechs.contains(m));
+                                if let Some(mech) = sasl_mechs.pop_front() {
+                                    match mech.new_flow(nickname, password) {
+                                        Ok((new_sasl, msg1)) => {
+                                            tracing::debug!(
+                                                "Starting SASL authentication with {mech} mechanism"
+                                            );
+                                            self.outgoing.push(ClientMessage::from(msg1));
+                                            *sasl = new_sasl;
+                                            return true;
+                                        }
+                                        Err(e) => LoginError::Sasl(e),
+                                    }
+                                } else {
+                                    tracing::debug!(
+                                        "Server does not support any enabled SASL mechanisms; skipping SASL"
+                                    );
+                                    self.outgoing.push(ClientMessage::from(CapEnd));
+                                    self.state = State::Awaiting001 {
+                                        capabilities: Some(capabilities.clone()),
+                                    };
+                                    return true;
+                                }
+                            } else {
+                                LoginError::SaslMechs {
+                                    message: format!("{} {}", r.mechanisms(), r.message()),
+                                }
+                            }
+                        }
                         unexpected => LoginError::UnexpectedError {
                             code: unexpected.code(),
                             reply: msg.to_string(),
@@ -291,7 +356,10 @@ enum State {
     },
     SentMechanism {
         capabilities: Vec<(Capability, Option<CapabilityValue>)>,
+        sasl_mechs: VecDeque<SaslMechanism>,
         sasl: SaslMachine,
+        nickname: Nickname,
+        password: TrailingParam,
     },
     Sasl {
         capabilities: Vec<(Capability, Option<CapabilityValue>)>,
@@ -688,9 +756,9 @@ impl State {
                         .iter()
                         .any(|c| c.capability == "sasl" && !c.disable)
                     {
+                        let mut sasl_mechs = VecDeque::from(sasl_mechs);
                         let mech = sasl_mechs
-                            .into_iter()
-                            .next()
+                            .pop_front()
                             .expect("sasl_mechs should be nonempty");
                         match mech.new_flow(&nickname, &password) {
                             Ok((sasl, msg1)) => {
@@ -699,7 +767,13 @@ impl State {
                                 );
                                 (
                                     Some(ClientMessage::from(msg1)),
-                                    State::SentMechanism { capabilities, sasl },
+                                    State::SentMechanism {
+                                        capabilities,
+                                        sasl,
+                                        sasl_mechs,
+                                        nickname,
+                                        password,
+                                    },
                                 )
                             }
                             Err(e) => (None, State::error(LoginError::Sasl(e))),
@@ -749,6 +823,7 @@ impl State {
                 State::SentMechanism {
                     capabilities,
                     mut sasl,
+                    ..
                 }
                 | State::Sasl {
                     capabilities,
@@ -962,7 +1037,7 @@ pub enum LoginError {
         "login failed because SASL authentication attempted while already logged in: {message:?}"
     )]
     SaslAlready { message: String },
-    #[error("login failed because server rejected SASL PLAIN authentication: {message:?}")]
+    #[error("login failed because server rejected SASL mechanism: {message:?}")]
     SaslMechs { message: String },
     #[error("login failed with unexpected error reply {code:03}: {reply:?}")]
     UnexpectedError { code: u16, reply: String },

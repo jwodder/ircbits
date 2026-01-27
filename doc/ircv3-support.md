@@ -76,4 +76,5 @@ Key:
 
 Notes:
 
-- (1) — `PLAIN` mechanism only
+- (1) — `PLAIN`, `SCRAM-SHA-1`, `SCRAM-SHA-256`, and `SCRAM-SHA-512` mechanisms
+  only

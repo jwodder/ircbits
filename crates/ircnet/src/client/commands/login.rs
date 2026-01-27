@@ -97,7 +97,7 @@ impl Login {
 //          - Or `CAP * NAK sasl`, in which case we error out
 //     - C: AUTHENTICATE <mechanism>
 //     - S: AUTHENTICATE +
-//          - Or ERR_SASLFAIL (904) or ERR_SASLMECHS (908)
+//          - Or ERR_SASLFAIL (904) or RPL_SASLMECHS (908)
 //     - SASL flow
 //     - S: RPL_LOGGEDIN (900)
 //     - S: RPL_SASLSUCCESS (903)
@@ -216,50 +216,6 @@ impl Command for Login {
                         Reply::SaslAlready(r) => LoginError::SaslAlready {
                             message: r.message().to_string(),
                         },
-                        Reply::SaslMechs(r) => {
-                            if let State::SentMechanism {
-                                ref mut sasl_mechs,
-                                ref nickname,
-                                ref password,
-                                ref mut sasl,
-                                ref capabilities,
-                                ..
-                            } = self.state
-                            {
-                                let server_mechs = r
-                                    .mechanisms()
-                                    .split(',')
-                                    .filter_map(|m| m.parse::<SaslMechanism>().ok())
-                                    .collect::<HashSet<_>>();
-                                sasl_mechs.retain(|m| server_mechs.contains(m));
-                                if let Some(mech) = sasl_mechs.pop_front() {
-                                    match mech.new_flow(nickname, password) {
-                                        Ok((new_sasl, msg1)) => {
-                                            tracing::debug!(
-                                                "Starting SASL authentication with {mech} mechanism"
-                                            );
-                                            self.outgoing.push(ClientMessage::from(msg1));
-                                            *sasl = new_sasl;
-                                            return true;
-                                        }
-                                        Err(e) => LoginError::Sasl(e),
-                                    }
-                                } else {
-                                    tracing::debug!(
-                                        "Server does not support any enabled SASL mechanisms; skipping SASL"
-                                    );
-                                    self.outgoing.push(ClientMessage::from(CapEnd));
-                                    self.state = State::Awaiting001 {
-                                        capabilities: Some(capabilities.clone()),
-                                    };
-                                    return true;
-                                }
-                            } else {
-                                LoginError::SaslMechs {
-                                    message: format!("{} {}", r.mechanisms(), r.message()),
-                                }
-                            }
-                        }
                         unexpected => LoginError::UnexpectedError {
                             code: unexpected.code(),
                             reply: msg.to_string(),
@@ -430,6 +386,53 @@ impl State {
                         ((true, None), State::error(LoginError::StarWelcome))
                     }
                 }
+                (
+                    State::SentMechanism {
+                        capabilities,
+                        mut sasl_mechs,
+                        nickname,
+                        password,
+                        ..
+                    },
+                    Reply::SaslMechs(r),
+                ) => {
+                    let server_mechs = r
+                        .mechanisms()
+                        .split(',')
+                        .filter_map(|m| m.parse::<SaslMechanism>().ok())
+                        .collect::<HashSet<_>>();
+                    sasl_mechs.retain(|m| server_mechs.contains(m));
+                    if let Some(mech) = sasl_mechs.pop_front() {
+                        match mech.new_flow(&nickname, &password) {
+                            Ok((new_sasl, msg1)) => {
+                                tracing::debug!(
+                                    "Starting SASL authentication with {mech} mechanism"
+                                );
+                                (
+                                    (true, Some(ClientMessage::from(msg1))),
+                                    State::SentMechanism {
+                                        capabilities,
+                                        sasl_mechs,
+                                        sasl: new_sasl,
+                                        nickname,
+                                        password,
+                                    },
+                                )
+                            }
+                            Err(e) => ((true, None), State::error(LoginError::Sasl(e))),
+                        }
+                    } else {
+                        tracing::debug!(
+                            "Server does not support any enabled SASL mechanisms; skipping SASL"
+                        );
+                        (
+                            (true, Some(ClientMessage::from(CapEnd))),
+                            State::Awaiting001 {
+                                capabilities: Some(capabilities),
+                            },
+                        )
+                    }
+                }
                 (State::SaslDone { capabilities }, Reply::LoggedIn(_)) => {
                     ((true, None), State::Got900 { capabilities })
                 }
@@ -564,16 +567,13 @@ impl State {
                     output.motd = Some(r.message().to_owned());
                     ((true, None), State::Motd(output))
                 }
-                (State::Got005(mut output) | State::Lusers(mut output), Reply::NoMotd(r)) => {
-                    output.motd = Some(r.message().to_owned());
-                    (
-                        (true, None),
-                        State::AwaitingMode {
-                            output,
-                            timeout: Some(MODE_TIMEOUT),
-                        },
-                    )
-                }
+                (State::Got005(output) | State::Lusers(output), Reply::NoMotd(_)) => (
+                    (true, None),
+                    State::AwaitingMode {
+                        output,
+                        timeout: Some(MODE_TIMEOUT),
+                    },
+                ),
                 (st @ State::Got005(_), _) => ((false, None), st), // Accept "other numerics and messages" after RPL_ISUPPORT
                 (State::Motd(mut output), Reply::Motd(r)) => {
                     if let Some(s) = output.motd.as_mut() {
@@ -1819,6 +1819,192 @@ mod tests {
                     )
                     .to_owned()
                 ),
+                mode: Some("+Ziw".parse::<ModeString>().unwrap()),
+            }
+        );
+    }
+
+    #[test]
+    fn sasl_v31_server_saslmechs_err() {
+        let params = LoginParams {
+            password: "hunter2".parse::<TrailingParam>().unwrap(),
+            nickname: "jwodder".parse::<Nickname>().unwrap(),
+            username: "jwuser".parse::<Username>().unwrap(),
+            realname: "Just this guy, you know?".parse::<TrailingParam>().unwrap(),
+            sasl: true,
+            sasl_mechanisms: Vec1::from([SaslMechanism::ScramSha256, SaslMechanism::Plain]),
+        };
+        let mut cmd = Login::new(params);
+
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            outgoing,
+            [
+                "CAP LS 302",
+                "PASS :hunter2",
+                "NICK jwodder",
+                "USER jwuser 0 * :Just this guy, you know?"
+            ]
+        );
+
+        let m = ":irc.example.com CAP * LS :sasl";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["CAP REQ :sasl"]);
+        assert!(!cmd.is_done());
+
+        let m = ":irc.example.com CAP jwodder ACK :sasl";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["AUTHENTICATE :SCRAM-SHA-256"]);
+        assert!(!cmd.is_done());
+
+        let m = ":irc.example.com 908 jwodder SCRAM-SHA-512,PLAIN :are available SASL mechanism";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["AUTHENTICATE :PLAIN"]);
+        assert!(!cmd.is_done());
+
+        let m = "AUTHENTICATE +";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["AUTHENTICATE :andvZGRlcgBqd29kZGVyAGh1bnRlcjI="]);
+        assert!(!cmd.is_done());
+
+        let m = ":irc.example.com 900 jwodder jwodder!jwuser@127.0.0.1 jwodder :You are now logged in as jwodder";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        assert!(cmd.get_client_messages().is_empty());
+        assert!(!cmd.is_done());
+
+        let m = ":irc.example.com 903 jwodder :SASL authentication successful";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["CAP END"]);
+        assert!(!cmd.is_done());
+
+        let incoming = [
+            ":irc.example.com 001 jwodder :Welcome to the Example Internet Relay Chat Network, jwodder",
+            ":irc.example.com 002 jwodder :Your host is irc.example.com, running version solanum-1.0-dev",
+            ":irc.example.com 003 jwodder :This server was created Thu Jul 18 2024 at 16:57:02 UTC",
+            ":irc.example.com 004 jwodder irc.example.com solanum-1.0-dev DGIMQRSZaghilopsuwz CFILMPQRSTbcefgijklmnopqrstuvz bkloveqjfI",
+            ":irc.example.com 005 jwodder ACCOUNTEXTBAN=a WHOX KNOCK MONITOR=100 ETRACE FNC SAFELIST ELIST=CMNTU CALLERID=g CHANTYPES=# EXCEPTS INVEX :are supported by this server",
+            ":irc.example.com 005 jwodder CHANMODES=eIbq,k,flj,CFLMPQRSTcgimnprstuz CHANLIMIT=#:250 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=Libera.Chat STATUSMSG=@+ CASEMAPPING=rfc1459 NICKLEN=16 MAXNICKLEN=16 CHANNELLEN=50 TOPICLEN=390 :are supported by this server",
+            ":irc.example.com 005 jwodder DEAF=D TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,agjrxz :are supported by this server",
+            ":irc.example.com 251 jwodder :There are 62 users and 31502 invisible on 28 servers",
+            ":irc.example.com 252 jwodder 40 :IRC Operators online",
+            ":irc.example.com 253 jwodder 66 :unknown connection(s)",
+            ":irc.example.com 254 jwodder 22798 :channels formed",
+            ":irc.example.com 255 jwodder :I have 2700 clients and 1 servers",
+            ":irc.example.com 265 jwodder 2700 3071 :Current local users 2700, max 3071",
+            ":irc.example.com 266 jwodder 31564 34153 :Current global users 31564, max 34153",
+            ":irc.example.com 250 jwodder :Highest connection count: 3072 (3071 clients) (781421 connections received)",
+            ":irc.example.com 422 jwodder :No message today",
+        ];
+        for m in incoming {
+            let msg = m.parse::<Message>().unwrap();
+            assert!(cmd.handle_message(&msg));
+            assert!(cmd.get_client_messages().is_empty());
+            assert!(!cmd.is_done());
+        }
+
+        let m = ":jwodder MODE jwodder :+Ziw";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        assert!(cmd.get_client_messages().is_empty());
+        assert!(cmd.is_done());
+
+        let output = cmd.get_output().unwrap();
+        pretty_assertions::assert_eq!(
+            output,
+            LoginOutput {
+                capabilities: Some(vec![("sasl".parse::<Capability>().unwrap(), None)]),
+                my_nick: "jwodder".parse::<Nickname>().unwrap(),
+                welcome_msg: "Welcome to the Example Internet Relay Chat Network, jwodder".into(),
+                yourhost_msg: "Your host is irc.example.com, running version solanum-1.0-dev".into(),
+                created_msg: "This server was created Thu Jul 18 2024 at 16:57:02 UTC".into(),
+                server_info: ServerInfo {
+                    name: "irc.example.com".into(),
+                    version: "solanum-1.0-dev".into(),
+                    user_modes: "DGIMQRSZaghilopsuwz".into(),
+                    channel_modes: "CFILMPQRSTbcefgijklmnopqrstuvz".into(),
+                    param_channel_modes: Some("bkloveqjfI".to_owned()),
+                },
+                isupport: [
+                    "ACCOUNTEXTBAN=a",
+                    "WHOX",
+                    "KNOCK",
+                    "MONITOR=100",
+                    "ETRACE",
+                    "FNC",
+                    "SAFELIST",
+                    "ELIST=CMNTU",
+                    "CALLERID=g",
+                    "CHANTYPES=#",
+                    "EXCEPTS",
+                    "INVEX",
+                    "CHANMODES=eIbq,k,flj,CFLMPQRSTcgimnprstuz",
+                    "CHANLIMIT=#:250",
+                    "PREFIX=(ov)@+",
+                    "MAXLIST=bqeI:100",
+                    "MODES=4",
+                    "NETWORK=Libera.Chat",
+                    "STATUSMSG=@+",
+                    "CASEMAPPING=rfc1459",
+                    "NICKLEN=16",
+                    "MAXNICKLEN=16",
+                    "CHANNELLEN=50",
+                    "TOPICLEN=390",
+                    "DEAF=D",
+                    "TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR:",
+                    "EXTBAN=$,agjrxz",
+                ]
+                .into_iter()
+                .map(str::parse::<ISupportParam>)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+                luser_stats: LuserStats {
+                    operators: Some(40),
+                    unknown_connections: Some(66),
+                    channels: Some(22798),
+                    local_clients: Some(2700),
+                    max_local_clients: Some(3071),
+                    global_clients: Some(31564),
+                    max_global_clients: Some(34153),
+                    luserclient_msg: Some("There are 62 users and 31502 invisible on 28 servers".to_owned()),
+                    luserme_msg: Some("I have 2700 clients and 1 servers".to_owned()),
+                    statsconn_msg: Some("Highest connection count: 3072 (3071 clients) (781421 connections received)".to_owned()),
+                },
+                motd: None,
                 mode: Some("+Ziw".parse::<ModeString>().unwrap()),
             }
         );

@@ -247,9 +247,9 @@ impl Command for Login {
                     true
                 }
                 ClientMessage::Authenticate(auth) => {
-                    let msgs = self.state.handle_auth(auth);
+                    let (b, msgs) = self.state.handle_auth(auth);
                     self.outgoing.extend(msgs.into_iter().map(Into::into));
-                    true
+                    b
                 }
                 other => self.state.handle_other(other),
             },
@@ -816,7 +816,7 @@ impl State {
         )
     }
 
-    fn handle_auth(&mut self, auth: &Authenticate) -> Vec<Authenticate> {
+    fn handle_auth(&mut self, auth: &Authenticate) -> (bool, Vec<Authenticate>) {
         replace_with_and_return(
             self,
             || State::Void,
@@ -832,18 +832,18 @@ impl State {
                 } => match sasl.handle_message(auth) {
                     Ok(msgs) => {
                         if sasl.is_done() {
-                            (msgs, State::SaslDone { capabilities })
+                            ((true, msgs), State::SaslDone { capabilities })
                         } else {
-                            (msgs, State::Sasl { capabilities, sasl })
+                            ((true, msgs), State::Sasl { capabilities, sasl })
                         }
                     }
-                    Err(e) => (Vec::new(), State::error(LoginError::Sasl(e))),
+                    Err(e) => ((true, Vec::new()), State::error(LoginError::Sasl(e))),
                 },
                 state => {
                     let expecting = state.expecting();
                     let msg = auth.to_irc_line();
                     (
-                        Vec::new(),
+                        (false, Vec::new()),
                         State::error(LoginError::Unexpected { expecting, msg }),
                     )
                 }

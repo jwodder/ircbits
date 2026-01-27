@@ -79,7 +79,7 @@ impl ScramSasl {
         nickname: &Nickname,
         password: &str,
         hash: HashAlgo,
-    ) -> Result<ScramSasl, SaslError> {
+    ) -> Result<(ScramSasl, Authenticate), SaslError> {
         ScramSasl::new_with_nonce(nickname, password, hash, generate_nonce())
     }
 
@@ -88,40 +88,39 @@ impl ScramSasl {
         password: &str,
         hash: HashAlgo,
         nonce: String,
-    ) -> Result<ScramSasl, SaslError> {
+    ) -> Result<(ScramSasl, Authenticate), SaslError> {
         let Ok(mech) = hash.mechanism().as_ref().parse::<TrailingParam>() else {
             unreachable!("SaslMechanism strings should be valid trailing params");
         };
         let mech_msg = Authenticate::new(mech);
         let username = nickname.as_str().parse::<Username>()?;
         let password = password.parse::<Password>()?;
-        Ok(ScramSasl {
-            state: State::Start(Start {
-                hash,
-                mech_msg,
-                nonce,
-                authzid: nickname.clone(),
-                username,
-                password,
-            }),
-        })
+        Ok((
+            ScramSasl {
+                state: AwaitingPlus {
+                    hash,
+                    nonce,
+                    authzid: nickname.clone(),
+                    username,
+                    password,
+                }
+                .into(),
+            },
+            mech_msg,
+        ))
     }
 }
 
 impl SaslFlow for ScramSasl {
-    fn handle_message(&mut self, msg: Authenticate) -> Result<(), SaslError> {
+    fn handle_message(&mut self, msg: Authenticate) -> Result<Vec<Authenticate>, SaslError> {
         replace_with_and_return(
             &mut self.state,
             || State::Error(Error),
             move |state| match state.handle_message(msg) {
-                Ok(state) => (Ok(()), state),
+                Ok((state, msgs)) => (Ok(msgs), state),
                 Err(e) => (Err(e), State::Error(Error)),
             },
         )
-    }
-
-    fn get_output(&mut self) -> Vec<Authenticate> {
-        replace_with_and_return(&mut self.state, || State::Error(Error), State::get_output)
     }
 
     fn is_done(&self) -> bool {
@@ -131,57 +130,18 @@ impl SaslFlow for ScramSasl {
 
 #[enum_dispatch]
 trait ScramState {
-    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError>;
-    fn get_output(self) -> (Vec<Authenticate>, State);
+    fn handle_message(self, msg: Authenticate) -> Result<(State, Vec<Authenticate>), SaslError>;
     fn is_done(&self) -> bool;
 }
 
 #[enum_dispatch(ScramState)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum State {
-    Start,
     AwaitingPlus,
-    GotPlus,
     AwaitingServerFirstMsg,
-    GotServerFirstMsg,
     AwaitingServerFinalMsg,
-    Finishing,
     Done,
     Error,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct Start {
-    hash: HashAlgo,
-    mech_msg: Authenticate,
-    nonce: String,
-    authzid: AuthzId,
-    username: Username,
-    password: Password,
-}
-
-impl ScramState for Start {
-    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
-        panic!("handle_message() called before calling get_output()")
-    }
-
-    fn get_output(self) -> (Vec<Authenticate>, State) {
-        (
-            vec![self.mech_msg],
-            AwaitingPlus {
-                hash: self.hash,
-                nonce: self.nonce,
-                authzid: self.authzid,
-                username: self.username,
-                password: self.password,
-            }
-            .into(),
-        )
-    }
-
-    fn is_done(&self) -> bool {
-        false
-    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -194,67 +154,32 @@ struct AwaitingPlus {
 }
 
 impl ScramState for AwaitingPlus {
-    fn handle_message(self, msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(self, msg: Authenticate) -> Result<(State, Vec<Authenticate>), SaslError> {
         if msg.parameter() == "+" {
-            Ok(GotPlus {
-                hash: self.hash,
-                nonce: self.nonce,
-                authzid: self.authzid,
-                username: self.username,
-                password: self.password,
+            let msgs = ClientFirstMessage {
+                authzid: &self.authzid,
+                username: &self.username,
+                nonce: &self.nonce,
             }
-            .into())
+            .to_auth_msgs();
+            Ok((
+                AwaitingServerFirstMsg {
+                    hash: self.hash,
+                    nonce: self.nonce,
+                    authzid: self.authzid,
+                    username: self.username,
+                    password: self.password,
+                    input: String::new(),
+                }
+                .into(),
+                msgs,
+            ))
         } else {
             Err(SaslError::Unexpected {
                 expecting: r#""AUTHENTICATE +""#,
                 msg: msg.to_irc_line(),
             })
         }
-    }
-
-    fn get_output(self) -> (Vec<Authenticate>, State) {
-        (Vec::new(), self.into())
-    }
-
-    fn is_done(&self) -> bool {
-        false
-    }
-}
-
-// About to send first client-first-message
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct GotPlus {
-    hash: HashAlgo,
-    nonce: String,
-    authzid: AuthzId,
-    username: Username,
-    password: Password,
-}
-
-impl ScramState for GotPlus {
-    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
-        panic!("handle_message() called before calling get_output()")
-    }
-
-    fn get_output(self) -> (Vec<Authenticate>, State) {
-        let msgs = ClientFirstMessage {
-            authzid: &self.authzid,
-            username: &self.username,
-            nonce: &self.nonce,
-        }
-        .to_auth_msgs();
-        (
-            msgs,
-            AwaitingServerFirstMsg {
-                hash: self.hash,
-                nonce: self.nonce,
-                authzid: self.authzid,
-                username: self.username,
-                password: self.password,
-                input: String::new(),
-            }
-            .into(),
-        )
     }
 
     fn is_done(&self) -> bool {
@@ -275,7 +200,10 @@ struct AwaitingServerFirstMsg {
 }
 
 impl ScramState for AwaitingServerFirstMsg {
-    fn handle_message(mut self, msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(
+        mut self,
+        msg: Authenticate,
+    ) -> Result<(State, Vec<Authenticate>), SaslError> {
         let payload = msg.parameter().as_str();
         if payload != "+" {
             self.input.push_str(payload);
@@ -327,56 +255,23 @@ impl ScramState for AwaitingServerFirstMsg {
                 server_first.iteration_count,
                 &auth_message,
             );
-            Ok(GotServerFirstMsg {
-                authzid: self.authzid,
-                nonce: final_nonce,
-                client_proof,
-                server_signature,
+            let msgs = ClientFinalMessage {
+                authzid: &self.authzid,
+                nonce: &final_nonce,
+                proof: &client_proof,
             }
-            .into())
+            .to_auth_msgs();
+            Ok((
+                AwaitingServerFinalMsg {
+                    server_signature,
+                    input: String::new(),
+                }
+                .into(),
+                msgs,
+            ))
         } else {
-            Ok(self.into())
+            Ok((self.into(), Vec::new()))
         }
-    }
-
-    fn get_output(self) -> (Vec<Authenticate>, State) {
-        (Vec::new(), self.into())
-    }
-
-    fn is_done(&self) -> bool {
-        false
-    }
-}
-
-// About to send client-final-message
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct GotServerFirstMsg {
-    authzid: AuthzId,
-    nonce: String,
-    client_proof: Bytes,
-    server_signature: Bytes,
-}
-
-impl ScramState for GotServerFirstMsg {
-    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
-        panic!("handle_message() called before calling get_output()")
-    }
-
-    fn get_output(self) -> (Vec<Authenticate>, State) {
-        let msgs = ClientFinalMessage {
-            authzid: &self.authzid,
-            nonce: &self.nonce,
-            proof: &self.client_proof,
-        }
-        .to_auth_msgs();
-        (
-            msgs,
-            AwaitingServerFinalMsg {
-                server_signature: self.server_signature,
-                input: String::new(),
-            }
-            .into(),
-        )
     }
 
     fn is_done(&self) -> bool {
@@ -393,7 +288,10 @@ struct AwaitingServerFinalMsg {
 }
 
 impl ScramState for AwaitingServerFinalMsg {
-    fn handle_message(mut self, msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(
+        mut self,
+        msg: Authenticate,
+    ) -> Result<(State, Vec<Authenticate>), SaslError> {
         let payload = msg.parameter().as_str();
         if payload != "+" {
             self.input.push_str(payload);
@@ -404,7 +302,7 @@ impl ScramState for AwaitingServerFinalMsg {
             match s.parse::<ServerFinalMessage>()? {
                 ServerFinalMessage::Success { verifier } => {
                     if verifier == self.server_signature {
-                        Ok(Finishing.into())
+                        Ok((Done.into(), vec![Authenticate::new_empty()]))
                     } else {
                         Err(SaslError::Signature)
                     }
@@ -412,29 +310,8 @@ impl ScramState for AwaitingServerFinalMsg {
                 ServerFinalMessage::Error { message } => Err(SaslError::Server(message)),
             }
         } else {
-            Ok(self.into())
+            Ok((self.into(), Vec::new()))
         }
-    }
-
-    fn get_output(self) -> (Vec<Authenticate>, State) {
-        (Vec::new(), self.into())
-    }
-
-    fn is_done(&self) -> bool {
-        false
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct Finishing;
-
-impl ScramState for Finishing {
-    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
-        panic!("handle_message() called before calling get_output()")
-    }
-
-    fn get_output(self) -> (Vec<Authenticate>, State) {
-        (vec![Authenticate::new_empty()], Done.into())
     }
 
     fn is_done(&self) -> bool {
@@ -446,12 +323,8 @@ impl ScramState for Finishing {
 struct Done;
 
 impl ScramState for Done {
-    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(self, _msg: Authenticate) -> Result<(State, Vec<Authenticate>), SaslError> {
         panic!("handle_message() called on Done state")
-    }
-
-    fn get_output(self) -> (Vec<Authenticate>, State) {
-        (Vec::new(), self.into())
     }
 
     fn is_done(&self) -> bool {
@@ -463,12 +336,8 @@ impl ScramState for Done {
 struct Error;
 
 impl ScramState for Error {
-    fn handle_message(self, _msg: Authenticate) -> Result<State, SaslError> {
+    fn handle_message(self, _msg: Authenticate) -> Result<(State, Vec<Authenticate>), SaslError> {
         panic!("handle_message() called on Error state")
-    }
-
-    fn get_output(self) -> (Vec<Authenticate>, State) {
-        panic!("get_output() called on Error state")
     }
 
     fn is_done(&self) -> bool {
@@ -815,26 +684,19 @@ mod tests {
     #[test]
     fn sha1session() {
         // Taken from <https://ircv3.net/specs/extensions/sasl-3.1>
-        let mut flow = ScramSasl::new_with_nonce(
+        let (mut flow, msg1) = ScramSasl::new_with_nonce(
             &"jilles".parse::<Nickname>().unwrap(),
             "sesame",
             HashAlgo::Sha1,
             "c5RqLCZy0L4fGkKAZ0hujFBs".to_owned(),
         )
         .unwrap();
-
-        let outgoing = flow
-            .get_output()
-            .into_iter()
-            .map(|msg| msg.to_irc_line())
-            .collect::<Vec<_>>();
-        assert_eq!(outgoing, ["AUTHENTICATE :SCRAM-SHA-1"]);
-        assert!(!flow.is_done());
+        assert_eq!(msg1.to_irc_line(), "AUTHENTICATE :SCRAM-SHA-1");
 
         let msg = Authenticate::new_empty();
-        assert!(flow.handle_message(msg).is_ok());
         let outgoing = flow
-            .get_output()
+            .handle_message(msg)
+            .unwrap()
             .into_iter()
             .map(|msg| msg.to_irc_line())
             .collect::<Vec<_>>();
@@ -845,9 +707,9 @@ mod tests {
         assert!(!flow.is_done());
 
         let msg = Authenticate::new("cj1jNVJxTENaeTBMNGZHa0tBWjBodWpGQnNYUW9LY2l2cUN3OWlEWlBTcGIscz01bUpPNmQ0cmpDbnNCVTFYLGk9NDA5Ng==".parse::<TrailingParam>().unwrap());
-        assert!(flow.handle_message(msg).is_ok());
         let outgoing = flow
-            .get_output()
+            .handle_message(msg)
+            .unwrap()
             .into_iter()
             .map(|msg| msg.to_irc_line())
             .collect::<Vec<_>>();
@@ -864,9 +726,9 @@ mod tests {
                 .parse::<TrailingParam>()
                 .unwrap(),
         );
-        assert!(flow.handle_message(msg).is_ok());
         let outgoing = flow
-            .get_output()
+            .handle_message(msg)
+            .unwrap()
             .into_iter()
             .map(|msg| msg.to_irc_line())
             .collect::<Vec<_>>();

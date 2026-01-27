@@ -11,33 +11,32 @@ use thiserror::Error;
 ///
 /// A `SaslFlow` is intended to be used as follows:
 ///
-/// - First, call `get_output()` and send any returned messages to the server.
+/// - The constructor for a `SaslFlow` value should return the new object
+///   alongside an `Authenticate` message.  Send this message to the server.
 ///
 /// - Whenever a message is received from the server:
 ///
 ///     - If the message is an `AUTHENTICATE` command, pass it to
-///       `handle_message()`.  If an error is returned, then SASL has failed
-///       and the `SaslFlow` object should be discarded without calling any
-///       further methods on it.
+///       `handle_message()`.
+///
+///         - If `Ok(msgs)` is returned, send `msgs` to the server, then call
+///           `is_done()`.  If it returns `true`, the `SaslFlow` has done all
+///           it can, and the object should be discarded without calling any
+///           further methods.  Success of the SASL operation should then be
+///           judged based on the replies returned by the server.
+///
+///         - If an error is returned, then SASL has failed and the `SaslFlow`
+///           object should be discarded without calling any further methods on
+///           it.
 ///
 ///     - If the message is anything else, it should be handled outside of the
 ///       `SaslFlow`.  Error replies relating to the SASL process should result
 ///       in the `SaslFlow` object being discarded.  Client messages other than
 ///       `Authenticate` should not normally be received while SASL
 ///       authentication is in progress.
-///
-/// - After each call to `handle_message()`, call `get_output()` again and send
-///   any returned messages to the server.
-///
-/// - After each call to `get_output()` and sending the returned messages
-///   (including the initial call), call `is_done()`.  If it returns `true`,
-///   the `SaslFlow` has done all it can, and the object should be discarded
-///   without calling any further methods.  Success of the SASL operation
-///   should then be judged based on the replies returned by the server.
 #[enum_dispatch]
 pub trait SaslFlow {
-    fn handle_message(&mut self, msg: Authenticate) -> Result<(), SaslError>;
-    fn get_output(&mut self) -> Vec<Authenticate>;
+    fn handle_message(&mut self, msg: Authenticate) -> Result<Vec<Authenticate>, SaslError>;
     fn is_done(&self) -> bool;
 }
 
@@ -61,14 +60,23 @@ pub enum SaslMechanism {
 }
 
 impl SaslMechanism {
-    pub fn new_flow(self, nickname: &Nickname, password: &str) -> Result<SaslMachine, SaslError> {
+    pub fn new_flow(
+        self,
+        nickname: &Nickname,
+        password: &str,
+    ) -> Result<(SaslMachine, Authenticate), SaslError> {
         match self {
-            SaslMechanism::Plain => Ok(PlainSasl::new(nickname, password).into()),
+            SaslMechanism::Plain => {
+                let (machine, msg1) = PlainSasl::new(nickname, password);
+                Ok((machine.into(), msg1))
+            }
             SaslMechanism::ScramSha1 => {
-                Ok(ScramSasl::new(nickname, password, HashAlgo::Sha1)?.into())
+                let (machine, msg1) = ScramSasl::new(nickname, password, HashAlgo::Sha1)?;
+                Ok((machine.into(), msg1))
             }
             SaslMechanism::ScramSha512 => {
-                Ok(ScramSasl::new(nickname, password, HashAlgo::Sha512)?.into())
+                let (machine, msg1) = ScramSasl::new(nickname, password, HashAlgo::Sha512)?;
+                Ok((machine.into(), msg1))
             }
         }
     }

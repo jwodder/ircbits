@@ -10,7 +10,6 @@ use irctext::{
 };
 use pbkdf2::pbkdf2_hmac_array;
 use rand::{
-    SeedableRng,
     distr::{Alphanumeric, Distribution},
     rngs::StdRng,
 };
@@ -551,7 +550,7 @@ impl fmt::Display for Gs2Escaped<'_> {
 }
 
 fn generate_nonce() -> String {
-    let mut rng = StdRng::from_os_rng();
+    let mut rng = rand::make_rng::<StdRng>();
     Alphanumeric
         .sample_iter(&mut rng)
         .take(CLIENT_NONCE_LENGTH)

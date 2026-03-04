@@ -21,7 +21,7 @@ here.
 | [`invite-notify`][]                                           | ✓         | ~        | ~         | ✓           | ~          | ✓          | ~           | ~          |
 | [`labeled-response`][]                                        | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
 | [`message-ids`][]                                             | ~         | ~        | ~         | ✓           | ~          | ~          | ~           | ~          |
-| [Message Tags][]                                              | ✓         | ~        | ~         | ~           | ~          | ~          | ~           | ~          |
+| [Message Tags][]                                              | ✓         | ~        | ~         | ✓           | ~          | ~          | ~           | ~          |
 | [Monitor][]                                                   | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
 | [`multi-prefix`][]                                            | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
 | [`netsplit` and `netjoin` batch types][]                      | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |

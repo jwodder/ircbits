@@ -12,7 +12,7 @@ base64.workspace = true
 bytes = "1.5.0"
 enum_dispatch.workspace = true
 futures-util = { version = "0.3.31", default-features = false, features = ["sink", "std"] }
-hmac = "0.12.1"
+hmac = "0.13.0"
 irctext = { path = "../irctext" }
 itertools.workspace = true
 jiff.workspace = true
@@ -23,8 +23,8 @@ replace_with = "0.1.8"
 rustls-native-certs = "0.8.1"
 rustls-pki-types = "1.10.0"
 serde = { workspace = true, features = ["derive"], optional = true }
-sha1 = "0.10.6"
-sha2 = "0.10.9"
+sha1 = "0.11.0"
+sha2 = "0.11.0"
 stringprep = "0.1.5"
 strum.workspace = true
 thiserror.workspace = true

@@ -2,7 +2,7 @@ use super::{SaslError, SaslFlow, SaslMechanism};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use bytes::Bytes;
 use enum_dispatch::enum_dispatch;
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use irctext::{
     TrailingParam,
     clientmsgs::{Authenticate, ClientMessageParts},

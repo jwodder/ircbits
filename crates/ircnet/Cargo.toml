@@ -23,7 +23,7 @@ replace_with = "0.1.8"
 rustls-native-certs = "0.8.1"
 rustls-pki-types = "1.10.0"
 serde = { workspace = true, features = ["derive"], optional = true }
-sha1 = "0.10.6"
+sha1 = "0.11.0"
 sha2 = "0.10.9"
 stringprep = "0.1.5"
 strum.workspace = true

@@ -17,7 +17,7 @@ irctext = { path = "../irctext" }
 itertools.workspace = true
 jiff.workspace = true
 mitsein.workspace = true
-pbkdf2 = "0.12.2"
+pbkdf2 = "0.13.0-rc.10"
 rand = "0.10.0"
 replace_with = "0.1.8"
 rustls-native-certs = "0.8.1"

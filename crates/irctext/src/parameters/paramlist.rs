@@ -423,6 +423,7 @@ impl ParameterListBuilder {
 pub struct ParameterListIntoIter(std::vec::IntoIter<Parameter>);
 
 impl ParameterListIntoIter {
+    #[allow(clippy::needless_collect)]
     fn new(params: ParameterList) -> Self {
         let mut paramvec = params
             .middle

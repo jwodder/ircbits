@@ -3,13 +3,13 @@ use clap::Parser;
 use ircnet::client::{
     ClientError, SessionBuilder, SessionParams,
     autoresponders::{CtcpQueryResponder, PingResponder},
-    commands::JoinCommand,
+    commands::{JoinCommand, SetUserMode},
 };
 use irctext::{
     ClientMessage, Message, Payload, Source, TrailingParam,
     clientmsgs::{PrivMsg, Quit},
     ctcp::CtcpParams,
-    types::{Channel, MsgTarget},
+    types::{Channel, ModeString, MsgTarget},
 };
 use mainutil::{ChannelSet, init_logging, recv_stop_signal};
 use std::collections::HashMap;
@@ -97,7 +97,16 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     let casemapping = login_output.casemapping()?;
+    let botmode = login_output.botmode();
     let me = login_output.my_nick;
+
+    if let Some(mchar) = botmode
+        && let Ok(ms) = format!("+{mchar}").parse::<ModeString>()
+    {
+        tracing::info!("Setting bot mode (+{mchar}) on self …");
+        let _ = client.run(SetUserMode::new(me.clone(), ms)).await?;
+    }
+
     let delay = profile.echobot.delay();
     let mut channels = ChannelSet::new(casemapping);
     for chan in profile.echobot.channels {

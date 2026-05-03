@@ -4,13 +4,13 @@ use either::Either;
 use ircnet::client::{
     SessionBuilder, SessionParams,
     autoresponders::{CtcpQueryResponder, PingResponder},
-    commands::JoinCommand,
+    commands::{JoinCommand, SetUserMode},
 };
 use irctext::{
     ClientMessage, Message, Payload, TrailingParam,
     clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
-    types::{Channel, MsgTarget},
+    types::{Channel, ModeString, MsgTarget},
 };
 use mainutil::{ChannelSet, init_logging, run_until_stopped};
 use patharg::OutputArg;
@@ -108,7 +108,15 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     let casemapping = login_output.casemapping()?;
+    let botmode = login_output.botmode();
     let me = login_output.my_nick;
+
+    if let Some(mchar) = botmode
+        && let Ok(ms) = format!("+{mchar}").parse::<ModeString>()
+    {
+        tracing::info!("Setting bot mode (+{mchar}) on self …");
+        let _ = client.run(SetUserMode::new(me.clone(), ms)).await?;
+    }
 
     if let Some(p) = profile.msgtimes.away {
         tracing::info!("Sending AWAY message");

@@ -1,9 +1,11 @@
 mod join;
 mod list;
 mod login;
+mod setusermode;
 pub use self::join::*;
 pub use self::list::*;
 pub use self::login::*;
+pub use self::setusermode::*;
 use irctext::{ClientMessage, Message};
 use std::time::Duration;
 

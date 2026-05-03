@@ -3,14 +3,14 @@ use clap::Parser;
 use ircnet::client::{
     ClientError, SessionBuilder, SessionParams,
     autoresponders::{CtcpQueryResponder, PingResponder},
-    commands::{JoinCommand, JoinOutput, LoginOutput},
+    commands::{JoinCommand, JoinOutput, LoginOutput, SetUserMode},
 };
 use irctext::{
     ClientMessage, ClientMessageParts, ClientSource, Message, ParseMessageError, Payload, Reply,
     ReplyParts, Source, TrailingParam, TryFromStringError,
     clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
-    types::{Channel, ISupportParam, TagKey, TagValue},
+    types::{Channel, ISupportParam, ModeString, TagKey, TagValue},
 };
 use jiff::{Timestamp, Zoned};
 use mainutil::{ChannelSet, init_logging, run_until_stopped};
@@ -117,12 +117,19 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
         .await?;
     let casemapping = login_output.casemapping()?;
     let me = login_output.my_nick.clone();
+    let botmode = login_output.botmode();
     sender
         .send(Event::Connected {
             timestamp: Zoned::now(),
             output: login_output,
         })
         .await?;
+    if let Some(mchar) = botmode
+        && let Ok(ms) = format!("+{mchar}").parse::<ModeString>()
+    {
+        tracing::info!("Setting bot mode (+{mchar}) on self …");
+        let _ = client.run(SetUserMode::new(me.clone(), ms)).await?;
+    }
     let mut channels = ChannelSet::new(casemapping);
     for chan in profile.ircevents.channels {
         tracing::info!("Joining {chan} …");

@@ -945,6 +945,18 @@ impl LoginOutput {
             Ok(CaseMapping::default())
         }
     }
+
+    pub fn botmode(&self) -> Option<char> {
+        self.isupport.iter().find_map(|param| {
+            if let ISupportParam::Eq(key, value) = param
+                && key == "BOT"
+            {
+                value.parse::<char>().ok()
+            } else {
+                None
+            }
+        })
+    }
 }
 
 /// Details about the IRC server as given in the `RPL_MYINFO` reply

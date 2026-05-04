@@ -275,6 +275,12 @@ struct EventLogger {
 
 impl EventLogger {
     fn new(filepath: PathBuf, sizelimit: Option<u64>) -> anyhow::Result<Self> {
+        if let Some(pp) = filepath.parent()
+            && pp != ""
+        {
+            std::fs::create_dir_all(pp)
+                .context("failed to create parent directory for output file")?;
+        }
         let fp = File::options()
             .create(true)
             .append(true)

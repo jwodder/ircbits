@@ -6,7 +6,7 @@
 
 # TODO:
 # - Specially mark messages from servers?
-# - Convert IRC formatting to ANSI escapes?
+# - Add an option to convert IRC formatting to ANSI escapes?
 # - Add an option for setting the server file
 # - Show TAGMSG events?
 
@@ -15,6 +15,7 @@ import argparse
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
+import gzip
 import json
 from pathlib import Path
 import re
@@ -83,7 +84,11 @@ def main() -> None:
     my_nick: str | None = None
     with AutoFileDict(args.outdir) as files:
         for fpath in args.infile:
-            with fpath.open("r", encoding="utf-8") as fp:
+            if fpath.suffix.lower() == ".gz":
+                fp = gzip.open(fpath, "r", encoding="utf-8")
+            else:
+                fp = fpath.open("r", encoding="utf-8")
+            with fp:
                 for line in fp:
                     data = json.loads(line)
                     dt = datetime.fromisoformat(data["timestamp"]).isoformat(
@@ -112,10 +117,10 @@ def main() -> None:
                                     msg = data["text"]
                                 s += f"<{source}> {msg}"
                                 if t.startswith("#"):
-                                    fp = files.for_channel(t)
+                                    ff = files.for_channel(t)
                                 else:
-                                    fp = files[SERVER_FILE]
-                                print(s, file=fp)
+                                    ff = files[SERVER_FILE]
+                                print(s, file=ff)
                     elif data["event"] == "topic":
                         channel = data["channel"]
                         if (nick := data["source"].get("nickname")) is not None:
@@ -142,8 +147,8 @@ def main() -> None:
                         print(f"[{dt}] --- Connected ---", file=files[SERVER_FILE])
                         my_nick = data["my_nick"]
                     elif data["event"] == "disconnected":
-                        for fp in files.fileiter():
-                            print(f"[{dt}] --- Disconnected ---", file=fp)
+                        for ff in files.fileiter():
+                            print(f"[{dt}] --- Disconnected ---", file=ff)
                         files.clear()
                     elif data["event"] == "kick" and my_nick in data["users"]:
                         assert source is not None

@@ -193,3 +193,53 @@ fn version_no_comment() {
         assert_eq!(r.parameters, ["jwodder", "ergo-v2.17.0-rc1", "irc.ergo.chat"]);
     });
 }
+
+#[test]
+fn whoisbot() {
+    let msg = ":irc.ircv3.net 335 alice robodan :is a Bot on IRCv3";
+    let msg = msg.parse::<Message>().unwrap();
+    assert_matches!(msg, Message {
+        tags,
+        source: Some(Source::Server(host)),
+        payload: Payload::Reply(Reply::WhoIsBot(r)),
+    } => {
+        assert!(tags.is_empty());
+        assert_eq!(host, Host::Domain("irc.ircv3.net"));
+        assert_eq!(r.code(), 335);
+        assert_eq!(r.client(), "alice");
+        assert_eq!(r.target(), "robodan");
+        assert_eq!(r.message(), "is a Bot on IRCv3");
+        assert_eq!(r.parameters, ["alice", "robodan", "is a Bot on IRCv3"]);
+    });
+}
+
+#[test]
+fn whoreply_bot() {
+    let msg =
+        ":irc.ircv3.net 352 alice #chat ~u 203.0.113.22 irc.ircv3.net robodan Hb :0 Hi, I'm a bot!";
+    let msg = msg.parse::<Message>().unwrap();
+    assert_matches!(msg, Message {
+        tags,
+        source: Some(Source::Server(host)),
+        payload: Payload::Reply(Reply::WhoReply(r)),
+    } => {
+        assert!(tags.is_empty());
+        assert_eq!(host, Host::Domain("irc.ircv3.net"));
+        assert_eq!(r.code(), 352);
+        assert_eq!(r.client(), "alice");
+        assert_eq!(r.channel(), "#chat");
+        assert_eq!(r.username(), "~u");
+        assert_eq!(r.host(), "203.0.113.22");
+        assert_eq!(r.server(), "irc.ircv3.net");
+        assert_eq!(r.nickname(), "robodan");
+        assert_eq!(r.flags(), &WhoFlags {
+            is_away: false,
+            is_op: false,
+            channel_membership: None,
+            flags: String::from("b"),
+        });
+        assert_eq!(r.hopcount(), 0);
+        assert_eq!(r.realname(), "Hi, I'm a bot!");
+        assert_eq!(r.parameters, ["alice", "#chat", "~u", "203.0.113.22", "irc.ircv3.net", "robodan", "Hb", "0 Hi, I'm a bot!"]);
+    });
+}

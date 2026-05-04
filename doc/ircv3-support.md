@@ -11,7 +11,7 @@ here.
 | [`account-tag`][]                                             | ~         | ~        | ~         | ~           | ~          | ~          | ~           | ~          |
 | [`away-notify`][]                                             | ✓         | ~        | ~         | ~           | ~          | ~          | ~           | ~          |
 | [`batch`][]                                                   | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [Bot Mode][]                                                  | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
+| [Bot Mode][]                                                  | ✓         | ~        | ✓         | ✓           | ~          | ~          | ~           | ✓          |
 | [Capability Negotiation][], version 302                       | ✓         | ✓        | ✓         | ✓           | ✓          | ✓          | ✓           | ✓          |
 | [`chathistory` batch type][]                                  | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
 | [`chghost`][]                                                 | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |

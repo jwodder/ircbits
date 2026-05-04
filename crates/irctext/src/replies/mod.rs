@@ -87,6 +87,7 @@ pub enum Reply {
     NoTopic,
     Topic,
     TopicWhoTime,
+    WhoIsBot,
     InviteList,
     EndOfInviteList,
     WhoIsActually,
@@ -227,6 +228,7 @@ impl Reply {
             331 => NoTopic::try_from(params).map(Into::into),
             332 => Topic::try_from(params).map(Into::into),
             333 => TopicWhoTime::try_from(params).map(Into::into),
+            335 => WhoIsBot::try_from(params).map(Into::into),
             336 => InviteList::try_from(params).map(Into::into),
             337 => EndOfInviteList::try_from(params).map(Into::into),
             338 => WhoIsActually::try_from(params).map(Into::into),
@@ -452,6 +454,7 @@ pub mod codes {
     pub const RPL_NOTOPIC: u16 = 331;
     pub const RPL_TOPIC: u16 = 332;
     pub const RPL_TOPICWHOTIME: u16 = 333;
+    pub const RPL_WHOISBOT: u16 = 335;
     pub const RPL_INVITELIST: u16 = 336;
     pub const RPL_ENDOFINVITELIST: u16 = 337;
     pub const RPL_WHOISACTUALLY: u16 = 338;
@@ -4842,6 +4845,91 @@ impl TryFrom<ParameterList> for TopicWhoTime {
             channel,
             user,
             setat,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct WhoIsBot {
+    parameters: ParameterList,
+    client: ReplyTarget,
+    target: MsgTarget,
+}
+
+impl WhoIsBot {
+    pub fn client(&self) -> &ReplyTarget {
+        &self.client
+    }
+
+    pub fn target(&self) -> &MsgTarget {
+        &self.target
+    }
+
+    pub fn message(&self) -> &str {
+        let Some(p) = self.parameters.last() else {
+            unreachable!("reply parameters should be nonempty");
+        };
+        p.as_str()
+    }
+}
+
+impl ReplyParts for WhoIsBot {
+    fn code(&self) -> u16 {
+        codes::RPL_WHOISBOT
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        Some("RPL_WHOISBOT")
+    }
+
+    fn parameters(&self) -> &ParameterList {
+        &self.parameters
+    }
+
+    fn is_error(&self) -> bool {
+        false
+    }
+
+    fn into_parts(self) -> (u16, ParameterList) {
+        let code = self.code();
+        (code, self.parameters)
+    }
+}
+
+impl From<WhoIsBot> for Message {
+    fn from(value: WhoIsBot) -> Message {
+        Message::from(Reply::from(value))
+    }
+}
+
+impl From<WhoIsBot> for RawMessage {
+    fn from(value: WhoIsBot) -> RawMessage {
+        RawMessage::from(Reply::from(value))
+    }
+}
+
+impl TryFrom<ParameterList> for WhoIsBot {
+    type Error = ReplyError;
+
+    fn try_from(parameters: ParameterList) -> Result<WhoIsBot, ReplyError> {
+        if parameters.len() < 3 {
+            return Err(ReplyError::ParamQty {
+                min_required: 3,
+                received: parameters.len(),
+            });
+        }
+        let p = parameters
+            .get(0)
+            .expect("Parameter 0 should exist when list length is at least 3");
+        let client = ReplyTarget::try_from(String::from(p))?;
+        let p = parameters
+            .get(1)
+            .expect("Parameter 1 should exist when list length is at least 3");
+        let target = MsgTarget::try_from(String::from(p))?;
+        Ok(WhoIsBot {
+            parameters,
+            client,
+            target,
         })
     }
 }

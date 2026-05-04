@@ -22,6 +22,7 @@ In particular:
         - The following client messages and numeric replies specified by IRCv3
           extensions are supported:
             - `TAGMSG` ([Message Tags][])
+            - `RPL_WHOISBOT` (333) ([Bot Mode][])
             - `ERR_INVALIDCAPCMD` (410) ([Capability Negotiation][cap])
         - The `<nick>` parameter of `RPL_TOPICWHOTIME` (333) is allowed to be
           either just a nickname or a string of the form `<nick>!<user>@<host>`
@@ -33,6 +34,7 @@ In particular:
 
 [Message Tags]: https://ircv3.net/specs/extensions/message-tags
 [cap]: https://ircv3.net/specs/extensions/capability-negotiation.html
+[Bot Mode]: https://ircv3.net/specs/extensions/bot-mode
 
 Features
 ========

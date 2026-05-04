@@ -7,7 +7,6 @@
 # TODO:
 # - Specially mark messages from servers?
 # - Add an option to convert IRC formatting to ANSI escapes?
-# - Add an option for setting the server file
 # - Show TAGMSG events?
 
 from __future__ import annotations
@@ -21,8 +20,6 @@ from pathlib import Path
 import re
 from types import TracebackType
 from typing import IO
-
-SERVER_FILE = "SERVER.txt"
 
 
 @dataclass
@@ -64,9 +61,15 @@ class AutoFileDict:
 
     def clear(self) -> None:
         for k, fp in self.files.items():
-            if k != SERVER_FILE and fp is not None:
+            if fp is not None:
                 fp.close()
                 self.files[k] = None
+
+    def close_channel(self, channel: str) -> None:
+        logname = channel[1:].replace("#", "_") + ".txt"
+        if (fp := self.files.get(logname)) is not None:
+            fp.close()
+            self.files[logname] = None
 
 
 def main() -> None:
@@ -78,11 +81,24 @@ def main() -> None:
         )
     )
     parser.add_argument("-o", "--outdir", type=Path, default="fmtlogs")
+    parser.add_argument(
+        "-S",
+        "--system-logfile",
+        type=Path,
+        help="File in which to log non-channel-specific messages [default: {outdir}/SYSTEM.txt]",
+    )
     parser.add_argument("infile", type=Path, nargs="*")
     args = parser.parse_args()
     args.outdir.mkdir(parents=True, exist_ok=True)
+    if args.system_logfile is not None:
+        sysfilepath = args.system_logfile
+        sysfilepath.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        sysfilepath = args.outdir / "SYSTEM.txt"
     my_nick: str | None = None
-    with AutoFileDict(args.outdir) as files:
+    with AutoFileDict(args.outdir) as files, sysfilepath.open(
+        "w", encoding="utf-8"
+    ) as sysfp:
         for fpath in args.infile:
             if fpath.suffix.lower() == ".gz":
                 fp = gzip.open(fpath, "r", encoding="utf-8")
@@ -119,7 +135,7 @@ def main() -> None:
                                 if t.startswith("#"):
                                     ff = files.for_channel(t)
                                 else:
-                                    ff = files[SERVER_FILE]
+                                    ff = sysfp
                                 print(s, file=ff)
                     elif data["event"] == "topic":
                         channel = data["channel"]
@@ -144,9 +160,10 @@ def main() -> None:
                             file=files.for_channel(channel),
                         )
                     elif data["event"] == "connected":
-                        print(f"[{dt}] --- Connected ---", file=files[SERVER_FILE])
+                        print(f"[{dt}] --- Connected ---", file=sysfp)
                         my_nick = data["my_nick"]
                     elif data["event"] == "disconnected":
+                        print(f"[{dt}] --- Disconnected ---", file=sysfp)
                         for ff in files.fileiter():
                             print(f"[{dt}] --- Disconnected ---", file=ff)
                         files.clear()
@@ -156,28 +173,23 @@ def main() -> None:
                         if (c := data["comment"]) is not None:
                             s += f": {c}"
                         print(s, file=files.for_channel(data["channel"]))
+                        files.close_channel(data["channel"])
                     elif data["event"] == "invite" and data["nickname"] == my_nick:
                         assert source is not None
                         print(
                             f"[{dt}] # {source} invited you to {data['channel']}",
-                            file=files[SERVER_FILE],
+                            file=sysfp,
                         )
                     elif data["event"] == "mode" and data["target"] == my_nick:
                         assert source is not None
                         s = f"[{dt}] # {source} changed your mode: {data['modestring']}"
                         s += " ".join(data["arguments"])
-                        print(s, file=files[SERVER_FILE])
+                        print(s, file=sysfp)
                     elif data["event"] == "wallops":
                         assert source is not None
-                        print(
-                            f"[{dt}] [WALLOPS] <{source}> {data['text']}",
-                            file=files[SERVER_FILE],
-                        )
+                        print(f"[{dt}] [WALLOPS] <{source}> {data['text']}", file=sysfp)
                     elif data["event"] == "error":
-                        print(
-                            f"[{dt}] [ERROR] {data['reason']}",
-                            file=files[SERVER_FILE],
-                        )
+                        print(f"[{dt}] [ERROR] {data['reason']}", file=sysfp)
 
 
 if __name__ == "__main__":

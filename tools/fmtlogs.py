@@ -101,7 +101,7 @@ def main() -> None:
     ) as sysfp:
         for fpath in args.infile:
             if fpath.suffix.lower() == ".gz":
-                fp = gzip.open(fpath, "r", encoding="utf-8")
+                fp = gzip.open(fpath, "rt", encoding="utf-8")
             else:
                 fp = fpath.open("r", encoding="utf-8")
             with fp:

@@ -1,5 +1,7 @@
 /// Enum of channel membership types
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 pub enum ChannelMembership {
     Founder,
     Protected,

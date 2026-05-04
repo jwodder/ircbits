@@ -10,7 +10,7 @@ use irctext::{
     ReplyParts, Source, TrailingParam, TryFromStringError,
     clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
-    types::{Channel, ISupportParam, ModeString, TagKey, TagValue},
+    types::{Channel, ISupportParam, ISupportSetting, ModeString, TagKey, TagValue},
 };
 use jiff::{Timestamp, Zoned};
 use mainutil::{ChannelSet, init_logging, run_until_stopped};
@@ -467,12 +467,13 @@ impl AddFields for LoginOutput {
         );
         let isupportlist = isupport
             .into_iter()
-            .map(|s| match s {
-                ISupportParam::Set(key) => (String::from(key), Value::Bool(true)),
-                ISupportParam::Unset(key) => (String::from(key), Value::Bool(false)),
-                ISupportParam::Eq(key, value) => {
-                    (String::from(key), Value::from(String::from(value)))
-                }
+            .map(|ISupportParam { key, setting }| {
+                let value = match setting {
+                    ISupportSetting::Set => Value::Bool(true),
+                    ISupportSetting::Unset => Value::Bool(false),
+                    ISupportSetting::Value(value) => Value::from(String::from(value)),
+                };
+                (String::from(key), value)
             })
             .collect::<Map<_, _>>();
         map.insert(String::from("isupport"), isupportlist.into());

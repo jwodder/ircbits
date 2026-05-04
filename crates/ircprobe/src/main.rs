@@ -9,7 +9,7 @@ use irctext::{
     ClientMessage, Message, Payload, Reply, ReplyParts, Verb,
     clientmsgs::{Admin, Cap, CapLsRequest, Info, Links, Lusers, Quit, Version},
     ctcp::CtcpParams,
-    types::ISupportParam,
+    types::{ISupportParam, ISupportSetting},
 };
 use mainutil::init_logging;
 use patharg::OutputArg;
@@ -310,12 +310,13 @@ async fn main() -> anyhow::Result<()> {
     let isupport = login_output
         .isupport
         .into_iter()
-        .map(|s| match s {
-            ISupportParam::Set(key) => (String::from(key), ISupportValue::Bool(true)),
-            ISupportParam::Unset(key) => (String::from(key), ISupportValue::Bool(false)),
-            ISupportParam::Eq(key, value) => {
-                (String::from(key), ISupportValue::Str(String::from(value)))
-            }
+        .map(|ISupportParam { key, setting }| {
+            let value = match setting {
+                ISupportSetting::Set => ISupportValue::Bool(true),
+                ISupportSetting::Unset => ISupportValue::Bool(false),
+                ISupportSetting::Value(value) => ISupportValue::Str(String::from(value)),
+            };
+            (String::from(key), value)
         })
         .collect::<BTreeMap<_, _>>();
     let output = IrcInfo {

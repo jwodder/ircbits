@@ -4,6 +4,8 @@ use thiserror::Error;
 
 /// Channel status used in `RPL_NAMREPLY`
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 pub enum ChannelStatus {
     Public,
     Secret,

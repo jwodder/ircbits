@@ -301,12 +301,12 @@ JSON objects for this event type have the following additional fields:
     - In the unlikely event that a timestamp cannot be constructed from the
       value reported by the server, the value of this field will be a UNIX
       timestamp (integer number of seconds since the UNIX epoch).
-- `"channel_status"` (string) — the channel's status: one of `"Public"`,
-  `"Secret"`, or `"Private"`
+- `"channel_status"` (string) — the channel's status: one of `"public"`,
+  `"secret"`, or `"private"`
 - `"users"` (list of objects) — The users currently joined to the channel along
   with their membership statuses therein.  Each object in the list contains the
-  fields `"nickname"` (string) and `"membership"` (`"Founder"`, `"Protected"`,
-  `"Operator"`, `"HalfOperator"`, `"Voiced"`, or `null`)
+  fields `"nickname"` (string) and `"membership"` (`"founder"`, `"protected"`,
+  `"operator"`, `"half_operator"`, `"voiced"`, or `null`)
 - `"url"` (string or `null`) — the URL associated with the channel, or `null`
   if not reported
 

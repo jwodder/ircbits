@@ -520,7 +520,7 @@ impl AddFields for JoinOutput {
         );
         map.insert(
             String::from("channel_status"),
-            Value::from(format!("{channel_status:?}")),
+            serde_json::to_value(channel_status).expect("ChannelStatus should be JSONable"),
         );
         let users = users
             .into_iter()
@@ -529,7 +529,8 @@ impl AddFields for JoinOutput {
                     (String::from("nickname"), Value::from(String::from(nick))),
                     (
                         String::from("membership"),
-                        Value::from(memship.map(|m| format!("{m:?}"))),
+                        serde_json::to_value(memship)
+                            .expect("Option<ChannelMembership> should be JSONable"),
                     ),
                 ])
             })

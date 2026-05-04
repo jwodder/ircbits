@@ -1,5 +1,5 @@
 use super::*;
-use crate::Source;
+use crate::{Source, types::ISupportSetting};
 use assert_matches::assert_matches;
 use std::net::Ipv4Addr;
 use url::Host;
@@ -123,12 +123,12 @@ fn isupport_draft() {
         assert_eq!(r.code(), 5);
         assert_eq!(r.client(), "*");
         assert_matches!(r.tokens(), [p1, p2] => {
-            assert_matches!(p1, ISupportParam::Eq(k, v) => {
-                assert_eq!(k, "NETWORK");
+            assert_eq!(p1.key, "NETWORK");
+            assert_matches!(&p1.setting, ISupportSetting::Value(v) => {
                 assert_eq!(v, "Example");
             });
-            assert_matches!(p2, ISupportParam::Eq(k, v) => {
-                assert_eq!(k, "draft/ICON");
+            assert_eq!(p2.key, "draft/ICON");
+            assert_matches!(&p2.setting, ISupportSetting::Value(v) => {
                 assert_eq!(v, "https://example.org/icon.svg");
             });
         });

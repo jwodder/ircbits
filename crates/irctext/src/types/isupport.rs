@@ -3,36 +3,34 @@ use std::fmt;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum ISupportParam {
-    Set(ISupportKey),
-    Unset(ISupportKey),
-    Eq(ISupportKey, ISupportValue),
+pub struct ISupportParam {
+    pub key: ISupportKey,
+    pub setting: ISupportSetting,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ISupportSetting {
+    Set,
+    Unset,
+    Value(ISupportValue),
 }
 
 impl ISupportParam {
     pub fn is_set(&self) -> bool {
-        matches!(self, ISupportParam::Set(_))
+        self.setting == ISupportSetting::Set
     }
 
     pub fn is_unset(&self) -> bool {
-        matches!(self, ISupportParam::Unset(_))
+        self.setting == ISupportSetting::Unset
     }
 
-    pub fn is_eq(&self) -> bool {
-        matches!(self, ISupportParam::Eq(_, _))
+    pub fn has_value(&self) -> bool {
+        matches!(self.setting, ISupportSetting::Value(_))
     }
 
-    pub fn key(&self) -> &ISupportKey {
-        match self {
-            ISupportParam::Set(key) => key,
-            ISupportParam::Unset(key) => key,
-            ISupportParam::Eq(key, _) => key,
-        }
-    }
-
-    pub fn value(&self) -> Option<&ISupportValue> {
-        match self {
-            ISupportParam::Eq(_, value) => Some(value),
+    pub fn get_value(&self) -> Option<&ISupportValue> {
+        match &self.setting {
+            ISupportSetting::Value(value) => Some(value),
             _ => None,
         }
     }
@@ -42,9 +40,18 @@ impl ISupportParam {
 impl fmt::Display for ISupportParam {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ISupportParam::Set(key) => write!(f, "{key}"),
-            ISupportParam::Unset(key) => write!(f, "-{key}"),
-            ISupportParam::Eq(key, value) => write!(f, "{key}={}", value.escaped()),
+            ISupportParam {
+                key,
+                setting: ISupportSetting::Set,
+            } => write!(f, "{key}"),
+            ISupportParam {
+                key,
+                setting: ISupportSetting::Unset,
+            } => write!(f, "-{key}"),
+            ISupportParam {
+                key,
+                setting: ISupportSetting::Value(value),
+            } => write!(f, "{key}={}", value.escaped()),
         }
     }
 }
@@ -57,13 +64,22 @@ impl std::str::FromStr for ISupportParam {
         if let Some((key, value)) = s.split_once('=') {
             let key = key.parse::<ISupportKey>()?;
             let value = ISupportValue::from_escaped(value)?;
-            Ok(ISupportParam::Eq(key, value))
+            Ok(ISupportParam {
+                key,
+                setting: ISupportSetting::Value(value),
+            })
         } else if let Some(key) = s.strip_prefix('-') {
             let key = key.parse::<ISupportKey>()?;
-            Ok(ISupportParam::Unset(key))
+            Ok(ISupportParam {
+                key,
+                setting: ISupportSetting::Unset,
+            })
         } else {
             let key = s.parse::<ISupportKey>()?;
-            Ok(ISupportParam::Set(key))
+            Ok(ISupportParam {
+                key,
+                setting: ISupportSetting::Set,
+            })
         }
     }
 }
@@ -210,24 +226,22 @@ mod tests {
     #[test]
     fn parse_set() {
         let isp = "EXCEPTS".parse::<ISupportParam>().unwrap();
-        assert_matches!(isp, ISupportParam::Set(key) => {
-            assert_eq!(key, "EXCEPTS");
-        });
+        assert_eq!(isp.key, "EXCEPTS");
+        assert_eq!(isp.setting, ISupportSetting::Set);
     }
 
     #[test]
     fn parse_unset() {
         let isp = "-EXCEPTS".parse::<ISupportParam>().unwrap();
-        assert_matches!(isp, ISupportParam::Unset(key) => {
-            assert_eq!(key, "EXCEPTS");
-        });
+        assert_eq!(isp.key, "EXCEPTS");
+        assert_eq!(isp.setting, ISupportSetting::Unset);
     }
 
     #[test]
     fn parse_eq() {
         let isp = "CHANTYPES=#".parse::<ISupportParam>().unwrap();
-        assert_matches!(isp, ISupportParam::Eq(key, value) => {
-            assert_eq!(key, "CHANTYPES");
+        assert_eq!(isp.key, "CHANTYPES");
+        assert_matches!(isp.setting, ISupportSetting::Value(value) => {
             assert_eq!(value, "#");
         });
     }

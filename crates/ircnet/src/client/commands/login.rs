@@ -8,8 +8,8 @@ use irctext::{
         CapabilityValue, Mode, Nick, Pass, User,
     },
     types::{
-        CaseMapping, ISupportParam, ModeString, Nickname, ParseCaseMappingError, ReplyTarget,
-        Username,
+        CaseMapping, ISupportParam, ISupportSetting, ModeString, Nickname, ParseCaseMappingError,
+        ReplyTarget, Username,
     },
 };
 use itertools::Itertools; // join
@@ -930,16 +930,16 @@ pub struct LoginOutput {
 }
 
 impl LoginOutput {
+    pub fn get_isupport_setting<S: AsRef<str>>(&self, key: S) -> Option<&ISupportSetting> {
+        let key = key.as_ref();
+        self.isupport
+            .iter()
+            .filter_map(|param| (param.key == key).then_some(&param.setting))
+            .next_back()
+    }
+
     pub fn casemapping(&self) -> Result<CaseMapping, TryFromStringError<ParseCaseMappingError>> {
-        if let Some(value) = self.isupport.iter().find_map(|param| {
-            if let ISupportParam::Eq(key, value) = param
-                && key == "CASEMAPPING"
-            {
-                Some(value)
-            } else {
-                None
-            }
-        }) {
+        if let Some(ISupportSetting::Value(value)) = self.get_isupport_setting("CASEMAPPING") {
             CaseMapping::try_from(value.to_string())
         } else {
             Ok(CaseMapping::default())
@@ -947,15 +947,11 @@ impl LoginOutput {
     }
 
     pub fn botmode(&self) -> Option<char> {
-        self.isupport.iter().find_map(|param| {
-            if let ISupportParam::Eq(key, value) = param
-                && key == "BOT"
-            {
-                value.parse::<char>().ok()
-            } else {
-                None
-            }
-        })
+        if let Some(ISupportSetting::Value(value)) = self.get_isupport_setting("BOT") {
+            value.parse::<char>().ok()
+        } else {
+            None
+        }
     }
 }
 

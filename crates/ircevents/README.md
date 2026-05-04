@@ -226,7 +226,7 @@ JSON objects for this event type have no additional fields.
 `"error"` Event
 ----------------
 
-Emitted when a `ERROR` message is received.
+Emitted when an `ERROR` message is received.
 
 JSON objects for this event type have the following additional field:
 
@@ -257,7 +257,7 @@ JSON objects for this event type have no additional fields.
 `"invite"` Event
 ----------------
 
-Emitted when a `INVITE` message is received.
+Emitted when an `INVITE` message is received.
 
 JSON objects for this event type have the following additional fields:
 
@@ -593,7 +593,7 @@ JSON objects for this event type have the following additional field:
 `"topic"` Event
 ----------------
 
-Emitted when an `TOPIC` message is received.
+Emitted when a `TOPIC` message is received.
 
 JSON objects for this event type have the following additional fields:
 
@@ -628,7 +628,7 @@ JSON objects for this event type have the following additional field:
 `"version"` Event
 ----------------
 
-Emitted when a`VERSION` message is received.
+Emitted when a `VERSION` message is received.
 
 This event should not occur during normal operation and is included only for
 completeness.
@@ -661,7 +661,7 @@ JSON objects for this event type have the following additional field:
 `"whois"` Event
 ----------------
 
-Emitted when an `WHOIS` message is received.
+Emitted when a `WHOIS` message is received.
 
 This event should not occur during normal operation and is included only for
 completeness.
@@ -674,7 +674,7 @@ JSON objects for this event type have the following additional fields:
 `"whowas"` Event
 ----------------
 
-Emitted when an `WHOWAS` message is received.
+Emitted when a `WHOWAS` message is received.
 
 This event should not occur during normal operation and is included only for
 completeness.

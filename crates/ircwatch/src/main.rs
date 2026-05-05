@@ -351,7 +351,7 @@ fn format_msg(msg: Message) -> String {
 
 fn format_msgtext(sender: &str, text: TrailingParam) -> String {
     match CtcpMessage::from(text) {
-        CtcpMessage::Plain(p) => format!("{sender}: {}", ircfmt_to_ansi(p.as_str())),
+        CtcpMessage::Plain(p) => format!("<{sender}> {}", ircfmt_to_ansi(p.as_str())),
         CtcpMessage::Action(None) => format!("* {sender}"),
         CtcpMessage::Action(Some(p)) => format!("* {sender} {}", ircfmt_to_ansi(p.as_str())),
         // TODO: Should the following messages be parsed for IRC formatting?

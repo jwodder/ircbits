@@ -255,13 +255,19 @@ fn format_msg(msg: Message) -> String {
             let tagtext = msg
                 .tags
                 .into_iter()
-                .map(|(key, value)| format!("{key}={value}"))
+                .map(|(key, value)| {
+                    if value.is_empty() {
+                        key.to_string()
+                    } else {
+                        format!("{key}={value}")
+                    }
+                })
                 .join(" ");
             if targets.len() == 1 && targets[0].is_nick() {
-                format!("[TAGMSG] {sender}: {tagtext}")
+                format!("[TAGMSG] <{sender}> {tagtext}")
             } else {
                 format!(
-                    "[{}] [TAGMSG] {sender}: {tagtext}",
+                    "[{}] [TAGMSG] <{sender}> {tagtext}",
                     m.targets().iter().map(|t| highlight(t.as_str())).join(","),
                 )
             }
@@ -368,7 +374,7 @@ fn format_msgtext(sender: &str, text: TrailingParam) -> String {
 }
 
 fn fmt_ctcp(sender: &str, cmd: &str, params: Option<CtcpParams>) -> String {
-    let mut s = format!("[CTCP] {sender}: {cmd}");
+    let mut s = format!("[CTCP] <{sender}> {cmd}");
     if let Some(p) = params {
         s.push(' ');
         s.push_str(p.as_str());

@@ -4,37 +4,37 @@ Per-Package IRCv3 Extension Support
 Draft/work-in-progress extensions and deprecated extensions are not listed
 here.
 
-| Extension                                                     | `irctext` | `ircnet` | `echobot` | `ircevents` | `ircprobe` | `ircwatch` | `listchans` | `msgtimes` |
-| ------------------------------------------------------------- | :-------: | :------: | :-------: | :---------: | :--------: | :--------: | :---------: | :--------: |
-| [`account-extban`][]                                          | ✓         | ~        | ~         | ~           | ~          | ~          | ~           | ~          |
-| [`account-notify`][]                                          | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`account-tag`][]                                             | ~         | ~        | ~         | ~           | ~          | ~          | ~           | ~          |
-| [`away-notify`][]                                             | ✓         | ~        | ~         | ~           | ~          | ~          | ~           | ~          |
-| [`batch`][]                                                   | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [Bot Mode][]                                                  | ✓         | ~        | ✓         | ✓           | ~          | ~          | ~           | ✓          |
-| [Capability Negotiation][], version 302                       | ✓         | ✓        | ✓         | ✓           | ✓          | ✓          | ✓           | ✓          |
-| [`chathistory` batch type][]                                  | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`chghost`][]                                                 | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`echo-message`][]                                            | ~         | ~        | ✗         | ~           | ~          | ~          | ~           | ~          |
-| [`extended-join`][]                                           | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [Extended Monitor][]                                          | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`invite-notify`][]                                           | ✓         | ~        | ~         | ✓           | ~          | ✓          | ~           | ~          |
-| [`labeled-response`][]                                        | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`message-ids`][]                                             | ~         | ~        | ~         | ✓           | ~          | ~          | ~           | ~          |
-| [Message Tags][]                                              | ✓         | ~        | ~         | ✓           | ~          | ~          | ~           | ~          |
-| [Monitor][]                                                   | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`multi-prefix`][]                                            | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`netsplit` and `netjoin` batch types][]                      | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| SASL Authentication, versions [3.1][sasl31] and [3.2][sasl32] | ✓         | ✓ (1)    | ✓ (1)     | ✓ (1)       | ✓ (1)      | ✓ (1)      | ✓ (1)       | ✓ (1)      |
-| [`server-time`][]                                             | ~         | ~        | ~         | ✓           | ~          | ~          | ~           | ~          |
-| [`setname`][]                                                 | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [Standard Replies][]                                          | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`sts`][]                                                     | ~         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`typing` client-only tag][]                                  | ~         | ~        | ~         | ✓           | ~          | ✓          | ~           | ~          |
-| [`userhost-in-names`][]                                       | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`UTF8ONLY`][]                                                | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`WEBIRC`][]                                                  | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
-| [`WHOX`][]                                                    | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           | ✗          |
+| Extension                                                     | `irctext` | `ircnet` | `echobot` | `ircevents` | `ircprobe` | `ircwatch` | `listchans` |
+| ------------------------------------------------------------- | :-------: | :------: | :-------: | :---------: | :--------: | :--------: | :---------: |
+| [`account-extban`][]                                          | ✓         | ~        | ~         | ~           | ~          | ~          | ~           |
+| [`account-notify`][]                                          | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`account-tag`][]                                             | ~         | ~        | ~         | ~           | ~          | ~          | ~           |
+| [`away-notify`][]                                             | ✓         | ~        | ~         | ~           | ~          | ~          | ~           |
+| [`batch`][]                                                   | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [Bot Mode][]                                                  | ✓         | ~        | ✓         | ✓           | ~          | ~          | ~           |
+| [Capability Negotiation][], version 302                       | ✓         | ✓        | ✓         | ✓           | ✓          | ✓          | ✓           |
+| [`chathistory` batch type][]                                  | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`chghost`][]                                                 | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`echo-message`][]                                            | ~         | ~        | ✗         | ~           | ~          | ~          | ~           |
+| [`extended-join`][]                                           | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [Extended Monitor][]                                          | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`invite-notify`][]                                           | ✓         | ~        | ~         | ✓           | ~          | ✓          | ~           |
+| [`labeled-response`][]                                        | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`message-ids`][]                                             | ~         | ~        | ~         | ✓           | ~          | ~          | ~           |
+| [Message Tags][]                                              | ✓         | ~        | ~         | ✓           | ~          | ~          | ~           |
+| [Monitor][]                                                   | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`multi-prefix`][]                                            | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`netsplit` and `netjoin` batch types][]                      | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| SASL Authentication, versions [3.1][sasl31] and [3.2][sasl32] | ✓         | ✓ (1)    | ✓ (1)     | ✓ (1)       | ✓ (1)      | ✓ (1)      | ✓ (1)       |
+| [`server-time`][]                                             | ~         | ~        | ~         | ✓           | ~          | ~          | ~           |
+| [`setname`][]                                                 | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [Standard Replies][]                                          | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`sts`][]                                                     | ~         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`typing` client-only tag][]                                  | ~         | ~        | ~         | ✓           | ~          | ✓          | ~           |
+| [`userhost-in-names`][]                                       | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`UTF8ONLY`][]                                                | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`WEBIRC`][]                                                  | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`WHOX`][]                                                    | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
 
 [Capability Negotiation]: https://ircv3.net/specs/extensions/capability-negotiation
 [Message Tags]: https://ircv3.net/specs/extensions/message-tags

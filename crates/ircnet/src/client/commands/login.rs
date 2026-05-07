@@ -45,8 +45,8 @@ pub struct LoginParams {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 pub enum CapDesire {
-    Require,
-    Request,
+    Required,
+    Optional,
 }
 
 #[cfg(feature = "serde")]
@@ -174,7 +174,7 @@ impl Command for Login {
                         && let Reply::UnknownCommand(r) = rpl
                         && r.command() == "CAP"
                     {
-                        if caps_desired.values().any(|&d| d == CapDesire::Require) {
+                        if caps_desired.values().any(|&d| d == CapDesire::Required) {
                             self.state = State::error(LoginError::CapNotSupported);
                         } else {
                             self.state = State::Awaiting001 {
@@ -394,7 +394,7 @@ impl State {
             || State::Void,
             |state| match (state, rpl) {
                 (State::Start { caps_desired, .. }, Reply::Welcome(r)) => {
-                    if caps_desired.values().any(|&d| d == CapDesire::Require) {
+                    if caps_desired.values().any(|&d| d == CapDesire::Required) {
                         ((true, None), State::error(LoginError::CapNotSupported))
                     } else if let ReplyTarget::Nick(nick) = r.client() {
                         let my_nick = nick.clone();
@@ -715,7 +715,7 @@ impl State {
                                 let sasl_cap = "sasl"
                                     .parse::<Capability>()
                                     .expect(r#""sasl" should be a valid capability name"#);
-                                caps_desired.insert(sasl_cap, CapDesire::Request);
+                                caps_desired.insert(sasl_cap, CapDesire::Optional);
                             }
                         } else {
                             caps_desired.remove("sasl");
@@ -724,7 +724,7 @@ impl State {
                         for (cap, desire) in caps_desired {
                             if capabilities.iter().any(|c| c.0 == cap) {
                                 caps_to_enable.push_back(cap);
-                            } else if desire == CapDesire::Require {
+                            } else if desire == CapDesire::Required {
                                 return (
                                     None,
                                     State::error(LoginError::RequiredCapNotSupported {
@@ -790,7 +790,7 @@ impl State {
                                 let sasl_cap = "sasl"
                                     .parse::<Capability>()
                                     .expect(r#""sasl" should be a valid capability name"#);
-                                caps_desired.insert(sasl_cap, CapDesire::Request);
+                                caps_desired.insert(sasl_cap, CapDesire::Optional);
                             }
                         } else {
                             caps_desired.remove("sasl");
@@ -799,7 +799,7 @@ impl State {
                         for (cap, desire) in caps_desired {
                             if capabilities.iter().any(|c| c.0 == cap) {
                                 caps_to_enable.push_back(cap);
-                            } else if desire == CapDesire::Require {
+                            } else if desire == CapDesire::Required {
                                 return (
                                     None,
                                     State::error(LoginError::RequiredCapNotSupported {
@@ -2199,7 +2199,7 @@ mod tests {
     }
 
     #[test]
-    fn require_and_request_cap_no_request() {
+    fn required_and_optional_caps_optional_not_supported() {
         let params = LoginParams {
             password: "hunter2".parse::<TrailingParam>().unwrap(),
             nickname: "jwodder".parse::<Nickname>().unwrap(),
@@ -2210,11 +2210,11 @@ mod tests {
             capabilities: BTreeMap::from([
                 (
                     "message-tags".parse::<Capability>().unwrap(),
-                    CapDesire::Require,
+                    CapDesire::Required,
                 ),
                 (
                     "server-time".parse::<Capability>().unwrap(),
-                    CapDesire::Request,
+                    CapDesire::Optional,
                 ),
             ]),
         };
@@ -2418,16 +2418,15 @@ mod tests {
             capabilities: BTreeMap::from([
                 (
                     "message-tags".parse::<Capability>().unwrap(),
-                    CapDesire::Require,
+                    CapDesire::Required,
                 ),
                 (
                     "server-time".parse::<Capability>().unwrap(),
-                    CapDesire::Request,
+                    CapDesire::Optional,
                 ),
             ]),
         };
         let mut cmd = Login::new(params);
-
         let outgoing = cmd
             .get_client_messages()
             .into_iter()
@@ -2442,7 +2441,6 @@ mod tests {
                 "USER jwuser 0 * :Just this guy, you know?"
             ]
         );
-
         let m = ":irc.example.com CAP * LS :account-notify away-notify sasl=ECDSA-NIST256P-CHALLENGE,EXTERNAL,PLAIN,SCRAM-SHA-512";
         let msg = m.parse::<Message>().unwrap();
         assert!(cmd.handle_message(&msg));

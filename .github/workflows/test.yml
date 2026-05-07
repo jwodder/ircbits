@@ -16,6 +16,8 @@ permissions: {}
 
 jobs:
   test:
+    # So that the `exclude:` key doesn't mess with require checks rules:
+    name: test (${{ matrix.os }}, ${{ matrix.toolchain }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -32,6 +34,7 @@ jobs:
             toolchain: stable
           - os: windows-latest
             toolchain: stable
+            exclude: --exclude-features systemd
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -65,10 +68,10 @@ jobs:
         uses: taiki-e/install-action@0276ab8ba1c860f0c06cb9d4af0359994de74057 # cargo-hack
 
       - name: Build crate
-        run: cargo hack --workspace --feature-powerset build --all-targets --verbose
+        run: cargo hack --workspace --feature-powerset ${{ matrix.exclude }} build --all-targets --verbose
 
       - name: Test crate
-        run: cargo hack --workspace --feature-powerset test --verbose
+        run: cargo hack --workspace --feature-powerset ${{ matrix.exclude }} test --verbose
 
   minimal-versions:
     runs-on: ubuntu-latest

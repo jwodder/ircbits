@@ -160,6 +160,10 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
     } else {
         None
     };
+    #[cfg(feature = "systemd")]
+    if let Err(e) = sd_notify::notify(&[sd_notify::NotifyState::Ready]) {
+        tracing::warn!("Failed to notify systemd that we're ready: {e}");
+    }
     loop {
         match run_until_stopped(client.recv()).await {
             Some(Ok(Some(Message {
@@ -200,6 +204,10 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                                     .expect(r#""Kicked out" should be valid TrailingParam"#),
                             ))
                             .await?;
+                        #[cfg(feature = "systemd")]
+                        if let Err(e) = sd_notify::notify(&[sd_notify::NotifyState::Stopping]) {
+                            tracing::warn!("Failed to notify systemd that we're stopping: {e}");
+                        }
                         quit = true;
                     }
                 }
@@ -264,6 +272,10 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                             .expect(r#""Terminated" should be valid TrailingParam"#),
                     ))
                     .await?;
+                #[cfg(feature = "systemd")]
+                if let Err(e) = sd_notify::notify(&[sd_notify::NotifyState::Stopping]) {
+                    tracing::warn!("Failed to notify systemd that we're stopping: {e}");
+                }
                 quit = true;
             }
             None => (),

@@ -45,3 +45,11 @@ This subtable contains the following fields:
 
 - `delay` (integer; optional) — number of seconds to wait before echoing a
   message; defaults to 5
+
+Features
+========
+
+This program has one optional Cargo feature:
+
+- `systemd` — When run under systemd, send notifications when the program has
+  finished starting up and when it is about to shut down [Unix only]

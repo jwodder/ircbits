@@ -186,6 +186,7 @@ async fn main() -> anyhow::Result<()> {
         }
         report(&s);
     }
+    let mut quit = false;
     loop {
         match run_until_stopped(client.recv()).await {
             Some(Ok(Some(msg))) => report(&format_msg(msg)),
@@ -197,7 +198,8 @@ async fn main() -> anyhow::Result<()> {
                 report(&format!("[PARSE FAILURE] {:?}", anyhow::Error::new(e)));
             }
             Some(Err(e)) => return Err(e.into()),
-            None => {
+            None if !quit => {
+                report("# Quitting ...");
                 client
                     .send(Quit::new_with_reason(
                         "Terminated"
@@ -205,7 +207,9 @@ async fn main() -> anyhow::Result<()> {
                             .expect(r#""Terminated" should be valid TrailingParam"#),
                     ))
                     .await?;
+                quit = false;
             }
+            None => (),
         }
     }
     Ok(())

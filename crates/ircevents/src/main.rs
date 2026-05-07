@@ -97,6 +97,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()> {
+    let mut quit = false;
     tracing::info!("Connecting to IRC …");
     let (mut client, login_output) = SessionBuilder::new(profile.session_params)
         .with_autoresponder(PingResponder::new())
@@ -184,9 +185,16 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                     .await?;
                 if let Some(chan) = kicked_chan {
                     channels.remove(&chan);
-                    if channels.is_empty() {
+                    if channels.is_empty() && !quit {
                         tracing::info!("No channels left; quitting");
-                        client.send(Quit::new()).await?;
+                        client
+                            .send(Quit::new_with_reason(
+                                "Kicked out"
+                                    .parse::<TrailingParam>()
+                                    .expect(r#""Kicked out" should be valid TrailingParam"#),
+                            ))
+                            .await?;
+                        quit = true;
                     }
                 }
             }
@@ -241,7 +249,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                     .await?;
                 return Err(e);
             }
-            None => {
+            None if !quit => {
                 tracing::info!("Signal received; quitting");
                 client
                     .send(Quit::new_with_reason(
@@ -250,7 +258,9 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                             .expect(r#""Terminated" should be valid TrailingParam"#),
                     ))
                     .await?;
+                quit = true;
             }
+            None => (),
         }
     }
     Ok(())

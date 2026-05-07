@@ -876,10 +876,11 @@ impl From<CapDel> for RawMessage {
     }
 }
 
-#[derive(Clone, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Capability(String);
 
 validstr!(Capability, ParseCapabilityError, validate_capability);
+strserde!(Capability, "an IRCv3 capability name");
 
 fn validate_capability(s: &str) -> Result<(), ParseCapabilityError> {
     if s.is_empty() {

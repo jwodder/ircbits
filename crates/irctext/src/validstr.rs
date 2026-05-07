@@ -109,6 +109,12 @@ macro_rules! validstr {
             }
         }
 
+        impl std::borrow::Borrow<str> for $t {
+            fn borrow(&self) -> &str {
+                self.0.as_ref()
+            }
+        }
+
         impl std::ops::Deref for $t {
             type Target = str;
 

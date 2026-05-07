@@ -687,6 +687,7 @@ dependencies = [
 name = "ircnet"
 version = "0.0.0"
 dependencies = [
+ "assert_matches",
  "base64",
  "bytes",
  "enum_dispatch",

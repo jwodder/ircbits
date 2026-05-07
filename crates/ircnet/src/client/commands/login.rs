@@ -2197,4 +2197,260 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn require_and_request_cap_no_request() {
+        let params = LoginParams {
+            password: "hunter2".parse::<TrailingParam>().unwrap(),
+            nickname: "jwodder".parse::<Nickname>().unwrap(),
+            username: "jwuser".parse::<Username>().unwrap(),
+            realname: "Just this guy, you know?".parse::<TrailingParam>().unwrap(),
+            sasl: true,
+            sasl_mechanisms: Vec1::from_one(SaslMechanism::Plain),
+            capabilities: BTreeMap::from([
+                (
+                    "message-tags".parse::<Capability>().unwrap(),
+                    CapDesire::Require,
+                ),
+                (
+                    "server-time".parse::<Capability>().unwrap(),
+                    CapDesire::Request,
+                ),
+            ]),
+        };
+        let mut cmd = Login::new(params);
+
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            outgoing,
+            [
+                "CAP LS 302",
+                "PASS :hunter2",
+                "NICK jwodder",
+                "USER jwuser 0 * :Just this guy, you know?"
+            ]
+        );
+
+        let m = ":irc.example.com CAP * LS :account-notify away-notify sasl=ECDSA-NIST256P-CHALLENGE,EXTERNAL,PLAIN,SCRAM-SHA-512 message-tags";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["CAP REQ :message-tags"]);
+
+        let m = ":irc.example.com CAP jwodder ACK message-tags";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["CAP REQ :sasl"]);
+        assert!(!cmd.is_done());
+
+        let m = ":irc.example.com CAP jwodder ACK :sasl";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["AUTHENTICATE :PLAIN"]);
+        assert!(!cmd.is_done());
+
+        let m = "AUTHENTICATE +";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["AUTHENTICATE :andvZGRlcgBqd29kZGVyAGh1bnRlcjI="]);
+        assert!(!cmd.is_done());
+
+        let m = ":irc.example.com 900 jwodder jwodder!jwuser@127.0.0.1 jwodder :You are now logged in as jwodder";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        assert!(cmd.get_client_messages().is_empty());
+        assert!(!cmd.is_done());
+
+        let m = ":irc.example.com 903 jwodder :SASL authentication successful";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(outgoing, ["CAP END"]);
+        assert!(!cmd.is_done());
+
+        let incoming = [
+            ":irc.example.com 001 jwodder :Welcome to the Example Internet Relay Chat Network, jwodder",
+            ":irc.example.com 002 jwodder :Your host is irc.example.com, running version solanum-1.0-dev",
+            ":irc.example.com 003 jwodder :This server was created Thu Jul 18 2024 at 16:57:02 UTC",
+            ":irc.example.com 004 jwodder irc.example.com solanum-1.0-dev DGIMQRSZaghilopsuwz CFILMPQRSTbcefgijklmnopqrstuvz bkloveqjfI",
+            ":irc.example.com 005 jwodder ACCOUNTEXTBAN=a WHOX KNOCK MONITOR=100 ETRACE FNC SAFELIST ELIST=CMNTU CALLERID=g CHANTYPES=# EXCEPTS INVEX :are supported by this server",
+            ":irc.example.com 005 jwodder CHANMODES=eIbq,k,flj,CFLMPQRSTcgimnprstuz CHANLIMIT=#:250 PREFIX=(ov)@+ MAXLIST=bqeI:100 MODES=4 NETWORK=Libera.Chat STATUSMSG=@+ CASEMAPPING=rfc1459 NICKLEN=16 MAXNICKLEN=16 CHANNELLEN=50 TOPICLEN=390 :are supported by this server",
+            ":irc.example.com 005 jwodder DEAF=D TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: EXTBAN=$,agjrxz :are supported by this server",
+            ":irc.example.com 251 jwodder :There are 62 users and 31502 invisible on 28 servers",
+            ":irc.example.com 252 jwodder 40 :IRC Operators online",
+            ":irc.example.com 253 jwodder 66 :unknown connection(s)",
+            ":irc.example.com 254 jwodder 22798 :channels formed",
+            ":irc.example.com 255 jwodder :I have 2700 clients and 1 servers",
+            ":irc.example.com 265 jwodder 2700 3071 :Current local users 2700, max 3071",
+            ":irc.example.com 266 jwodder 31564 34153 :Current global users 31564, max 34153",
+            ":irc.example.com 250 jwodder :Highest connection count: 3072 (3071 clients) (781421 connections received)",
+            ":irc.example.com 422 jwodder :No message today",
+        ];
+        for m in incoming {
+            let msg = m.parse::<Message>().unwrap();
+            assert!(cmd.handle_message(&msg));
+            assert!(cmd.get_client_messages().is_empty());
+            assert!(!cmd.is_done());
+        }
+
+        let m = ":jwodder MODE jwodder :+Ziw";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        assert!(cmd.get_client_messages().is_empty());
+        assert!(cmd.is_done());
+
+        let output = cmd.get_output().unwrap();
+        pretty_assertions::assert_eq!(
+            output,
+            LoginOutput {
+                capabilities: Some(vec![
+                    ("account-notify".parse::<Capability>().unwrap(), None),
+                    ("away-notify".parse::<Capability>().unwrap(), None),
+                    (
+                        "sasl".parse::<Capability>().unwrap(),
+                        Some(
+                            "ECDSA-NIST256P-CHALLENGE,EXTERNAL,PLAIN,SCRAM-SHA-512"
+                                .parse::<CapabilityValue>()
+                                .unwrap()
+                        )
+                    ),
+                    ("message-tags".parse::<Capability>().unwrap(), None),
+                ]),
+                capabilities_enabled: HashSet::from(["message-tags".parse::<Capability>().unwrap(), "sasl".parse::<Capability>().unwrap()]),
+                my_nick: "jwodder".parse::<Nickname>().unwrap(),
+                welcome_msg: "Welcome to the Example Internet Relay Chat Network, jwodder".into(),
+                yourhost_msg: "Your host is irc.example.com, running version solanum-1.0-dev".into(),
+                created_msg: "This server was created Thu Jul 18 2024 at 16:57:02 UTC".into(),
+                server_info: ServerInfo {
+                    name: "irc.example.com".into(),
+                    version: "solanum-1.0-dev".into(),
+                    user_modes: "DGIMQRSZaghilopsuwz".into(),
+                    channel_modes: "CFILMPQRSTbcefgijklmnopqrstuvz".into(),
+                    param_channel_modes: Some("bkloveqjfI".to_owned()),
+                },
+                isupport: [
+                    "ACCOUNTEXTBAN=a",
+                    "WHOX",
+                    "KNOCK",
+                    "MONITOR=100",
+                    "ETRACE",
+                    "FNC",
+                    "SAFELIST",
+                    "ELIST=CMNTU",
+                    "CALLERID=g",
+                    "CHANTYPES=#",
+                    "EXCEPTS",
+                    "INVEX",
+                    "CHANMODES=eIbq,k,flj,CFLMPQRSTcgimnprstuz",
+                    "CHANLIMIT=#:250",
+                    "PREFIX=(ov)@+",
+                    "MAXLIST=bqeI:100",
+                    "MODES=4",
+                    "NETWORK=Libera.Chat",
+                    "STATUSMSG=@+",
+                    "CASEMAPPING=rfc1459",
+                    "NICKLEN=16",
+                    "MAXNICKLEN=16",
+                    "CHANNELLEN=50",
+                    "TOPICLEN=390",
+                    "DEAF=D",
+                    "TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR:",
+                    "EXTBAN=$,agjrxz",
+                ]
+                .into_iter()
+                .map(str::parse::<ISupportParam>)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap(),
+                luser_stats: LuserStats {
+                    operators: Some(40),
+                    unknown_connections: Some(66),
+                    channels: Some(22798),
+                    local_clients: Some(2700),
+                    max_local_clients: Some(3071),
+                    global_clients: Some(31564),
+                    max_global_clients: Some(34153),
+                    luserclient_msg: Some("There are 62 users and 31502 invisible on 28 servers".to_owned()),
+                    luserme_msg: Some("I have 2700 clients and 1 servers".to_owned()),
+                    statsconn_msg: Some("Highest connection count: 3072 (3071 clients) (781421 connections received)".to_owned()),
+                },
+                motd: None,
+                mode: Some("+Ziw".parse::<ModeString>().unwrap()),
+            }
+        );
+    }
+
+    #[test]
+    fn required_cap_not_supported() {
+        let params = LoginParams {
+            password: "hunter2".parse::<TrailingParam>().unwrap(),
+            nickname: "jwodder".parse::<Nickname>().unwrap(),
+            username: "jwuser".parse::<Username>().unwrap(),
+            realname: "Just this guy, you know?".parse::<TrailingParam>().unwrap(),
+            sasl: true,
+            sasl_mechanisms: Vec1::from_one(SaslMechanism::Plain),
+            capabilities: BTreeMap::from([
+                (
+                    "message-tags".parse::<Capability>().unwrap(),
+                    CapDesire::Require,
+                ),
+                (
+                    "server-time".parse::<Capability>().unwrap(),
+                    CapDesire::Request,
+                ),
+            ]),
+        };
+        let mut cmd = Login::new(params);
+
+        let outgoing = cmd
+            .get_client_messages()
+            .into_iter()
+            .map(|msg| msg.to_irc_line())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            outgoing,
+            [
+                "CAP LS 302",
+                "PASS :hunter2",
+                "NICK jwodder",
+                "USER jwuser 0 * :Just this guy, you know?"
+            ]
+        );
+
+        let m = ":irc.example.com CAP * LS :account-notify away-notify sasl=ECDSA-NIST256P-CHALLENGE,EXTERNAL,PLAIN,SCRAM-SHA-512";
+        let msg = m.parse::<Message>().unwrap();
+        assert!(cmd.handle_message(&msg));
+        assert!(cmd.get_client_messages().is_empty());
+        assert!(cmd.is_done());
+        let output = cmd.get_output().unwrap_err();
+        assert_matches::assert_matches!(output, LoginError::RequiredCapNotSupported { capability} => {
+            assert_eq!(capability, "message-tags");
+        });
+    }
 }

@@ -102,6 +102,11 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await?;
 
+    #[cfg(feature = "systemd")]
+    if let Err(e) = sd_notify::notify(&[sd_notify::NotifyState::Ready]) {
+        tracing::warn!("Failed to notify systemd that we're ready: {e}");
+    }
+
     let casemapping = login_output.casemapping()?;
     let botmode = login_output.botmode();
     let me = login_output.my_nick;
@@ -121,11 +126,6 @@ async fn main() -> anyhow::Result<()> {
         let chan = output.channel;
         tracing::info!("Joined {chan}");
         channels.add(chan);
-    }
-
-    #[cfg(feature = "systemd")]
-    if let Err(e) = sd_notify::notify(&[sd_notify::NotifyState::Ready]) {
-        tracing::warn!("Failed to notify systemd that we're ready: {e}");
     }
 
     let mut pending = JoinSet::new();

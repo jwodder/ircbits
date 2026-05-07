@@ -2,7 +2,7 @@ use anyhow::Context;
 use clap::Parser;
 use ircnet::client::{
     ClientError, SessionBuilder, SessionParams,
-    autoresponders::{CtcpQueryResponder, PingResponder},
+    autoresponders::{AutoResponder, CtcpQueryResponder, PingResponder},
     commands::{JoinCommand, JoinOutput, LoginOutput, SetUserMode},
 };
 use irctext::{
@@ -102,26 +102,24 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
     tracing::info!("Connecting to IRC …");
     let (mut client, login_output) = SessionBuilder::new(profile.session_params)
         .with_autoresponder(PingResponder::new())
-        .with_autoresponder(
-            CtcpQueryResponder::new()
-                .with_version(
-                    format!(
-                        "{} {} ({})",
-                        env!("CARGO_CRATE_NAME"),
-                        env!("VERSION_WITH_GIT"),
-                        env!("CARGO_PKG_REPOSITORY")
-                    )
-                    .parse::<CtcpParams>()
-                    .expect("Crate name, version, & URL should be valid CTCP params"),
-                )
-                .with_source(
-                    env!("CARGO_PKG_REPOSITORY")
-                        .parse::<CtcpParams>()
-                        .expect("Project repository URL should be valid CTCP params"),
-                ),
-        )
         .build()
         .await?;
+    let mut ctcp = CtcpQueryResponder::new()
+        .with_version(
+            format!(
+                "{} {} ({})",
+                env!("CARGO_CRATE_NAME"),
+                env!("VERSION_WITH_GIT"),
+                env!("CARGO_PKG_REPOSITORY")
+            )
+            .parse::<CtcpParams>()
+            .expect("Crate name, version, & URL should be valid CTCP params"),
+        )
+        .with_source(
+            env!("CARGO_PKG_REPOSITORY")
+                .parse::<CtcpParams>()
+                .expect("Project repository URL should be valid CTCP params"),
+        );
     let casemapping = login_output.casemapping()?;
     let me = login_output.my_nick.clone();
     let botmode = login_output.botmode();
@@ -166,74 +164,86 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
     }
     loop {
         match run_until_stopped(client.recv()).await {
-            Some(Ok(Some(Message {
-                tags,
-                source,
-                payload: Payload::ClientMessage(msg),
-            }))) => {
-                let kicked_chan = if let ClientMessage::Kick(m) = &msg
-                    && let Some(chan) = channels.canonicalize(m.channel())
-                    && m.users()
-                        .iter()
-                        .any(|nick| casemapping.eq_ignore_case(nick, &me))
-                {
-                    tracing::info!(
-                        comment = m.comment().map(ToString::to_string),
-                        "Kicked from {chan}"
-                    );
-                    Some(chan.to_owned())
-                } else {
-                    None
-                };
-                sender
-                    .send(Event::Message {
-                        timestamp: Zoned::now(),
-                        tags,
-                        source,
-                        msg,
-                    })
-                    .await?;
-                if let Some(chan) = kicked_chan {
-                    channels.remove(&chan);
-                    if channels.is_empty() && !quit {
-                        tracing::info!("No channels left; quitting");
-                        client
-                            .send(Quit::new_with_reason(
-                                "Kicked out"
-                                    .parse::<TrailingParam>()
-                                    .expect(r#""Kicked out" should be valid TrailingParam"#),
-                            ))
-                            .await?;
-                        #[cfg(feature = "systemd")]
-                        if let Err(e) = sd_notify::notify(&[sd_notify::NotifyState::Stopping]) {
-                            tracing::warn!("Failed to notify systemd that we're stopping: {e}");
-                        }
-                        quit = true;
+            Some(Ok(Some(m))) => {
+                // Handle CTCP messages here so that we can also emit log
+                // events for them
+                if ctcp.handle_message(&m) {
+                    for msg in ctcp.get_outgoing_messages() {
+                        client.send(msg).await?;
                     }
                 }
-            }
-            Some(Ok(Some(Message {
-                tags,
-                source,
-                payload: Payload::Reply(reply),
-            }))) => {
-                if matches!(reply, Reply::UnAway(_) | Reply::NowAway(_))
-                    && away_sent.is_some_and(|when| when.elapsed() < AWAY_REPLY_WINDOW)
-                {
-                    tracing::info!(
-                        "Received {} reply to AWAY command; not logging",
-                        reply.name().unwrap_or("UNKNOWN")
-                    );
-                    away_sent = None;
-                } else {
-                    sender
-                        .send(Event::Reply {
-                            timestamp: Zoned::now(),
-                            tags,
-                            source,
-                            reply,
-                        })
-                        .await?;
+                let Message {
+                    tags,
+                    source,
+                    payload,
+                } = m;
+                match payload {
+                    Payload::ClientMessage(msg) => {
+                        let kicked_chan = if let ClientMessage::Kick(m) = &msg
+                            && let Some(chan) = channels.canonicalize(m.channel())
+                            && m.users()
+                                .iter()
+                                .any(|nick| casemapping.eq_ignore_case(nick, &me))
+                        {
+                            tracing::info!(
+                                comment = m.comment().map(ToString::to_string),
+                                "Kicked from {chan}"
+                            );
+                            Some(chan.to_owned())
+                        } else {
+                            None
+                        };
+                        sender
+                            .send(Event::Message {
+                                timestamp: Zoned::now(),
+                                tags,
+                                source,
+                                msg,
+                            })
+                            .await?;
+                        if let Some(chan) = kicked_chan {
+                            channels.remove(&chan);
+                            if channels.is_empty() && !quit {
+                                tracing::info!("No channels left; quitting");
+                                client
+                                    .send(Quit::new_with_reason(
+                                        "Kicked out".parse::<TrailingParam>().expect(
+                                            r#""Kicked out" should be valid TrailingParam"#,
+                                        ),
+                                    ))
+                                    .await?;
+                                #[cfg(feature = "systemd")]
+                                if let Err(e) =
+                                    sd_notify::notify(&[sd_notify::NotifyState::Stopping])
+                                {
+                                    tracing::warn!(
+                                        "Failed to notify systemd that we're stopping: {e}"
+                                    );
+                                }
+                                quit = true;
+                            }
+                        }
+                    }
+                    Payload::Reply(reply) => {
+                        if matches!(reply, Reply::UnAway(_) | Reply::NowAway(_))
+                            && away_sent.is_some_and(|when| when.elapsed() < AWAY_REPLY_WINDOW)
+                        {
+                            tracing::info!(
+                                "Received {} reply to AWAY command; not logging",
+                                reply.name().unwrap_or("UNKNOWN")
+                            );
+                            away_sent = None;
+                        } else {
+                            sender
+                                .send(Event::Reply {
+                                    timestamp: Zoned::now(),
+                                    tags,
+                                    source,
+                                    reply,
+                                })
+                                .await?;
+                        }
+                    }
                 }
             }
             Some(Ok(None)) => {

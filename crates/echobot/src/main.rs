@@ -123,6 +123,11 @@ async fn main() -> anyhow::Result<()> {
         channels.add(chan);
     }
 
+    #[cfg(feature = "systemd")]
+    if let Err(e) = sd_notify::notify(&[sd_notify::NotifyState::Ready]) {
+        tracing::warn!("Failed to notify systemd that we're ready: {e}");
+    }
+
     let mut pending = JoinSet::new();
     let mut quit = false;
 
@@ -198,6 +203,14 @@ async fn main() -> anyhow::Result<()> {
                                         ),
                                     ))
                                     .await?;
+                                #[cfg(feature = "systemd")]
+                                if let Err(e) =
+                                    sd_notify::notify(&[sd_notify::NotifyState::Stopping])
+                                {
+                                    tracing::warn!(
+                                        "Failed to notify systemd that we're stopping: {e}"
+                                    );
+                                }
                                 quit = true;
                             }
                         }
@@ -230,6 +243,10 @@ async fn main() -> anyhow::Result<()> {
                             .expect(r#""Terminated" should be valid TrailingParam"#),
                     ))
                     .await?;
+                #[cfg(feature = "systemd")]
+                if let Err(e) = sd_notify::notify(&[sd_notify::NotifyState::Stopping]) {
+                    tracing::warn!("Failed to notify systemd that we're stopping: {e}");
+                }
                 quit = true;
             }
             Event::Stopped => (),

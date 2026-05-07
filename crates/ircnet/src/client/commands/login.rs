@@ -685,13 +685,7 @@ impl State {
             self,
             || State::Void,
             |state| match (state, cap) {
-                (
-                    State::Start {
-                        mut caps_desired,
-                        mut sasl,
-                    },
-                    Cap::LsResponse(m),
-                ) => {
+                (State::Start { caps_desired, sasl }, Cap::LsResponse(m)) => {
                     let capabilities = m.capabilities.clone();
                     if m.continued {
                         (
@@ -703,67 +697,14 @@ impl State {
                             },
                         )
                     } else {
-                        if let Some(mut ss) = sasl.take() {
-                            ss.restrict_mechanisms(servers_sasl_mechs(&capabilities));
-                            if ss.mechanisms.is_empty() {
-                                tracing::debug!(
-                                    "Server does not support any enabled SASL mechanisms; skipping SASL"
-                                );
-                                caps_desired.remove("sasl");
-                            } else {
-                                sasl = Some(ss);
-                                let sasl_cap = "sasl"
-                                    .parse::<Capability>()
-                                    .expect(r#""sasl" should be a valid capability name"#);
-                                caps_desired.insert(sasl_cap, CapDesire::Optional);
-                            }
-                        } else {
-                            caps_desired.remove("sasl");
-                        }
-                        let mut caps_to_enable = VecDeque::new();
-                        for (cap, desire) in caps_desired {
-                            if capabilities.iter().any(|c| c.0 == cap) {
-                                caps_to_enable.push_back(cap);
-                            } else if desire == CapDesire::Required {
-                                return (
-                                    None,
-                                    State::error(LoginError::RequiredCapNotSupported {
-                                        capability: cap,
-                                    }),
-                                );
-                            }
-                        }
-                        if let Some(for_cap) = caps_to_enable.pop_front() {
-                            let cap_req = ClientMessage::from(CapReq {
-                                capabilities: vec![CapabilityRequest::enable(for_cap.clone())],
-                            });
-                            (
-                                Some(cap_req),
-                                State::AwaitingAck {
-                                    capabilities,
-                                    caps_to_enable,
-                                    capabilities_enabled: HashSet::new(),
-                                    for_cap,
-                                    sasl,
-                                },
-                            )
-                        } else {
-                            let cap_end = ClientMessage::from(CapEnd);
-                            (
-                                Some(cap_end),
-                                State::Awaiting001 {
-                                    capabilities: Some(capabilities),
-                                    capabilities_enabled: HashSet::new(),
-                                },
-                            )
-                        }
+                        post_cap_ls(capabilities, caps_desired, sasl)
                     }
                 }
                 (
                     State::ListingCaps {
                         mut capabilities,
-                        mut caps_desired,
-                        mut sasl,
+                        caps_desired,
+                        sasl,
                     },
                     Cap::LsResponse(m),
                 ) => {
@@ -778,60 +719,7 @@ impl State {
                             },
                         )
                     } else {
-                        if let Some(mut ss) = sasl.take() {
-                            ss.restrict_mechanisms(servers_sasl_mechs(&capabilities));
-                            if ss.mechanisms.is_empty() {
-                                tracing::debug!(
-                                    "Server does not support any enabled SASL mechanisms; skipping SASL"
-                                );
-                                caps_desired.remove("sasl");
-                            } else {
-                                sasl = Some(ss);
-                                let sasl_cap = "sasl"
-                                    .parse::<Capability>()
-                                    .expect(r#""sasl" should be a valid capability name"#);
-                                caps_desired.insert(sasl_cap, CapDesire::Optional);
-                            }
-                        } else {
-                            caps_desired.remove("sasl");
-                        }
-                        let mut caps_to_enable = VecDeque::new();
-                        for (cap, desire) in caps_desired {
-                            if capabilities.iter().any(|c| c.0 == cap) {
-                                caps_to_enable.push_back(cap);
-                            } else if desire == CapDesire::Required {
-                                return (
-                                    None,
-                                    State::error(LoginError::RequiredCapNotSupported {
-                                        capability: cap,
-                                    }),
-                                );
-                            }
-                        }
-                        if let Some(for_cap) = caps_to_enable.pop_front() {
-                            let cap_req = ClientMessage::from(CapReq {
-                                capabilities: vec![CapabilityRequest::enable(for_cap.clone())],
-                            });
-                            (
-                                Some(cap_req),
-                                State::AwaitingAck {
-                                    capabilities,
-                                    caps_to_enable,
-                                    capabilities_enabled: HashSet::new(),
-                                    for_cap,
-                                    sasl,
-                                },
-                            )
-                        } else {
-                            let cap_end = ClientMessage::from(CapEnd);
-                            (
-                                Some(cap_end),
-                                State::Awaiting001 {
-                                    capabilities: Some(capabilities),
-                                    capabilities_enabled: HashSet::new(),
-                                },
-                            )
-                        }
+                        post_cap_ls(capabilities, caps_desired, sasl)
                     }
                 }
                 (
@@ -1244,6 +1132,63 @@ impl SaslBuilder {
         } else {
             Ok(None)
         }
+    }
+}
+
+fn post_cap_ls(
+    capabilities: Vec<(Capability, Option<CapabilityValue>)>,
+    mut caps_desired: BTreeMap<Capability, CapDesire>,
+    mut sasl: Option<SaslBuilder>,
+) -> (Option<ClientMessage>, State) {
+    if let Some(mut ss) = sasl.take() {
+        ss.restrict_mechanisms(servers_sasl_mechs(&capabilities));
+        if ss.mechanisms.is_empty() {
+            tracing::debug!("Server does not support any enabled SASL mechanisms; skipping SASL");
+            caps_desired.remove("sasl");
+        } else {
+            sasl = Some(ss);
+            let sasl_cap = "sasl"
+                .parse::<Capability>()
+                .expect(r#""sasl" should be a valid capability name"#);
+            caps_desired.insert(sasl_cap, CapDesire::Optional);
+        }
+    } else {
+        caps_desired.remove("sasl");
+    }
+    let mut caps_to_enable = VecDeque::new();
+    for (cap, desire) in caps_desired {
+        if capabilities.iter().any(|c| c.0 == cap) {
+            caps_to_enable.push_back(cap);
+        } else if desire == CapDesire::Required {
+            return (
+                None,
+                State::error(LoginError::RequiredCapNotSupported { capability: cap }),
+            );
+        }
+    }
+    if let Some(for_cap) = caps_to_enable.pop_front() {
+        let cap_req = ClientMessage::from(CapReq {
+            capabilities: vec![CapabilityRequest::enable(for_cap.clone())],
+        });
+        (
+            Some(cap_req),
+            State::AwaitingAck {
+                capabilities,
+                caps_to_enable,
+                capabilities_enabled: HashSet::new(),
+                for_cap,
+                sasl,
+            },
+        )
+    } else {
+        let cap_end = ClientMessage::from(CapEnd);
+        (
+            Some(cap_end),
+            State::Awaiting001 {
+                capabilities: Some(capabilities),
+                capabilities_enabled: HashSet::new(),
+            },
+        )
     }
 }
 

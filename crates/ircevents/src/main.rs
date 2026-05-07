@@ -482,6 +482,7 @@ impl AddFields for LoginOutput {
     fn add_fields(self, map: &mut Map<String, Value>) {
         let LoginOutput {
             capabilities,
+            capabilities_enabled,
             my_nick,
             welcome_msg,
             yourhost_msg,
@@ -501,6 +502,19 @@ impl AddFields for LoginOutput {
         } else {
             map.insert(String::from("capabilities"), Value::Null);
         }
+        let mut caps_enabled = capabilities_enabled
+            .into_iter()
+            .map(|c| c.to_string())
+            .collect::<Vec<_>>();
+        caps_enabled.sort_unstable();
+        let caps_enabled = caps_enabled
+            .into_iter()
+            .map(Value::from)
+            .collect::<Vec<_>>();
+        map.insert(
+            String::from("capabilities_enabled"),
+            Value::from(caps_enabled),
+        );
         map.insert(String::from("my_nick"), Value::from(String::from(my_nick)));
         map.insert(String::from("welcome_msg"), Value::from(welcome_msg));
         map.insert(String::from("yourhost_msg"), Value::from(yourhost_msg));

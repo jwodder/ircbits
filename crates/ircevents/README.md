@@ -164,6 +164,9 @@ JSON objects for this event type have the following additional fields:
   mapping capability names to capability values (or to `null` if no value is
   given); otherwise, this field is `null`
 
+- `"capabilities_enabled"` (list of strings) — The names of all capabilities
+  successfully enabled during login
+
 - `"my_nick"` (string) — The nickname with which the program logged into IRC as
   given in the `RPL_WELCOME` reply
 

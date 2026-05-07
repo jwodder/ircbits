@@ -118,6 +118,7 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let mut pending = JoinSet::new();
+    let mut quit = false;
 
     loop {
         let r = tokio::select! {
@@ -182,9 +183,16 @@ async fn main() -> anyhow::Result<()> {
                             );
                             let chan = chan.to_owned(); // Stop borrowing from `channels` so we can mutate it
                             channels.remove(&chan);
-                            if channels.is_empty() {
+                            if channels.is_empty() && !quit {
                                 tracing::info!("No channels left; quitting");
-                                client.send(Quit::new()).await?;
+                                client
+                                    .send(Quit::new_with_reason(
+                                        "Kicked out".parse::<TrailingParam>().expect(
+                                            r#""Kicked out" should be valid TrailingParam"#,
+                                        ),
+                                    ))
+                                    .await?;
+                                quit = true;
                             }
                         }
                     }
@@ -207,7 +215,7 @@ async fn main() -> anyhow::Result<()> {
                 tracing::error!(?e, "Error communicating with server");
                 return Err(e);
             }
-            Event::Stopped => {
+            Event::Stopped if !quit => {
                 tracing::info!("Signal received; quitting");
                 client
                     .send(Quit::new_with_reason(
@@ -216,7 +224,9 @@ async fn main() -> anyhow::Result<()> {
                             .expect(r#""Terminated" should be valid TrailingParam"#),
                     ))
                     .await?;
+                quit = true;
             }
+            Event::Stopped => (),
             Event::EchoReady(target, msg) => {
                 tracing::info!(%target, %msg, "Sending message");
                 client.send(PrivMsg::new(target, msg)).await?;

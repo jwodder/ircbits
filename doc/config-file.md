@@ -39,6 +39,14 @@ stated otherwise.
     If a server does not support any configured mechanisms, the program will
     proceed normally without using SASL.
 
+- `capabilities` — An optional subtable specifying IRCv3 capabilities to enable
+  when logging in.  The keys of the subtable are capability names, and each
+  value is either the string `"required"` (indicating that login should fail if
+  the remote server does not support the given capability) or the string
+  `"optional"` (indicating that login should proceed without the given
+  capability if the server doesn't support it).  If the key `sasl` appears in
+  this subtable, it is ignored.
+
 Many `ircbits` commands read further command-specific configuration from
 subtables of profile tables that are keyed by the name of the command; see each
 command's documentation for details.
@@ -59,6 +67,10 @@ nickname = "example"
 username = "edsample"
 realname = "Edward Sample"
 password = "hunter2"
+
+[libera.capabilities]
+server-time = "required"
+"solanum.chat/realhost" = "optional"
 
 [libera.ircwatch]
 default-channels = ["#python", "##rust", "#nethack"]

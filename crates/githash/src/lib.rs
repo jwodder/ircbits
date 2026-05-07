@@ -1,0 +1,78 @@
+use anyhow::{Context, bail};
+use semver::{BuildMetadata, Version};
+use std::io::ErrorKind;
+use std::path::Path;
+use std::process::{Command, Stdio};
+
+pub fn get_work_tree() -> anyhow::Result<Option<String>> {
+    match Command::new("git")
+        .arg("rev-parse")
+        .arg("--show-toplevel")
+        .stderr(Stdio::null())
+        .output()
+    {
+        Ok(output) if output.status.success() => {
+            let mut work_tree = String::from_utf8(output.stdout)
+                .context("`git rev-parse --show-toplevel` output was not UTF-8")?;
+            if work_tree.ends_with('\n') {
+                work_tree.pop();
+                #[cfg(windows)]
+                if work_tree.ends_with('\r') {
+                    // Although Git on Windows (at least under GitHub Actions)
+                    // seems to use LF as the newline sequence in its output,
+                    // we should still take care to strip final CR on Windows
+                    // if it ever shows up.  As Windows doesn't allow CR in
+                    // file names, a CR here will always be part of a line
+                    // ending.
+                    work_tree.pop();
+                }
+            }
+            Ok(Some(work_tree))
+        }
+        Ok(_) => Ok(None), // We are not in a Git repository
+        Err(e) if e.kind() == ErrorKind::NotFound => {
+            // Git doesn't seem to be installed, so assume we're not in a Git
+            // repository
+            Ok(None)
+        }
+        Err(e) => Err(e).context("failed to run `git rev-parse --show-toplevel`"),
+    }
+}
+
+pub fn get_commit_hash<P: AsRef<Path>>(work_tree: P) -> anyhow::Result<String> {
+    let output = Command::new("git")
+        .arg("rev-parse")
+        .arg("--short")
+        .arg("HEAD")
+        .current_dir(work_tree.as_ref())
+        .output()
+        .context("failed to run `git rev-parse --short HEAD`")?;
+    if !output.status.success() {
+        bail!(
+            "`git rev-parse --short HEAD` command was not successful: {}",
+            output.status
+        );
+    }
+    let revision = std::str::from_utf8(&output.stdout)
+        .context("`git rev-parse --short HEAD` output was not UTF-8")?
+        .trim()
+        .to_owned();
+    Ok(revision)
+}
+
+pub fn add_semver_metadata(version: &str, metadata: &str) -> anyhow::Result<Version> {
+    let mut vobj = version
+        .parse::<Version>()
+        .with_context(|| format!("failed to parse version {version:?}"))?;
+    let mdobj = if vobj.build.is_empty() {
+        metadata
+            .parse::<BuildMetadata>()
+            .with_context(|| format!("failed to parse build metadata {metadata:?}"))?
+    } else {
+        let md = format!("{}.{metadata}", vobj.build);
+        md.parse::<BuildMetadata>()
+            .with_context(|| format!("failed to parse build metadata {md:?}"))?
+    };
+    vobj.build = mdobj;
+    Ok(vobj)
+}

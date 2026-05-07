@@ -26,6 +26,7 @@ use tracing::Level;
 ///
 /// Visit <https://github.com/jwodder/ircbits> for more information.
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
+#[command(version = env!("VERSION_WITH_GIT"))]
 struct Arguments {
     /// Read IRC network connection details from the given configuration file
     #[arg(short = 'c', long, default_value = "ircbits.toml")]
@@ -92,9 +93,14 @@ async fn main() -> anyhow::Result<()> {
         .with_autoresponder(
             CtcpQueryResponder::new()
                 .with_version(
-                    env!("CARGO_CRATE_NAME")
-                        .parse::<CtcpParams>()
-                        .expect("Crate name should be valid CTCP params"),
+                    format!(
+                        "{} {} ({})",
+                        env!("CARGO_CRATE_NAME"),
+                        env!("VERSION_WITH_GIT"),
+                        env!("CARGO_PKG_REPOSITORY")
+                    )
+                    .parse::<CtcpParams>()
+                    .expect("Crate name, version, & URL should be valid CTCP params"),
                 )
                 .with_source(
                     env!("CARGO_PKG_REPOSITORY")

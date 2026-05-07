@@ -329,6 +329,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
+ "githash",
  "ircnet",
  "irctext",
  "mainutil",
@@ -465,6 +466,14 @@ dependencies = [
  "rand_core",
  "wasip2",
  "wasip3",
+]
+
+[[package]]
+name = "githash"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "semver",
 ]
 
 [[package]]
@@ -659,6 +668,7 @@ dependencies = [
  "anyhow",
  "bytesize",
  "clap",
+ "githash",
  "ircnet",
  "irctext",
  "jiff",
@@ -708,6 +718,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
+ "githash",
  "ircnet",
  "irctext",
  "mainutil",
@@ -742,6 +753,7 @@ dependencies = [
  "anstyle",
  "anyhow",
  "clap",
+ "githash",
  "ircnet",
  "irctext",
  "itertools",
@@ -855,6 +867,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
+ "githash",
  "ircnet",
  "irctext",
  "mainutil",
@@ -1288,9 +1301,9 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "1.0.27"
+version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d767eb0aabc880b29956c35734170f26ed551a859dbd361d140cdbeca61ab1e2"
+checksum = "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd"
 
 [[package]]
 name = "serde"

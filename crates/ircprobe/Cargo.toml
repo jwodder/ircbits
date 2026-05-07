@@ -20,5 +20,9 @@ tokio = { workspace = true, features = ["macros", "rt", "time"] }
 toml.workspace = true
 tracing.workspace = true
 
+[build-dependencies]
+anyhow.workspace = true
+githash = { path = "../githash" }
+
 [lints]
 workspace = true

@@ -1,5 +1,5 @@
 [![Project Status: Concept – Minimal or no implementation has been done yet, or the repository is only intended to be a limited example, demo, or proof-of-concept.](https://www.repostatus.org/badges/latest/concept.svg)](https://www.repostatus.org/#concept)
-[![Minimum Supported Rust Version](https://img.shields.io/badge/MSRV-1.91-orange)](https://www.rust-lang.org)
+[![Minimum Supported Rust Version](https://img.shields.io/badge/MSRV-1.95-orange)](https://www.rust-lang.org)
 [![MIT License](https://img.shields.io/github/license/jwodder/ircbits.svg)](https://opensource.org/licenses/MIT)
 
 `ircevents` logs into an IRC network, joins a given set of channels, and then
@@ -163,6 +163,9 @@ JSON objects for this event type have the following additional fields:
   negotiation, this field contains its supported capabilities as an object
   mapping capability names to capability values (or to `null` if no value is
   given); otherwise, this field is `null`
+
+- `"capabilities_enabled"` (list of strings) — The names of all capabilities
+  successfully enabled during login
 
 - `"my_nick"` (string) — The nickname with which the program logged into IRC as
   given in the `RPL_WELCOME` reply

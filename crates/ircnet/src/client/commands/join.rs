@@ -91,9 +91,6 @@ impl Command for JoinCommand {
                         Reply::BadChannelKey(r) => JoinError::BadChannelKey {
                             message: r.message().to_owned(),
                         },
-                        Reply::TryAgain(r) => JoinError::TryAgain {
-                            message: r.message().to_owned(),
-                        },
                         Reply::InputTooLong(r) => JoinError::InputTooLong {
                             message: r.message().to_string(),
                         },
@@ -110,6 +107,11 @@ impl Command for JoinCommand {
                         },
                     };
                     self.state = State::Done(Some(Err(e)));
+                    true
+                } else if let Reply::TryAgain(r) = rpl {
+                    self.state = State::Done(Some(Err(JoinError::TryAgain {
+                        message: r.message().to_owned(),
+                    })));
                     true
                 } else {
                     self.state.in_place(|state| state.handle_reply(rpl))

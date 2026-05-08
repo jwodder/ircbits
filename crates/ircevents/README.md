@@ -301,8 +301,9 @@ Emitted when the program successfully finishes joining a channel.
 
 JSON objects for this event type have the following additional fields:
 
-- `"channel"` (string) — the name of the channel as given in `RPL_NAMREPLY`
-  messages
+- `"channel"` (string) — the name of the channel as given in the `RPL_NAMREPLY`
+  messages (or as given in our echoed `JOIN` command if the `no-implicit-names`
+  capability is enabled)
 - `"topic"` (string or `null`) — the channel's topic, or `null` if no topic is
   set
 - `"topic_set_by"` (object or `null`) — the user who set the current topic (in
@@ -312,8 +313,8 @@ JSON objects for this event type have the following additional fields:
     - In the unlikely event that a timestamp cannot be constructed from the
       value reported by the server, the value of this field will be a UNIX
       timestamp (integer number of seconds since the UNIX epoch).
-- `"channel_status"` (string) — the channel's status: one of `"public"`,
-  `"secret"`, or `"private"`
+- `"channel_status"` (string or `null`) — the channel's status: one of `"public"`,
+  `"secret"`, `"private"`, or (if `no-implicit-names` is enabled) `null`
 - `"users"` (list of objects) — The users currently joined to the channel along
   with their membership statuses therein.  Each object in the list contains the
   fields `"nickname"` (string) and `"membership"` (`"founder"`, `"protected"`,

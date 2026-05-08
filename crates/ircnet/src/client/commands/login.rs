@@ -12,7 +12,6 @@ use irctext::{
         ReplyTarget, Username,
     },
 };
-use itertools::Itertools; // join
 use mitsein::vec1::Vec1;
 use replace_with::{replace_with, replace_with_and_return};
 use std::collections::{BTreeMap, HashSet, VecDeque};
@@ -732,9 +731,9 @@ impl State {
                     },
                     Cap::Ack(m),
                 ) => {
-                    if m.capabilities
-                        .iter()
-                        .any(|c| c.capability == for_cap && !c.disable)
+                    if m.capabilities.len() == 1
+                        && m.capabilities[0].capability == for_cap
+                        && !m.capabilities[0].disable
                     {
                         capabilities_enabled.insert(for_cap);
                         if let Some(for_cap) = caps_to_enable.pop_front() {
@@ -786,17 +785,16 @@ impl State {
                             None,
                             State::error(LoginError::BadAckNak {
                                 requested: for_cap,
-                                cmd: "ACK",
-                                acked: m.capabilities.iter().join(" "),
+                                got: cap.to_irc_line(),
                             }),
                         )
                     }
                 }
                 (State::AwaitingAck { for_cap, .. }, Cap::Nak(m)) => {
-                    if m.capabilities.iter().any(|c| c == &for_cap) {
+                    if m.capabilities.len() == 1 && m.capabilities[0] == for_cap {
                         (
                             None,
-                            State::error(LoginError::CapNaked {
+                            State::error(LoginError::CapNakked {
                                 capability: for_cap,
                             }),
                         )
@@ -805,8 +803,7 @@ impl State {
                             None,
                             State::error(LoginError::BadAckNak {
                                 requested: for_cap,
-                                cmd: "NAK",
-                                acked: m.capabilities.iter().join(" "),
+                                got: cap.to_irc_line(),
                             }),
                         )
                     }
@@ -1091,15 +1088,11 @@ pub enum LoginError {
     #[error("login failed because server does not support required capability {capability}")]
     RequiredCapNotSupported { capability: Capability },
     #[error(
-        r#"login failed because server responded to "CAP REQ {requested}" with inapplicable "CAP * {cmd} :{acked}"#
+        r#"login failed because server responded to "CAP REQ {requested}" with inapplicable {got:?}"#
     )]
-    BadAckNak {
-        requested: Capability,
-        cmd: &'static str,
-        acked: String,
-    },
+    BadAckNak { requested: Capability, got: String },
     #[error("login failed because server NAKed our request to enable {capability}")]
-    CapNaked { capability: Capability },
+    CapNakked { capability: Capability },
     #[error("login failed due to SASL failing")]
     Sasl(SaslError),
 }

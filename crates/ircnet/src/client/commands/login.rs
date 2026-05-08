@@ -4,12 +4,12 @@ use irctext::{
     ClientMessage, ClientMessageParts, Message, Payload, Reply, ReplyParts, TrailingParam,
     TryFromStringError,
     clientmsgs::{
-        Authenticate, Cap, CapEnd, CapLsRequest, CapReq, Capability, CapabilityRequest,
-        CapabilityValue, Mode, Nick, Pass, User,
+        Authenticate, Cap, CapEnd, CapLsRequest, CapReq, CapabilityRequest, CapabilityValue, Mode,
+        Nick, Pass, User,
     },
     types::{
-        CaseMapping, ISupportParam, ISupportSetting, ModeString, Nickname, ParseCaseMappingError,
-        ReplyTarget, Username,
+        Capability, CaseMapping, ISupportParam, ISupportSetting, ModeString, Nickname,
+        ParseCaseMappingError, ReplyTarget, Username,
     },
 };
 use mitsein::vec1::Vec1;

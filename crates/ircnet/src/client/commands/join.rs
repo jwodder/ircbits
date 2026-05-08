@@ -38,8 +38,9 @@ impl JoinCommand {
 //  - One of:
 //     - RPL_TOPIC (332) + optional RPL_TOPICWHOTIME (333)
 //     - no replies
-//  - one or more RPL_NAMREPLY (353)
-//  - RPL_ENDOFNAMES (366)
+//  - Not present if `no-implicit-names` capability is enabled:
+//     - one or more RPL_NAMREPLY (353)
+//     - RPL_ENDOFNAMES (366)
 //  - optional: RPL_CHANNELURL (328)
 
 // Possible error replies:

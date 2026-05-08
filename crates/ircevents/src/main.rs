@@ -10,7 +10,7 @@ use irctext::{
     ReplyParts, Source, TrailingParam, TryFromStringError,
     clientmsgs::{Away, Quit},
     ctcp::CtcpParams,
-    types::{Channel, ISupportParam, ISupportSetting, ModeString, TagKey, TagValue},
+    types::{Capability, Channel, ISupportParam, ISupportSetting, ModeString, TagKey, TagValue},
 };
 use jiff::{Timestamp, Zoned};
 use mainutil::{ChannelSet, init_logging, run_until_stopped};
@@ -127,6 +127,9 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
     let casemapping = login_output.casemapping()?;
     let me = login_output.my_nick.clone();
     let botmode = login_output.botmode();
+    let no_implicit_names = login_output
+        .capabilities_enabled
+        .contains(&Capability::NO_IMPLICIT_NAMES);
     sender
         .send(Event::Connected {
             timestamp: Zoned::now(),
@@ -142,7 +145,9 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
     let mut channels = ChannelSet::new(casemapping);
     for chan in profile.ircevents.channels {
         tracing::info!("Joining {chan} …");
-        let output = client.run(JoinCommand::new(chan.clone())).await?;
+        let output = client
+            .run(JoinCommand::new(chan.clone()).with_no_implicit_names(no_implicit_names))
+            .await?;
         let chan = output.channel.clone();
         tracing::info!("Joined {chan}");
         channels.add(chan);

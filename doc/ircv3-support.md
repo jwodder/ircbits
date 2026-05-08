@@ -25,6 +25,7 @@ here.
 | [Monitor][]                                                   | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
 | [`multi-prefix`][]                                            | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
 | [`netsplit` and `netjoin` batch types][]                      | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
+| [`no-implicit-names`][]                                       | ~         | ✓        | ✓         | ✓           | ~          | ✓          | ~           |
 | SASL Authentication, versions [3.1][sasl31] and [3.2][sasl32] | ✓         | ✓ (1)    | ✓ (1)     | ✓ (1)       | ✓ (1)      | ✓ (1)      | ✓ (1)       |
 | [`server-time`][]                                             | ~         | ~        | ~         | ✓           | ~          | ~          | ~           |
 | [`setname`][]                                                 | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
@@ -66,6 +67,7 @@ here.
 [`sts`]: https://ircv3.net/specs/extensions/sts
 [`UTF8ONLY`]: https://ircv3.net/specs/extensions/utf8-only
 [`WEBIRC`]: https://ircv3.net/specs/extensions/webirc
+[`no-implicit-names`]: https://ircv3.net/specs/extensions/no-implicit-names
 
 Key:
 

@@ -12,7 +12,7 @@ use irctext::{
     clientmsgs::Quit,
     ctcp::{CtcpMessage, CtcpParams},
     formatting::StyledLine,
-    types::{Channel, ChannelMembership},
+    types::{Capability, Channel, ChannelMembership},
 };
 use itertools::Itertools; // join
 use mainutil::{init_logging, run_until_stopped};
@@ -110,6 +110,9 @@ async fn main() -> anyhow::Result<()> {
         )
         .build()
         .await?;
+    let no_implicit_names = login_output
+        .capabilities_enabled
+        .contains(&Capability::NO_IMPLICIT_NAMES);
     for msg in client.take_unhandled() {
         report(&format_msg(msg));
     }
@@ -137,7 +140,9 @@ async fn main() -> anyhow::Result<()> {
     };
     for chan in channels {
         let hichan = highlight(&chan);
-        let output = client.run(JoinCommand::new(chan.clone())).await?;
+        let output = client
+            .run(JoinCommand::new(chan.clone()).with_no_implicit_names(no_implicit_names))
+            .await?;
         report(&format!("[JOIN] Joined {hichan}"));
         if let Some(topic) = output.topic {
             report(&format!(
@@ -153,44 +158,48 @@ async fn main() -> anyhow::Result<()> {
         } else {
             report(&format!("[JOIN] [{hichan}] No topic set"));
         }
-        let mut s = format!(
-            "[JOIN] [{hichan}] {status:?} channel",
-            status = output.channel_status
-        );
-        let mut users = 0u32;
-        let mut founders = 0u32;
-        let mut protected = 0u32;
-        let mut operators = 0u32;
-        let mut halfops = 0u32;
-        let mut voiced = 0u32;
-        for (prefix, _) in output.users {
-            users += 1;
-            match prefix {
-                Some(ChannelMembership::Founder) => founders += 1,
-                Some(ChannelMembership::Protected) => protected += 1,
-                Some(ChannelMembership::Operator) => operators += 1,
-                Some(ChannelMembership::HalfOperator) => halfops += 1,
-                Some(ChannelMembership::Voiced) => voiced += 1,
-                _ => (),
+        if !no_implicit_names {
+            let mut s = format!(
+                "[JOIN] [{hichan}] {status:?} channel",
+                status = output
+                    .channel_status
+                    .expect("channel_status should be Some when !no_implicit_names"),
+            );
+            let mut users = 0u32;
+            let mut founders = 0u32;
+            let mut protected = 0u32;
+            let mut operators = 0u32;
+            let mut halfops = 0u32;
+            let mut voiced = 0u32;
+            for (prefix, _) in output.users {
+                users += 1;
+                match prefix {
+                    Some(ChannelMembership::Founder) => founders += 1,
+                    Some(ChannelMembership::Protected) => protected += 1,
+                    Some(ChannelMembership::Operator) => operators += 1,
+                    Some(ChannelMembership::HalfOperator) => halfops += 1,
+                    Some(ChannelMembership::Voiced) => voiced += 1,
+                    _ => (),
+                }
             }
+            let _ = write!(&mut s, "; {users} users");
+            if founders > 0 {
+                let _ = write!(&mut s, ", {}", quantify(founders, "founder"));
+            }
+            if protected > 0 {
+                let _ = write!(&mut s, ", {protected} protected");
+            }
+            if operators > 0 {
+                let _ = write!(&mut s, ", {}", quantify(operators, "operator"));
+            }
+            if halfops > 0 {
+                let _ = write!(&mut s, ", {}", quantify(halfops, "halfop"));
+            }
+            if voiced > 0 {
+                let _ = write!(&mut s, ", {voiced} voiced");
+            }
+            report(&s);
         }
-        let _ = write!(&mut s, "; {users} users");
-        if founders > 0 {
-            let _ = write!(&mut s, ", {}", quantify(founders, "founder"));
-        }
-        if protected > 0 {
-            let _ = write!(&mut s, ", {protected} protected");
-        }
-        if operators > 0 {
-            let _ = write!(&mut s, ", {}", quantify(operators, "operator"));
-        }
-        if halfops > 0 {
-            let _ = write!(&mut s, ", {}", quantify(halfops, "halfop"));
-        }
-        if voiced > 0 {
-            let _ = write!(&mut s, ", {voiced} voiced");
-        }
-        report(&s);
     }
     let mut quit = false;
     loop {

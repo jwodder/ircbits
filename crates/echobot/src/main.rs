@@ -9,7 +9,7 @@ use irctext::{
     ClientMessage, Message, Payload, Source, TrailingParam,
     clientmsgs::{PrivMsg, Quit},
     ctcp::CtcpParams,
-    types::{Channel, ModeString, MsgTarget},
+    types::{Capability, Channel, ModeString, MsgTarget},
 };
 use mainutil::{ChannelSet, init_logging, recv_stop_signal};
 use std::collections::HashMap;
@@ -110,6 +110,9 @@ async fn main() -> anyhow::Result<()> {
     let casemapping = login_output.casemapping()?;
     let botmode = login_output.botmode();
     let me = login_output.my_nick;
+    let no_implicit_names = login_output
+        .capabilities_enabled
+        .contains(&Capability::NO_IMPLICIT_NAMES);
 
     if let Some(mchar) = botmode
         && let Ok(ms) = format!("+{mchar}").parse::<ModeString>()
@@ -122,7 +125,9 @@ async fn main() -> anyhow::Result<()> {
     let mut channels = ChannelSet::new(casemapping);
     for chan in profile.echobot.channels {
         tracing::info!("Joining {chan} …");
-        let output = client.run(JoinCommand::new(chan.clone())).await?;
+        let output = client
+            .run(JoinCommand::new(chan.clone()).with_no_implicit_names(no_implicit_names))
+            .await?;
         let chan = output.channel;
         tracing::info!("Joined {chan}");
         channels.add(chan);

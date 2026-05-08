@@ -36,9 +36,6 @@ impl Command for ListCommand {
                         return false;
                     }
                     let e = match rpl {
-                        Reply::TryAgain(r) => ListError::TryAgain {
-                            message: r.message().to_owned(),
-                        },
                         Reply::InputTooLong(r) => ListError::InputTooLong {
                             message: r.message().to_string(),
                         },
@@ -55,6 +52,11 @@ impl Command for ListCommand {
                         },
                     };
                     self.state = State::Done(Some(Err(e)));
+                    true
+                } else if let Reply::TryAgain(r) = rpl {
+                    self.state = State::Done(Some(Err(ListError::TryAgain {
+                        message: r.message().to_owned(),
+                    })));
                     true
                 } else {
                     self.state.in_place(|state| state.handle_reply(rpl))

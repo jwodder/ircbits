@@ -89,9 +89,6 @@ impl Command for SetUserMode {
                     Reply::UsersDontMatch(r) => SetUserModeError::UsersDontMatch {
                         message: r.message().to_owned(),
                     },
-                    Reply::TryAgain(r) => SetUserModeError::TryAgain {
-                        message: r.message().to_owned(),
-                    },
                     Reply::InputTooLong(r) => SetUserModeError::InputTooLong {
                         message: r.message().to_string(),
                     },
@@ -108,6 +105,12 @@ impl Command for SetUserMode {
                     },
                 };
                 self.state = State::Done(Some(Err(e)));
+                true
+            }
+            Payload::Reply(Reply::TryAgain(r)) => {
+                self.state = State::Done(Some(Err(SetUserModeError::TryAgain {
+                    message: r.message().to_owned(),
+                })));
                 true
             }
             Payload::ClientMessage(ClientMessage::Error(err)) => {

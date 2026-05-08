@@ -77,10 +77,11 @@ impl Command for SetUserMode {
                     }
                 }
             }
-            Payload::Reply(rpl) if rpl.is_error() && !matches!(rpl, Reply::NoMotd(_)) => {
-                if self.state != State::Start {
-                    return false;
-                }
+            Payload::Reply(rpl)
+                if self.state == State::Start
+                    && rpl.is_error()
+                    && !matches!(rpl, Reply::NoMotd(_)) =>
+            {
                 let e = match rpl {
                     Reply::NoSuchNick(r) => SetUserModeError::NoSuchNick {
                         nickname: r.target().to_owned(),
@@ -107,7 +108,7 @@ impl Command for SetUserMode {
                 self.state = State::Done(Some(Err(e)));
                 true
             }
-            Payload::Reply(Reply::TryAgain(r)) => {
+            Payload::Reply(Reply::TryAgain(r)) if self.state == State::Start => {
                 self.state = State::Done(Some(Err(SetUserModeError::TryAgain {
                     message: r.message().to_owned(),
                 })));

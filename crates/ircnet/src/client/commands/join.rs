@@ -81,56 +81,55 @@ impl Command for JoinCommand {
 
     fn handle_message(&mut self, msg: &Message) -> bool {
         match &msg.payload {
-            Payload::Reply(rpl) => {
-                if rpl.is_error() && !matches!(rpl, Reply::NoMotd(_)) {
-                    if !matches!(self.state, State::Start { .. }) {
-                        return false;
-                    }
-                    let e = match rpl {
-                        Reply::NoSuchChannel(r) => JoinError::NoSuchChannel {
-                            message: r.message().to_owned(),
-                        },
-                        Reply::TooManyChannels(r) => JoinError::TooManyChannels {
-                            message: r.message().to_owned(),
-                        },
-                        Reply::ChannelIsFull(r) => JoinError::ChannelIsFull {
-                            message: r.message().to_owned(),
-                        },
-                        Reply::InviteOnlyChan(r) => JoinError::InviteOnly {
-                            message: r.message().to_owned(),
-                        },
-                        Reply::BannedFromChan(r) => JoinError::Banned {
-                            message: r.message().to_owned(),
-                        },
-                        Reply::BadChannelKey(r) => JoinError::BadChannelKey {
-                            message: r.message().to_owned(),
-                        },
-                        Reply::InputTooLong(r) => JoinError::InputTooLong {
-                            message: r.message().to_string(),
-                        },
-                        Reply::UnknownCommand(r) => JoinError::UnknownCommand {
-                            command: r.command().to_string(),
-                            message: r.message().to_string(),
-                        },
-                        Reply::NotRegistered(r) => JoinError::NotRegistered {
-                            message: r.message().to_string(),
-                        },
-                        unexpected => JoinError::UnexpectedError {
-                            code: unexpected.code(),
-                            reply: msg.to_string(),
-                        },
-                    };
-                    self.state = State::Done(Some(Err(e)));
-                    true
-                } else if let Reply::TryAgain(r) = rpl {
-                    self.state = State::Done(Some(Err(JoinError::TryAgain {
+            Payload::Reply(rpl)
+                if matches!(self.state, State::Start { .. })
+                    && rpl.is_error()
+                    && !matches!(rpl, Reply::NoMotd(_)) =>
+            {
+                let e = match rpl {
+                    Reply::NoSuchChannel(r) => JoinError::NoSuchChannel {
                         message: r.message().to_owned(),
-                    })));
-                    true
-                } else {
-                    self.state.in_place(|state| state.handle_reply(rpl))
-                }
+                    },
+                    Reply::TooManyChannels(r) => JoinError::TooManyChannels {
+                        message: r.message().to_owned(),
+                    },
+                    Reply::ChannelIsFull(r) => JoinError::ChannelIsFull {
+                        message: r.message().to_owned(),
+                    },
+                    Reply::InviteOnlyChan(r) => JoinError::InviteOnly {
+                        message: r.message().to_owned(),
+                    },
+                    Reply::BannedFromChan(r) => JoinError::Banned {
+                        message: r.message().to_owned(),
+                    },
+                    Reply::BadChannelKey(r) => JoinError::BadChannelKey {
+                        message: r.message().to_owned(),
+                    },
+                    Reply::InputTooLong(r) => JoinError::InputTooLong {
+                        message: r.message().to_string(),
+                    },
+                    Reply::UnknownCommand(r) => JoinError::UnknownCommand {
+                        command: r.command().to_string(),
+                        message: r.message().to_string(),
+                    },
+                    Reply::NotRegistered(r) => JoinError::NotRegistered {
+                        message: r.message().to_string(),
+                    },
+                    unexpected => JoinError::UnexpectedError {
+                        code: unexpected.code(),
+                        reply: msg.to_string(),
+                    },
+                };
+                self.state = State::Done(Some(Err(e)));
+                true
             }
+            Payload::Reply(Reply::TryAgain(r)) if matches!(self.state, State::Start { .. }) => {
+                self.state = State::Done(Some(Err(JoinError::TryAgain {
+                    message: r.message().to_owned(),
+                })));
+                true
+            }
+            Payload::Reply(rpl) => self.state.in_place(|state| state.handle_reply(rpl)),
             Payload::ClientMessage(ClientMessage::Error(err)) => {
                 self.state = State::Done(Some(Err(JoinError::ErrorMessage {
                     reason: err.reason().to_string(),

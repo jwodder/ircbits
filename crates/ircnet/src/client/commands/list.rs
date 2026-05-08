@@ -30,38 +30,37 @@ impl Command for ListCommand {
 
     fn handle_message(&mut self, msg: &Message) -> bool {
         match &msg.payload {
-            Payload::Reply(rpl) => {
-                if rpl.is_error() && !matches!(rpl, Reply::NoMotd(_)) {
-                    if !matches!(self.state, State::Listing(_)) {
-                        return false;
-                    }
-                    let e = match rpl {
-                        Reply::InputTooLong(r) => ListError::InputTooLong {
-                            message: r.message().to_string(),
-                        },
-                        Reply::UnknownCommand(r) => ListError::UnknownCommand {
-                            command: r.command().to_string(),
-                            message: r.message().to_string(),
-                        },
-                        Reply::NotRegistered(r) => ListError::NotRegistered {
-                            message: r.message().to_string(),
-                        },
-                        unexpected => ListError::UnexpectedError {
-                            code: unexpected.code(),
-                            reply: msg.to_string(),
-                        },
-                    };
-                    self.state = State::Done(Some(Err(e)));
-                    true
-                } else if let Reply::TryAgain(r) = rpl {
-                    self.state = State::Done(Some(Err(ListError::TryAgain {
-                        message: r.message().to_owned(),
-                    })));
-                    true
-                } else {
-                    self.state.in_place(|state| state.handle_reply(rpl))
-                }
+            Payload::Reply(rpl)
+                if matches!(self.state, State::Listing(_))
+                    && rpl.is_error()
+                    && !matches!(rpl, Reply::NoMotd(_)) =>
+            {
+                let e = match rpl {
+                    Reply::InputTooLong(r) => ListError::InputTooLong {
+                        message: r.message().to_string(),
+                    },
+                    Reply::UnknownCommand(r) => ListError::UnknownCommand {
+                        command: r.command().to_string(),
+                        message: r.message().to_string(),
+                    },
+                    Reply::NotRegistered(r) => ListError::NotRegistered {
+                        message: r.message().to_string(),
+                    },
+                    unexpected => ListError::UnexpectedError {
+                        code: unexpected.code(),
+                        reply: msg.to_string(),
+                    },
+                };
+                self.state = State::Done(Some(Err(e)));
+                true
             }
+            Payload::Reply(Reply::TryAgain(r)) if matches!(self.state, State::Listing(_)) => {
+                self.state = State::Done(Some(Err(ListError::TryAgain {
+                    message: r.message().to_owned(),
+                })));
+                true
+            }
+            Payload::Reply(rpl) => self.state.in_place(|state| state.handle_reply(rpl)),
             Payload::ClientMessage(ClientMessage::Error(err)) => {
                 self.state = State::Done(Some(Err(ListError::ErrorMessage {
                     reason: err.reason().to_string(),

@@ -1,3 +1,4 @@
+mod capability;
 mod casemapping;
 mod channel;
 mod channel_membership;
@@ -15,6 +16,7 @@ mod tagvalue;
 mod userhostreply;
 mod username;
 mod whoflags;
+pub use self::capability::*;
 pub use self::casemapping::*;
 pub use self::channel::*;
 pub use self::channel_membership::*;

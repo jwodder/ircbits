@@ -81,9 +81,9 @@ pub use self::who::*;
 pub use self::whois::*;
 pub use self::whowas::*;
 use crate::types::{
-    ParseChannelError, ParseEListCondError, ParseKeyError, ParseModeStringError,
-    ParseModeTargetError, ParseMsgTargetError, ParseNicknameError, ParseReplyTargetError,
-    ParseUsernameError,
+    ParseCapabilityError, ParseChannelError, ParseEListCondError, ParseKeyError,
+    ParseModeStringError, ParseModeTargetError, ParseMsgTargetError, ParseNicknameError,
+    ParseReplyTargetError, ParseUsernameError,
 };
 use crate::{
     Message, ParameterList, ParseMiddleParamError, Payload, RawMessage, TryFromParameterListError,

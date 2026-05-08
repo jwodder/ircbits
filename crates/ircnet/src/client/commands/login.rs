@@ -4,12 +4,12 @@ use irctext::{
     ClientMessage, ClientMessageParts, Message, Payload, Reply, ReplyParts, TrailingParam,
     TryFromStringError,
     clientmsgs::{
-        Authenticate, Cap, CapEnd, CapLsRequest, CapReq, Capability, CapabilityRequest,
-        CapabilityValue, Mode, Nick, Pass, User,
+        Authenticate, Cap, CapEnd, CapLsRequest, CapReq, CapabilityRequest, CapabilityValue, Mode,
+        Nick, Pass, User,
     },
     types::{
-        CaseMapping, ISupportParam, ISupportSetting, ModeString, Nickname, ParseCaseMappingError,
-        ReplyTarget, Username,
+        Capability, CaseMapping, ISupportParam, ISupportSetting, ModeString, Nickname,
+        ParseCaseMappingError, ReplyTarget, Username,
     },
 };
 use mitsein::vec1::Vec1;
@@ -1140,10 +1140,7 @@ fn post_cap_ls(
             caps_desired.remove("sasl");
         } else {
             sasl = Some(ss);
-            let sasl_cap = "sasl"
-                .parse::<Capability>()
-                .expect(r#""sasl" should be a valid capability name"#);
-            caps_desired.insert(sasl_cap, CapDesire::Optional);
+            caps_desired.insert(Capability::SASL, CapDesire::Optional);
         }
     } else {
         caps_desired.remove("sasl");
@@ -1592,24 +1589,24 @@ mod tests {
             output,
             LoginOutput {
                 capabilities: Some(vec![
-                    ("account-notify".parse::<Capability>().unwrap(), None),
-                    ("away-notify".parse::<Capability>().unwrap(), None),
-                    ("chghost".parse::<Capability>().unwrap(), None),
-                    ("extended-join".parse::<Capability>().unwrap(), None),
-                    ("multi-prefix".parse::<Capability>().unwrap(), None),
+                    (Capability::ACCOUNT_NOTIFY, None),
+                    (Capability::AWAY_NOTIFY, None),
+                    (Capability::CHGHOST, None),
+                    (Capability::EXTENDED_JOIN, None),
+                    (Capability::MULTI_PREFIX, None),
                     (
-                        "sasl".parse::<Capability>().unwrap(),
+                        Capability::SASL,
                         Some(
                             "ECDSA-NIST256P-CHALLENGE,EXTERNAL,PLAIN,SCRAM-SHA-512"
                                 .parse::<CapabilityValue>()
                                 .unwrap()
                         )
                     ),
-                    ("tls".parse::<Capability>().unwrap(), None),
-                    ("account-tag".parse::<Capability>().unwrap(), None),
-                    ("cap-notify".parse::<Capability>().unwrap(), None),
-                    ("echo-message".parse::<Capability>().unwrap(), None),
-                    ("server-time".parse::<Capability>().unwrap(), None),
+                    (Capability::TLS, None),
+                    (Capability::ACCOUNT_TAG, None),
+                    (Capability::CAP_NOTIFY, None),
+                    (Capability::ECHO_MESSAGE, None),
+                    (Capability::SERVER_TIME, None),
                     (
                         "solanum.chat/identify-msg".parse::<Capability>().unwrap(),
                         None
@@ -1617,7 +1614,7 @@ mod tests {
                     ("solanum.chat/oper".parse::<Capability>().unwrap(), None),
                     ("solanum.chat/realhost".parse::<Capability>().unwrap(), None),
                 ]),
-                capabilities_enabled: HashSet::from(["sasl".parse::<Capability>().unwrap()]),
+                capabilities_enabled: HashSet::from([Capability::SASL]),
                 my_nick: "jwodder".parse::<Nickname>().unwrap(),
                 welcome_msg: "Welcome to the Libera.Chat Internet Relay Chat Network jwodder".into(),
                 yourhost_msg: "Your host is molybdenum.libera.chat[2607:5300:205:300::ae0/6697], running version solanum-1.0-dev".into(),
@@ -2072,8 +2069,8 @@ mod tests {
         pretty_assertions::assert_eq!(
             output,
             LoginOutput {
-                capabilities: Some(vec![("sasl".parse::<Capability>().unwrap(), None)]),
-                capabilities_enabled: HashSet::from(["sasl".parse::<Capability>().unwrap()]),
+                capabilities: Some(vec![(Capability::SASL, None)]),
+                capabilities_enabled: HashSet::from([Capability::SASL]),
                 my_nick: "jwodder".parse::<Nickname>().unwrap(),
                 welcome_msg: "Welcome to the Example Internet Relay Chat Network, jwodder".into(),
                 yourhost_msg: "Your host is irc.example.com, running version solanum-1.0-dev".into(),
@@ -2146,14 +2143,8 @@ mod tests {
             sasl: true,
             sasl_mechanisms: Vec1::from_one(SaslMechanism::Plain),
             capabilities: BTreeMap::from([
-                (
-                    "message-tags".parse::<Capability>().unwrap(),
-                    CapDesire::Required,
-                ),
-                (
-                    "server-time".parse::<Capability>().unwrap(),
-                    CapDesire::Optional,
-                ),
+                (Capability::MESSAGE_TAGS, CapDesire::Required),
+                (Capability::SERVER_TIME, CapDesire::Optional),
             ]),
         };
         let mut cmd = Login::new(params);
@@ -2269,19 +2260,19 @@ mod tests {
             output,
             LoginOutput {
                 capabilities: Some(vec![
-                    ("account-notify".parse::<Capability>().unwrap(), None),
-                    ("away-notify".parse::<Capability>().unwrap(), None),
+                    (Capability::ACCOUNT_NOTIFY, None),
+                    (Capability::AWAY_NOTIFY, None),
                     (
-                        "sasl".parse::<Capability>().unwrap(),
+                        Capability::SASL,
                         Some(
                             "ECDSA-NIST256P-CHALLENGE,EXTERNAL,PLAIN,SCRAM-SHA-512"
                                 .parse::<CapabilityValue>()
                                 .unwrap()
                         )
                     ),
-                    ("message-tags".parse::<Capability>().unwrap(), None),
+                    (Capability::MESSAGE_TAGS, None),
                 ]),
-                capabilities_enabled: HashSet::from(["message-tags".parse::<Capability>().unwrap(), "sasl".parse::<Capability>().unwrap()]),
+                capabilities_enabled: HashSet::from([Capability::MESSAGE_TAGS, Capability::SASL]),
                 my_nick: "jwodder".parse::<Nickname>().unwrap(),
                 welcome_msg: "Welcome to the Example Internet Relay Chat Network, jwodder".into(),
                 yourhost_msg: "Your host is irc.example.com, running version solanum-1.0-dev".into(),
@@ -2354,14 +2345,8 @@ mod tests {
             sasl: true,
             sasl_mechanisms: Vec1::from_one(SaslMechanism::Plain),
             capabilities: BTreeMap::from([
-                (
-                    "message-tags".parse::<Capability>().unwrap(),
-                    CapDesire::Required,
-                ),
-                (
-                    "server-time".parse::<Capability>().unwrap(),
-                    CapDesire::Optional,
-                ),
+                (Capability::MESSAGE_TAGS, CapDesire::Required),
+                (Capability::SERVER_TIME, CapDesire::Optional),
             ]),
         };
         let mut cmd = Login::new(params);

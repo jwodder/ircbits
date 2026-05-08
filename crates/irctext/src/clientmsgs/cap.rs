@@ -1,5 +1,5 @@
 use super::{ClientMessage, ClientMessageError, ClientMessageParts};
-use crate::types::ReplyTarget;
+use crate::types::{Capability, ParseCapabilityError, ReplyTarget};
 use crate::util::{join_with_space, split_spaces};
 use crate::{
     Message, MiddleParam, ParameterList, RawMessage, TrailingParam, TryFromParameterListError,
@@ -876,46 +876,6 @@ impl From<CapDel> for RawMessage {
     }
 }
 
-#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct Capability(String);
-
-validstr!(Capability, ParseCapabilityError, validate_capability);
-strserde!(Capability, "an IRCv3 capability name");
-
-fn validate_capability(s: &str) -> Result<(), ParseCapabilityError> {
-    if s.is_empty() {
-        Err(ParseCapabilityError::Empty)
-    } else if s.starts_with('-') {
-        Err(ParseCapabilityError::BadStart)
-    } else if s.contains(['\0', '\r', '\n', ' ', '=']) {
-        Err(ParseCapabilityError::BadCharacter)
-    } else {
-        Ok(())
-    }
-}
-
-impl From<Capability> for MiddleParam {
-    fn from(value: Capability) -> MiddleParam {
-        MiddleParam::try_from(value.into_inner()).expect("Capability should be valid MiddleParam")
-    }
-}
-
-impl From<Capability> for TrailingParam {
-    fn from(value: Capability) -> TrailingParam {
-        TrailingParam::from(MiddleParam::from(value))
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
-pub enum ParseCapabilityError {
-    #[error("capabilities cannot be empty")]
-    Empty,
-    #[error("capabilities cannot start with '-'")]
-    BadStart,
-    #[error("capabilities cannot contain NUL, CR, LF, SPACE, or =")]
-    BadCharacter,
-}
-
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct CapabilityValue(String);
 
@@ -1037,8 +997,8 @@ mod tests {
                 assert!(cap.target.is_star());
                 assert!(cap.continued);
                 assert_eq!(cap.capabilities, [
-                    ("cap-notify".parse::<Capability>().unwrap(), None),
-                    ("server-time".parse::<Capability>().unwrap(), None),
+                    (Capability::CAP_NOTIFY, None),
+                    (Capability::SERVER_TIME, None),
                     ("example.org/dummy-cap".parse::<Capability>().unwrap(), Some("dummyvalue".parse::<CapabilityValue>().unwrap())),
                     ("example.org/second-dummy-cap".parse::<Capability>().unwrap(), None),
                 ]);
@@ -1055,8 +1015,8 @@ mod tests {
                 assert!(cap.target.is_star());
                 assert!(!cap.continued);
                 assert_eq!(cap.capabilities, [
-                    ("userhost-in-names".parse::<Capability>().unwrap(), None),
-                    ("sasl".parse::<Capability>().unwrap(), Some("EXTERNAL,DH-AES,DH-BLOWFISH,ECDSA-NIST256P-CHALLENGE,PLAIN".parse::<CapabilityValue>().unwrap())),
+                    (Capability::USERHOST_IN_NAMES, None),
+                    (Capability::SASL, Some("EXTERNAL,DH-AES,DH-BLOWFISH,ECDSA-NIST256P-CHALLENGE,PLAIN".parse::<CapabilityValue>().unwrap())),
                 ]);
             }
         );
@@ -1082,7 +1042,7 @@ mod tests {
                 assert_eq!(cap.capabilities, [
                     "example.org/example-cap".parse::<Capability>().unwrap(),
                     "example.org/second-example-cap".parse::<Capability>().unwrap(),
-                    "account-notify".parse::<Capability>().unwrap(),
+                    Capability::ACCOUNT_NOTIFY,
                 ]);
             }
         );
@@ -1099,8 +1059,8 @@ mod tests {
                 assert_eq!(cap.target, "modernclient");
                 assert!(!cap.continued);
                 assert_eq!(cap.capabilities, [
-                    "invite-notify".parse::<Capability>().unwrap(),
-                    "batch".parse::<Capability>().unwrap(),
+                    Capability::INVITE_NOTIFY,
+                    Capability::BATCH,
                     "example.org/third-example-cap".parse::<Capability>().unwrap(),
                 ]);
             }
@@ -1114,8 +1074,8 @@ mod tests {
             msg.payload,
             Payload::ClientMessage(ClientMessage::Cap(Cap::Req(cap))) => {
                 assert_eq!(cap.capabilities, [
-                    CapabilityRequest {capability: "multi-prefix".parse::<Capability>().unwrap(), disable: false},
-                    CapabilityRequest {capability: "sasl".parse::<Capability>().unwrap(), disable: false},
+                    CapabilityRequest {capability: Capability::MULTI_PREFIX, disable: false},
+                    CapabilityRequest {capability: Capability::SASL, disable: false},
                 ]);
             }
         );
@@ -1129,8 +1089,8 @@ mod tests {
             Payload::ClientMessage(ClientMessage::Cap(Cap::Ack(cap))) => {
                 assert!(cap.target.is_star());
                 assert_eq!(cap.capabilities, [
-                    CapabilityRequest {capability: "multi-prefix".parse::<Capability>().unwrap(), disable: false},
-                    CapabilityRequest {capability: "sasl".parse::<Capability>().unwrap(), disable: false},
+                    CapabilityRequest {capability: Capability::MULTI_PREFIX, disable: false},
+                    CapabilityRequest {capability: Capability::SASL, disable: false},
                 ]);
             }
         );
@@ -1143,7 +1103,7 @@ mod tests {
             msg.payload,
             Payload::ClientMessage(ClientMessage::Cap(Cap::Req(cap))) => {
                 assert_eq!(cap.capabilities, [
-                    CapabilityRequest {capability: "userhost-in-names".parse::<Capability>().unwrap(), disable: true},
+                    CapabilityRequest {capability: Capability::USERHOST_IN_NAMES, disable: true},
                 ]);
             }
         );
@@ -1157,7 +1117,7 @@ mod tests {
             Payload::ClientMessage(ClientMessage::Cap(Cap::Ack(cap))) => {
                 assert!(cap.target.is_star());
                 assert_eq!(cap.capabilities, [
-                    CapabilityRequest {capability: "userhost-in-names".parse::<Capability>().unwrap(), disable: true},
+                    CapabilityRequest {capability: Capability::USERHOST_IN_NAMES, disable: true},
                 ]);
             }
         );
@@ -1173,8 +1133,8 @@ mod tests {
             Payload::ClientMessage(ClientMessage::Cap(Cap::Nak(cap))) => {
                 assert!(cap.target.is_star());
                 assert_eq!(cap.capabilities, [
-                    "multi-prefix".parse::<Capability>().unwrap(),
-                    "sasl".parse::<Capability>().unwrap(),
+                    Capability::MULTI_PREFIX,
+                    Capability::SASL,
                     "ex3".parse::<Capability>().unwrap(),
                 ]);
             }
@@ -1199,9 +1159,7 @@ mod tests {
             msg.payload,
             Payload::ClientMessage(ClientMessage::Cap(Cap::New(cap))) => {
                 assert_eq!(cap.target, "modernclient");
-                assert_eq!(cap.capabilities, [
-                    "batch".parse::<Capability>().unwrap(),
-                ]);
+                assert_eq!(cap.capabilities, [Capability::BATCH]);
             }
         );
     }
@@ -1217,9 +1175,9 @@ mod tests {
             Payload::ClientMessage(ClientMessage::Cap(Cap::Del(cap))) => {
                 assert_eq!(cap.target, "modernclient");
                 assert_eq!(cap.capabilities, [
-                    "userhost-in-names".parse::<Capability>().unwrap(),
-                    "multi-prefix".parse::<Capability>().unwrap(),
-                    "away-notify".parse::<Capability>().unwrap(),
+                    Capability::USERHOST_IN_NAMES,
+                    Capability::MULTI_PREFIX,
+                    Capability::AWAY_NOTIFY,
                 ]);
             }
         );

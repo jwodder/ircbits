@@ -25,7 +25,7 @@ here.
 | [Monitor][]                                                   | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
 | [`multi-prefix`][]                                            | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
 | [`netsplit` and `netjoin` batch types][]                      | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |
-| [`no-implicit-names`][]                                       | ~         | ✗        | ✗         | ✗           | ~          | ✗          | ~           |
+| [`no-implicit-names`][]                                       | ~         | ✓        | ✗         | ✗           | ~          | ✗          | ~           |
 | SASL Authentication, versions [3.1][sasl31] and [3.2][sasl32] | ✓         | ✓ (1)    | ✓ (1)     | ✓ (1)       | ✓ (1)      | ✓ (1)      | ✓ (1)       |
 | [`server-time`][]                                             | ~         | ~        | ~         | ✓           | ~          | ~          | ~           |
 | [`setname`][]                                                 | ✗         | ✗        | ✗         | ✗           | ✗          | ✗          | ✗           |

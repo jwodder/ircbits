@@ -7,9 +7,8 @@ use irctext::{
 use std::time::Duration;
 use thiserror::Error;
 
-/// How long to wait for an optional `RPL_CHANNELURL` (328) message after
-/// receiving the list of names
-const URL_TIMEOUT: Duration = Duration::from_secs(1);
+/// How long to wait for optional replies
+const OPTIONAL_REPLY_TIMEOUT: Duration = Duration::from_secs(1);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct JoinCommand {
@@ -21,15 +20,29 @@ impl JoinCommand {
     pub fn new(channel: Channel) -> JoinCommand {
         JoinCommand {
             outgoing: vec![Join::new(channel).into()],
-            state: State::Start,
+            state: State::Start {
+                no_implicit_names: false,
+            },
         }
     }
 
     pub fn new_with_key(channel: Channel, key: Key) -> JoinCommand {
         JoinCommand {
             outgoing: vec![Join::new_with_key(channel, key).into()],
-            state: State::Start,
+            state: State::Start {
+                no_implicit_names: false,
+            },
         }
+    }
+
+    #[allow(clippy::missing_panics_doc)]
+    pub fn with_no_implicit_names(mut self, yesno: bool) -> JoinCommand {
+        if let State::Start { no_implicit_names } = &mut self.state {
+            *no_implicit_names = yesno;
+        } else {
+            panic!("JoinCommand::with_no_implicit_names() called after starting command");
+        }
+        self
     }
 }
 
@@ -70,7 +83,7 @@ impl Command for JoinCommand {
         match &msg.payload {
             Payload::Reply(rpl) => {
                 if rpl.is_error() && !matches!(rpl, Reply::NoMotd(_)) {
-                    if self.state != State::Start {
+                    if !matches!(self.state, State::Start { .. }) {
                         return false;
                     }
                     let e = match rpl {
@@ -124,27 +137,35 @@ impl Command for JoinCommand {
                 })));
                 true
             }
-            Payload::ClientMessage(ClientMessage::Join(_)) => {
-                self.state.in_place(State::handle_join)
+            Payload::ClientMessage(ClientMessage::Join(j)) if !j.is_zero() => {
+                self.state.in_place(|st| st.handle_join(j))
             }
             Payload::ClientMessage(_) => false,
         }
     }
 
     fn get_timeout(&mut self) -> Option<Duration> {
-        if let State::AwaitingUrl {
-            ref mut timeout, ..
-        } = self.state
-        {
-            timeout.take()
-        } else {
-            None
+        match &mut self.state {
+            State::GotJoin { timeout, .. } => timeout.take(),
+            State::GotTopic { timeout, .. } => timeout.take(),
+            State::AwaitingUrl { timeout, .. } => timeout.take(),
+            _ => None,
         }
     }
 
     fn handle_timeout(&mut self) {
         let state = std::mem::replace(&mut self.state, State::Void);
         self.state = match state {
+            State::GotJoin {
+                no_implicit_names: true,
+                output,
+                timeout: None,
+            } => State::Done(Some(Ok(output))),
+            State::GotTopic {
+                no_implicit_names: true,
+                output,
+                timeout: None,
+            } => State::Done(Some(Ok(output))),
             State::AwaitingUrl {
                 timeout: None,
                 output,
@@ -169,16 +190,20 @@ impl Command for JoinCommand {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum State {
-    Start,
-    GotJoin,
+    Start {
+        no_implicit_names: bool,
+    },
+    GotJoin {
+        no_implicit_names: bool,
+        output: JoinOutput,
+        timeout: Option<Duration>,
+    },
     GotTopic {
-        topic: String,
+        no_implicit_names: bool,
+        output: JoinOutput,
+        timeout: Option<Duration>,
     },
-    GotTopicWho {
-        topic: String,
-        topic_setter: ClientSource,
-        topic_set_at: u64,
-    },
+    GotTopicWho(JoinOutput),
     GotNamReply(JoinOutput),
     AwaitingUrl {
         output: JoinOutput,
@@ -201,63 +226,72 @@ impl State {
 
     fn handle_reply(self, rpl: &Reply) -> (State, bool) {
         match (self, rpl) {
-            (State::GotJoin, Reply::Topic(r)) => (
+            (
+                State::GotJoin {
+                    no_implicit_names,
+                    mut output,
+                    ..
+                },
+                Reply::Topic(r),
+            ) => {
+                output.topic = Some(r.topic().to_owned());
+                (
+                    State::GotTopic {
+                        no_implicit_names,
+                        output,
+                        timeout: no_implicit_names.then_some(OPTIONAL_REPLY_TIMEOUT),
+                    },
+                    true,
+                )
+            }
+            (
                 State::GotTopic {
-                    topic: r.topic().to_owned(),
+                    no_implicit_names,
+                    mut output,
+                    ..
                 },
-                true,
-            ),
-            (State::GotTopic { topic }, Reply::TopicWhoTime(r)) => (
-                State::GotTopicWho {
-                    topic,
-                    topic_setter: r.user().clone(),
-                    topic_set_at: r.setat(),
-                },
-                true,
-            ),
-            (State::GotJoin, Reply::NamReply(r)) => (
+                Reply::TopicWhoTime(r),
+            ) => {
+                output.topic_set_by = Some(r.user().clone());
+                output.topic_set_at = Some(r.setat());
+                if no_implicit_names {
+                    (
+                        State::AwaitingUrl {
+                            output,
+                            timeout: Some(OPTIONAL_REPLY_TIMEOUT),
+                        },
+                        true,
+                    )
+                } else {
+                    (State::GotTopicWho(output), true)
+                }
+            }
+            (State::GotJoin { .. }, Reply::NamReply(r)) => (
+                // TODO: Error if no_implicit_names is true?
                 State::GotNamReply(JoinOutput {
                     channel: r.channel().to_owned(),
                     topic: None,
                     topic_set_by: None,
                     topic_set_at: None,
-                    channel_status: r.channel_status(),
+                    channel_status: Some(r.channel_status()),
                     users: r.clients().to_vec(),
                     url: None,
                 }),
                 true,
             ),
-            (State::GotTopic { topic }, Reply::NamReply(r)) => (
-                State::GotNamReply(JoinOutput {
-                    channel: r.channel().to_owned(),
-                    topic: Some(topic),
-                    topic_set_by: None,
-                    topic_set_at: None,
-                    channel_status: r.channel_status(),
-                    users: r.clients().to_vec(),
-                    url: None,
-                }),
-                true,
-            ),
-            (
-                State::GotTopicWho {
-                    topic,
-                    topic_setter,
-                    topic_set_at,
-                },
-                Reply::NamReply(r),
-            ) => (
-                State::GotNamReply(JoinOutput {
-                    channel: r.channel().to_owned(),
-                    topic: Some(topic),
-                    topic_set_by: Some(topic_setter),
-                    topic_set_at: Some(topic_set_at),
-                    channel_status: r.channel_status(),
-                    users: r.clients().to_vec(),
-                    url: None,
-                }),
-                true,
-            ),
+            (State::GotTopic { mut output, .. }, Reply::NamReply(r)) => {
+                // TODO: Error if no_implicit_names is true?
+                output.channel = r.channel().to_owned();
+                output.channel_status = Some(r.channel_status());
+                output.users = r.clients().to_vec();
+                (State::GotNamReply(output), true)
+            }
+            (State::GotTopicWho(mut output), Reply::NamReply(r)) => {
+                output.channel = r.channel().to_owned();
+                output.channel_status = Some(r.channel_status());
+                output.users = r.clients().to_vec();
+                (State::GotNamReply(output), true)
+            }
             (State::GotNamReply(mut output), Reply::NamReply(r)) => {
                 output.users.extend(r.clients().to_vec());
                 (State::GotNamReply(output), true)
@@ -265,7 +299,7 @@ impl State {
             (State::GotNamReply(output), Reply::EndOfNames(_)) => (
                 State::AwaitingUrl {
                     output,
-                    timeout: Some(URL_TIMEOUT),
+                    timeout: Some(OPTIONAL_REPLY_TIMEOUT),
                 },
                 true,
             ),
@@ -278,9 +312,24 @@ impl State {
         }
     }
 
-    fn handle_join(self) -> (State, bool) {
+    fn handle_join(self, join: &Join) -> (State, bool) {
         match self {
-            State::Start => (State::GotJoin, true),
+            State::Start { no_implicit_names } => (
+                State::GotJoin {
+                    no_implicit_names,
+                    output: JoinOutput {
+                        channel: join.channels()[0].clone(),
+                        topic: None,
+                        topic_set_by: None,
+                        topic_set_at: None,
+                        channel_status: None,
+                        users: Vec::new(),
+                        url: None,
+                    },
+                    timeout: no_implicit_names.then_some(OPTIONAL_REPLY_TIMEOUT),
+                },
+                true,
+            ),
             State::Void => panic!("handle_join() called on Void join state"),
             st => (st, false),
         }
@@ -289,7 +338,8 @@ impl State {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct JoinOutput {
-    /// The name of the channel as given in the `RPL_NAMREPLY` messages
+    /// The name of the channel as given in the `RPL_NAMREPLY` messages (or as
+    /// given in our echoed `JOIN` command if `no-implicit-names` is enabled)
     pub channel: Channel,
 
     /// The channel's topic, or `None` if no topic is set
@@ -302,8 +352,8 @@ pub struct JoinOutput {
     /// `None` if not reported
     pub topic_set_at: Option<u64>,
 
-    /// The channel's status
-    pub channel_status: ChannelStatus,
+    /// The channel's status, or `None` if `no-implicit-names` is enabled
+    pub channel_status: Option<ChannelStatus>,
 
     /// The users currently joined to the channel along with their membership
     /// statuses therein
@@ -386,7 +436,7 @@ mod tests {
                         .unwrap()
                 ),
                 topic_set_at: Some(1757535834),
-                channel_status: ChannelStatus::Public,
+                channel_status: Some(ChannelStatus::Public),
                 users: vec![
                     (None, "mynick".parse::<Nickname>().unwrap()),
                     (
@@ -459,7 +509,7 @@ mod tests {
                         .unwrap()
                 ),
                 topic_set_at: Some(1757535834),
-                channel_status: ChannelStatus::Public,
+                channel_status: Some(ChannelStatus::Public),
                 users: vec![
                     (None, "mynick".parse::<Nickname>().unwrap()),
                     (

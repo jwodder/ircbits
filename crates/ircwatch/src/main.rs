@@ -231,7 +231,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn report(msg: &str) {
-    let timestamp = jiff::Zoned::now()
+    let timestamp = jiff::ZonedDateTime::now()
         .time()
         .round(jiff::Unit::Second)
         .expect("Time.round(Second) should not fail");

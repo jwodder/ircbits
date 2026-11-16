@@ -12,7 +12,7 @@ use irctext::{
     ctcp::CtcpParams,
     types::{Capability, Channel, ISupportParam, ISupportSetting, ModeString, TagKey, TagValue},
 };
-use jiff::{Timestamp, Zoned};
+use jiff::{Timestamp, ZonedDateTime};
 use mainutil::{ChannelSet, init_logging, run_until_stopped};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
@@ -132,7 +132,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
         .contains(&Capability::NO_IMPLICIT_NAMES);
     sender
         .send(Event::Connected {
-            timestamp: Zoned::now(),
+            timestamp: ZonedDateTime::now(),
             output: login_output,
         })
         .await?;
@@ -153,7 +153,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
         channels.add(chan);
         sender
             .send(Event::Joined {
-                timestamp: Zoned::now(),
+                timestamp: ZonedDateTime::now(),
                 output,
             })
             .await?;
@@ -200,7 +200,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                         };
                         sender
                             .send(Event::Message {
-                                timestamp: Zoned::now(),
+                                timestamp: ZonedDateTime::now(),
                                 tags,
                                 source,
                                 msg,
@@ -241,7 +241,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                         } else {
                             sender
                                 .send(Event::Reply {
-                                    timestamp: Zoned::now(),
+                                    timestamp: ZonedDateTime::now(),
                                     tags,
                                     source,
                                     reply,
@@ -255,7 +255,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                 tracing::info!("Connection closed");
                 sender
                     .send(Event::Disconnected {
-                        timestamp: Zoned::now(),
+                        timestamp: ZonedDateTime::now(),
                     })
                     .await?;
                 break;
@@ -263,7 +263,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
             Some(Err(ClientError::Parse(error))) => {
                 sender
                     .send(Event::ParseError {
-                        timestamp: Zoned::now(),
+                        timestamp: ZonedDateTime::now(),
                         error,
                     })
                     .await?;
@@ -273,7 +273,7 @@ async fn irc(profile: Profile, sender: mpsc::Sender<Event>) -> anyhow::Result<()
                 tracing::error!(?e, "Error communicating with server; disconnecting");
                 sender
                     .send(Event::Disconnected {
-                        timestamp: Zoned::now(),
+                        timestamp: ZonedDateTime::now(),
                     })
                     .await?;
                 return Err(e);
@@ -370,31 +370,31 @@ impl EventLogger {
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Event {
     Connected {
-        timestamp: Zoned,
+        timestamp: ZonedDateTime,
         output: LoginOutput,
     },
     Joined {
-        timestamp: Zoned,
+        timestamp: ZonedDateTime,
         output: JoinOutput,
     },
     Message {
-        timestamp: Zoned,
+        timestamp: ZonedDateTime,
         tags: Vec<(TagKey, TagValue)>,
         source: Option<Source>,
         msg: ClientMessage,
     },
     Reply {
-        timestamp: Zoned,
+        timestamp: ZonedDateTime,
         tags: Vec<(TagKey, TagValue)>,
         source: Option<Source>,
         reply: Reply,
     },
     ParseError {
-        timestamp: Zoned,
+        timestamp: ZonedDateTime,
         error: TryFromStringError<ParseMessageError>,
     },
     Disconnected {
-        timestamp: Zoned,
+        timestamp: ZonedDateTime,
     },
 }
 
@@ -1042,7 +1042,7 @@ impl AddFields for Reply {
     }
 }
 
-fn fmt_zoned(z: Zoned) -> String {
+fn fmt_zoned(z: ZonedDateTime) -> String {
     let ts = z.timestamp();
     let offset = z.offset();
     ts.display_with_offset(offset).to_string()

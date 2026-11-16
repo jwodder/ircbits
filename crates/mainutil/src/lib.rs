@@ -31,7 +31,7 @@ struct JiffTimer;
 
 impl FormatTime for JiffTimer {
     fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
-        let now = jiff::Zoned::now();
+        let now = jiff::ZonedDateTime::now();
         let ts = now.timestamp();
         let offset = now.offset();
         write!(w, "{}", ts.display_with_offset(offset))

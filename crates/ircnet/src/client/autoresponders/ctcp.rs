@@ -4,7 +4,7 @@ use irctext::{
     clientmsgs::Notice,
     ctcp::{CtcpMessage, CtcpParams},
 };
-use jiff::{Timestamp, Zoned, tz::TimeZone};
+use jiff::{Timestamp, ZonedDateTime, tz::TimeZone};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CtcpQueryResponder {
@@ -141,9 +141,9 @@ impl AutoResponder for CtcpQueryResponder {
                     "Received TIME CTCP query; responding ..."
                 );
                 let now = if self.utc_time {
-                    Timestamp::now().to_zoned(TimeZone::UTC)
+                    Timestamp::now().to_zoned_datetime(TimeZone::UTC)
                 } else {
-                    Zoned::now()
+                    ZonedDateTime::now()
                 };
                 match jiff::fmt::rfc2822::to_string(&now) {
                     Ok(stamp) => match CtcpParams::try_from(stamp) {
